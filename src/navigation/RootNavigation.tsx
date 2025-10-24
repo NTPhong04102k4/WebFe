@@ -74,6 +74,7 @@ export function RootNavigation() {
             <Route element={<CalculatorFeatures />} path="/home/calculator" />
             <Route element={<Login />} path="/auth/login" />
             <Route element={<AuthCallback />} path="/auth/callback" />
+            <Route element={<AuthCallback />} path="/auth/callback/google" />
             <Route element={<ContactUs />} path="/contact" />
             <Route element={<ErrorPage />} path="*" />
             <Route element={<Services />} path="/home/services" />
