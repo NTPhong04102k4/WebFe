@@ -5,7 +5,6 @@ import Admin from "src/pages/admin";
 import CalculatorFeatures from "src/pages/calculator";
 import { LoadingScreen } from "src/shared/components/loading";
 
-// Sử dụng React.lazy để tải lười biếng các trang
 const About = React.lazy(() => import("src/pages/about"));
 const Accessory = React.lazy(() => import("src/pages/accessory"));
 const ContactUs = React.lazy(() => import("src/pages/contact"));
@@ -41,6 +40,9 @@ const ListingCarOld = React.lazy(
 const ListingBody = React.lazy(
   () => import("src/pages/listings/item/ListingBody")
 );
+const PaymentForm = React.lazy(
+  () => import("src/components/payment/PaymentForm")
+);
 export function RootNavigation() {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
@@ -75,6 +77,7 @@ export function RootNavigation() {
             <Route element={<Login />} path="/auth/login" />
             <Route element={<AuthCallback />} path="/auth/callback" />
             <Route element={<AuthCallback />} path="/auth/callback/google" />
+            <Route element={<AuthCallback />} path="/auth/callback/facebook" />
             <Route element={<ContactUs />} path="/contact" />
             <Route element={<ErrorPage />} path="*" />
             <Route element={<Services />} path="/home/services" />
@@ -107,6 +110,10 @@ export function RootNavigation() {
             <Route element={<ListingDetails />} path="/cars/details" />
             <Route element={<ListingCarOld />} path="/listings/car_old" />
             <Route element={<ListingBody />} path="/listings/body" />
+            <Route path="/payment" element={<PaymentForm />} />
+            {/* <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/error" element={<PaymentError />} />
+        <Route path="/payment/cancel" element={<PaymentCancel />} /> */}
           </Routes>
         </Suspense>
       )}

@@ -11,7 +11,6 @@ import {
   SocialLoginButtons,
 } from "../../shared/components/Login";
 import { OtpVerificationForm } from "../../shared/components/Login/OtpVerificationForm";
-import { log } from "console";
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -36,7 +35,6 @@ export default function Login() {
     isLoading,
     isAuthenticated,
   } = useAuth();
-
   useEffect(() => {
     if (isAuthenticated) {
       window.location.href = "/";
@@ -63,9 +61,10 @@ export default function Login() {
       setError("Vui lòng nhập đầy đủ thông tin");
       return;
     }
-
     try {
-      await loginWithEmail(formData.email, formData.password);
+      var res = await loginWithEmail(formData.email, formData.password);
+      console.log(res);
+      // chuyer màn o]tong quan
       setSuccess("Đăng nhập thành công!");
     } catch (error: any) {
       setError(error.message || "Đăng nhập thất bại");
