@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkwebapp=self.webpackChunkwebapp||[]).push([[914],{9914:(e,s,a)=>{a.r(s),a.d(s,{default:()=>h});var l=a(5043),c=a(312),b=a(609),n=a(5639),p=a(29),f=a(579);const h=l.memo((()=>(0,f.jsxs)("div",{className:"flex flex-col w-full min-h-screen bg-[#050b2b]",children:[(0,f.jsx)(n.Y,{}),(0,f.jsx)(c.E,{data:b.EU}),(0,f.jsx)(p.n,{show:!0})]})))}}]);
+//# sourceMappingURL=914.d4893ac6.chunk.js.map

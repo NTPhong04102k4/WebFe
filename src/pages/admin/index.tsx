@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import axios from "axios";
+import React, { useEffect, useState } from "react";
 import { GoArrowRight } from "react-icons/go";
 import { useNavigate } from "react-router-dom";
 
@@ -7,8 +8,8 @@ const Admin = React.memo(() => {
   const [data, setData] = useState([]);
   useEffect(() => {
     // Giả sử API của bạn có đường dẫn /api/admins
-    fetch("/api/admins")
-      .then((response) => response.json())
+    axios.get("/api/admins")
+      .then((response) => response.data)
       .then((data) => setData(data))
       .catch((error) => console.error("Error fetching data:", error));
     console.log("adminAPi:", data);
