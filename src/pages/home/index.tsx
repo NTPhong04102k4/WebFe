@@ -32,7 +32,6 @@ const Home = React.memo(() => {
         data={DATA_SUGGEST}
         title={`We're BIG on what matters to you`}
       />
-
       <MostCar data={DATA_CAR} title=" The Most Searched Cars" />
       <SuggestChoiceOption data={DATA_OPTION_SUGGEST} />
       <ListCar data={DATA_CAR} title="Recommended Cars For You" />

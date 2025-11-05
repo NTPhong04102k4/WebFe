@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 
-import { ENV } from "../config/environment";
+import { ENV } from "../../../config/environment";
 
 // API Configuration
 const API_BASE_URL = ENV.API_URL || "https://localhost:7250";

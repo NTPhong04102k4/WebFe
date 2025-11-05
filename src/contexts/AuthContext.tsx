@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { googleAuthRealService } from "../services/googleAuthReal";
 import { facebookAuthRealService } from "../services/facebookAuthReal";
-import { AuthService, LoginRequest } from "../services/api";
+import { AuthService, LoginRequest } from "../services/api/functions/api";
 
 interface User {
   id: string;
