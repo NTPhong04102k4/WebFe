@@ -1,27 +1,40 @@
 import React, { useState } from "react";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthQuery } from "src/query/auth/useAuthQuery";
+import { useAppSelector, useAppDispatch } from "src/redux/hook";
+import { selectAuth, clearCredentials } from "src/redux/Slice/AuthSlice";
 import { Trash2, User, Key, RefreshCw, Eye, EyeOff } from "lucide-react";
 
 export const DebugPanel: React.FC = () => {
-  const { user, isAuthenticated, clearStorage, logout, initializeAuth } =
-    useAuth();
+  const dispatch = useAppDispatch();
+  const { user, isAuthenticated } = useAppSelector(selectAuth);
+  const { logout, refetchProfile } = useAuthQuery();
   const [showStorage, setShowStorage] = useState(false);
 
   const handleClearStorage = () => {
     if (window.confirm("Bạn có chắc muốn xóa tất cả dữ liệu đăng nhập?")) {
-      clearStorage();
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      dispatch(clearCredentials());
       alert("Đã xóa tất cả dữ liệu đăng nhập!");
+      window.location.reload();
     }
   };
 
   const handleLogout = () => {
     logout();
-    alert("Đã đăng xuất!");
+    // logout mutation sẽ tự động redirect, nhưng vẫn hiển thị alert
+    setTimeout(() => {
+      alert("Đã đăng xuất!");
+    }, 100);
   };
 
-  const handleRefreshAuth = () => {
-    initializeAuth();
-    alert("Đã làm mới trạng thái đăng nhập!");
+  const handleRefreshAuth = async () => {
+    try {
+      await refetchProfile();
+      alert("Đã làm mới trạng thái đăng nhập!");
+    } catch (error) {
+      alert("Không thể làm mới trạng thái đăng nhập!");
+    }
   };
 
   const getStorageInfo = () => {
@@ -68,9 +81,18 @@ export const DebugPanel: React.FC = () => {
 
         {user && (
           <div className="text-xs text-gray-600 ml-6">
-            <div>👤 {user.name}</div>
-            <div>📧 {user.email}</div>
-            <div>🔗 {user.provider}</div>
+            <div>
+              👤{" "}
+              {user.fullName ||
+                (user as any)?.name ||
+                (user as any)?.username ||
+                "N/A"}
+            </div>
+            <div>📧 {(user as any)?.email || "N/A"}</div>
+            {(user as any)?.username && (
+              <div>🔐 Username: {(user as any).username}</div>
+            )}
+            {(user as any)?.phone && <div>📱 Phone: {(user as any).phone}</div>}
           </div>
         )}
       </div>
@@ -98,8 +120,16 @@ export const DebugPanel: React.FC = () => {
               🔑 auth_token: {storageInfo.hasToken ? "Có" : "Không"}
             </div>
             {storageInfo.authToken && (
-              <div className="text-gray-500">
+              <div className="text-gray-500 break-all">
                 Token: {storageInfo.authToken}
+              </div>
+            )}
+            {storageInfo.authUser && (
+              <div className="text-gray-500 mt-1">
+                <div className="font-medium">User Data:</div>
+                <pre className="text-[10px] overflow-auto max-h-32 bg-white p-1 rounded border">
+                  {JSON.stringify(storageInfo.authUser, null, 2)}
+                </pre>
               </div>
             )}
           </div>

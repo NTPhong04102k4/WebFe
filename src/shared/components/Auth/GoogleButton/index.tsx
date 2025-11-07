@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "src/contexts/AuthContext";
+import { googleAuthRealService } from "src/shared/hooks/auth/googleAuthReal";
 
 interface GoogleLoginButtonProps {
   onSuccess?: () => void;
@@ -14,7 +14,6 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   className = "",
   children,
 }) => {
-  const { loginWithGoogle, isLoading } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleGoogleLogin = async () => {
@@ -22,7 +21,26 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
     try {
       setIsLoggingIn(true);
       console.log("🔄 Calling loginWithGoogle...");
-      await loginWithGoogle();
+
+      // Lấy thông tin user từ Google OAuth
+      const googleUser = await googleAuthRealService.loginWithGoogle();
+      console.log("✅ Google user received:", googleUser);
+
+      // TODO: Gọi API backend để xử lý Google login và nhận token
+      // Ví dụ: const response = await authAPI.googleLogin({
+      //   id: googleUser.id,
+      //   email: googleUser.email,
+      //   name: googleUser.name,
+      //   accessToken: googleUser.tokens?.access_token
+      // });
+      //
+      // Sau đó set credentials:
+      // dispatch(setCredentials({
+      //   token: response.data.token,
+      //   user: response.data.user
+      // }));
+
+      // Tạm thời: chỉ log và gọi onSuccess
       console.log("✅ loginWithGoogle completed, calling onSuccess");
       onSuccess?.();
     } catch (error) {
@@ -37,7 +55,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   return (
     <button
       onClick={handleGoogleLogin}
-      disabled={isLoading || isLoggingIn}
+      disabled={isLoggingIn}
       className={`
         flex items-center justify-center gap-3 px-6 py-3 
         bg-white hover:bg-gray-50 
@@ -56,7 +74,6 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
         </div>
       ) : (
         <>
-          {/* Google Icon */}
           <svg
             className="w-5 h-5"
             viewBox="0 0 24 24"

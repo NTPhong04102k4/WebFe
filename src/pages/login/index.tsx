@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "src/shared/components/header";
 import { FooterComponent } from "src/shared/components/footer";
-import { useAuth } from "../../contexts/AuthContext";
 import { Theme } from "src/shared/components/footer/data";
 import {
   TabNavigation,
@@ -11,6 +10,9 @@ import {
   SocialLoginButtons,
 } from "../../shared/components/Login";
 import { OtpVerificationForm } from "../../shared/components/Login/OtpVerificationForm";
+import { useAuthQuery } from "src/query/auth/useAuthQuery";
+import { googleAuthRealService } from "src/shared/hooks/auth/googleAuthReal";
+import { facebookAuthRealService } from "src/shared/hooks/auth/facebookAuthReal";
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,22 +28,16 @@ export default function Login() {
   const [isResendingOtp, setIsResendingOtp] = useState(false);
 
   const {
-    loginWithGoogle,
-    loginWithFacebook,
-    loginWithEmail,
-    registerWithEmail,
-    verifyOtp,
-    resendOtp,
-    isLoading,
-    isAuthenticated,
-  } = useAuth();
-  useEffect(() => {
-    if (isAuthenticated) {
-      window.location.href = "/";
-    }
-  }, [isAuthenticated]);
+    verifyOtpAsync,
+    resendOtpAsync,
+    loginAsync,
+    registerAsync,
+    isLoginLoading,
+    isRegisterLoading,
+    isVerifyOtpLoading,
+    isResendOtpLoading,
+  } = useAuthQuery();
 
-  // Check for OAuth errors
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get("error");
@@ -61,13 +57,21 @@ export default function Login() {
       setError("Vui lòng nhập đầy đủ thông tin");
       return;
     }
+    setError("");
     try {
-      var res = await loginWithEmail(formData.email, formData.password);
+      const res = await loginAsync({
+        usernameOrPhoneOrEmail: formData.email,
+        password: formData.password,
+      });
       console.log(res);
-      // chuyer màn o]tong quan
       setSuccess("Đăng nhập thành công!");
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
     } catch (error: any) {
-      setError(error.message || "Đăng nhập thất bại");
+      setError(
+        error?.response?.data?.message || error?.message || "Đăng nhập thất bại"
+      );
     }
   };
 
@@ -76,37 +80,56 @@ export default function Login() {
       setError("Vui lòng nhập đầy đủ thông tin");
       return;
     }
-    console.log("🔄 handleRegister called from login page!");
-    console.log("🔄 formData:", formData);
+    setError("");
     try {
-      await registerWithEmail(formData.name, formData.email, formData.password);
+      await registerAsync({
+        username: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
       setSuccess("Mã OTP đã được gửi đến email của bạn!");
       setShowOtpVerification(true);
     } catch (error: any) {
-      setError(error.message || "Đăng ký thất bại");
+      setError(
+        error?.response?.data?.message || error?.message || "Đăng ký thất bại"
+      );
     }
   };
 
   const handleVerifyOtp = async (otpCode: string) => {
+    setError("");
     try {
-      await verifyOtp(formData.email, otpCode);
+      await verifyOtpAsync({
+        email: formData.email,
+        otpCode: otpCode,
+      });
       setSuccess("Đăng ký thành công! Chào mừng bạn đến với SoldCars!");
-      // Redirect to home page after successful registration
       setTimeout(() => {
         window.location.href = "/";
       }, 2000);
     } catch (error: any) {
-      setError(error.message || "Xác thực OTP thất bại");
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Xác thực OTP thất bại"
+      );
     }
   };
 
   const handleResendOtp = async () => {
     setIsResendingOtp(true);
+    setError("");
     try {
-      await resendOtp(formData.email);
+      await resendOtpAsync({
+        email: formData.email,
+      });
       setSuccess("Mã OTP mới đã được gửi đến email của bạn!");
     } catch (error: any) {
-      setError(error.message || "Không thể gửi lại mã OTP");
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Không thể gửi lại mã OTP"
+      );
     } finally {
       setIsResendingOtp(false);
     }
@@ -122,38 +145,43 @@ export default function Login() {
     console.log("🎯 handleGoogleLogin called from login page!");
     setError("");
     try {
-      console.log("🔄 Calling loginWithGoogle from page...");
-      await loginWithGoogle();
-      console.log("✅ loginWithGoogle completed, setting success message");
+      const googleUser = await googleAuthRealService.loginWithGoogle();
+      console.log("Google user:", googleUser);
       const message = isLogin
         ? "Đăng nhập Google thành công!"
         : "Đăng ký Google thành công!";
       setSuccess(message);
-    } catch (error) {
-      console.error("❌ Error in handleGoogleLogin:", error);
-      const errorMessage = isLogin
-        ? "Đăng nhập Google thất bại. Vui lòng thử lại."
-        : "Đăng ký Google thất bại. Vui lòng thử lại.";
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+    } catch (error: any) {
+      const errorMessage =
+        error?.message ||
+        (isLogin
+          ? "Đăng nhập Google thất bại. Vui lòng thử lại."
+          : "Đăng ký Google thất bại. Vui lòng thử lại.");
       setError(errorMessage);
     }
   };
 
   const handleFacebookLogin = async () => {
-    console.log("🎯 handleFacebookLogin called from login page!");
     setError("");
     try {
-      console.log("🔄 Calling loginWithFacebook from page...");
-      await loginWithFacebook();
-      console.log("✅ loginWithFacebook completed, setting success message");
+      const facebookUser = await facebookAuthRealService.loginWithFacebook();
+      console.log("Facebook user:", facebookUser);
       const message = isLogin
         ? "Đăng nhập Facebook thành công!"
         : "Đăng ký Facebook thành công!";
       setSuccess(message);
-    } catch (error) {
-      console.error("❌ Error in handleFacebookLogin:", error);
-      const errorMessage = isLogin
-        ? "Đăng nhập Facebook thất bại. Vui lòng thử lại."
-        : "Đăng ký Facebook thất bại. Vui lòng thử lại.";
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1000);
+    } catch (error: any) {
+      const errorMessage =
+        error?.message ||
+        (isLogin
+          ? "Đăng nhập Facebook thất bại. Vui lòng thử lại."
+          : "Đăng ký Facebook thất bại. Vui lòng thử lại.");
       setError(errorMessage);
     }
   };
@@ -176,8 +204,8 @@ export default function Login() {
               onVerifyOtp={handleVerifyOtp}
               onResendOtp={handleResendOtp}
               onBack={handleBackToRegister}
-              isLoading={isLoading}
-              isResending={isResendingOtp}
+              isLoading={isVerifyOtpLoading}
+              isResending={isResendOtpLoading || isResendingOtp}
               error={error}
             />
           ) : isLogin ? (
@@ -186,7 +214,7 @@ export default function Login() {
                 formData={formData}
                 onInputChange={handleInputChange}
                 onLogin={handleLogin}
-                isLoading={isLoading}
+                isLoading={isLoginLoading}
                 isHide={isHide}
                 onToggleHide={() => setIsHide((prev) => !prev)}
               />
@@ -208,7 +236,7 @@ export default function Login() {
                 formData={formData}
                 onInputChange={handleInputChange}
                 onRegister={handleRegister}
-                isLoading={isLoading}
+                isLoading={isRegisterLoading}
                 isHide={isHide}
                 onToggleHide={() => setIsHide((prev) => !prev)}
               />

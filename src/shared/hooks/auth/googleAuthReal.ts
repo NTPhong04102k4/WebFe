@@ -1,5 +1,6 @@
 // Real Google Authentication using OAuth 2.0
-import { OAUTH_CONFIG } from "../config/oauth";
+import { ENV } from "src/config/environment";
+import { OAUTH_CONFIG } from "../../../config/oauth";
 
 export interface GoogleUser {
   id: string;
@@ -29,15 +30,6 @@ class GoogleAuthRealService {
 
   public async loginWithGoogle(): Promise<GoogleUser> {
     return new Promise((resolve, reject) => {
-      console.log("🔍 Starting real Google OAuth login...");
-      console.log("📋 OAuth Config:", OAUTH_CONFIG.google);
-      console.log(
-        "🔗 Redirect URI being used:",
-        OAUTH_CONFIG.google.redirectUri
-      );
-
-      // Create popup window for Google OAuth using authorization code flow
-      // Redirect directly to Backend API (port 7250)
       const authUrl =
         `${OAUTH_CONFIG.google.authUrl}?` +
         `client_id=${OAUTH_CONFIG.google.clientId}&` +
@@ -47,8 +39,6 @@ class GoogleAuthRealService {
         `state=google_login&` +
         `access_type=offline&` +
         `prompt=consent`;
-
-      console.log("🌐 Full Auth URL:", authUrl);
 
       const popup = window.open(
         authUrl,
@@ -61,72 +51,49 @@ class GoogleAuthRealService {
         return;
       }
 
-      // Listen for popup messages from Backend
       const messageListener = (event: MessageEvent) => {
-        // Accept messages from Backend (localhost:7250) or same origin
         if (
-          event.origin !== "https://localhost:7250" &&
+          event.origin !== `${ENV.API_URL}` &&
           event.origin !== window.location.origin
         )
           return;
 
         if (event.data.type === "GOOGLE_LOGIN_SUCCESS") {
-          console.log("🎉 Real Google Login Success!");
-          console.log("📋 User Information:");
-          console.log("ID: " + event.data.user.id);
-          console.log("Name: " + event.data.user.name);
-          console.log("Email: " + event.data.user.email);
-          console.log("Image URL: " + event.data.user.picture);
-          console.log("Email Verified: " + event.data.user.verified_email);
-          console.log("🔑 Tokens received:", event.data.tokens);
-
           window.removeEventListener("message", messageListener);
           popupClosed = true;
           try {
             if (popup) {
               popup.close();
             }
-          } catch (error) {
-            // CORS error when trying to close popup - this is expected
-          }
+          } catch (error) {}
 
-          // Return user data with tokens
           resolve({
             ...event.data.user,
             tokens: event.data.tokens,
           });
         } else if (event.data.type === "GOOGLE_LOGIN_ERROR") {
-          console.error("❌ Google login error:", event.data.error);
           window.removeEventListener("message", messageListener);
           popupClosed = true;
           try {
             if (popup) {
               popup.close();
             }
-          } catch (error) {
-            // CORS error when trying to close popup - this is expected
-          }
+          } catch (error) {}
           reject(new Error(event.data.error));
         }
       };
 
       window.addEventListener("message", messageListener);
 
-      // Don't check popup.closed to avoid COOP errors
-      // Instead, rely on timeout and message listener only
       let popupClosed = false;
 
-      // Timeout after 5 minutes
       setTimeout(() => {
         if (!popupClosed) {
           try {
             if (popup) {
               popup.close();
             }
-          } catch (error) {
-            // CORS error when trying to close popup - this is expected
-            // The popup will be closed by the user or browser
-          }
+          } catch (error) {}
           window.removeEventListener("message", messageListener);
           reject(new Error("Login timeout"));
         }

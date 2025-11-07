@@ -57,13 +57,7 @@ export function Header() {
           closeDropdowns={closeDropdowns}
           items={menuItems.listings}
         />
-        <DropdownMenu
-          label="Blog"
-          dropdownOpen={dropdownOpen.blogs}
-          toggleDropdown={() => toggleDropdown(FEATURES.BLOGS)}
-          closeDropdowns={closeDropdowns}
-          items={menuItems.blog}
-        />
+
         <DropdownMenu
           label="Pages"
           dropdownOpen={dropdownOpen.pages}

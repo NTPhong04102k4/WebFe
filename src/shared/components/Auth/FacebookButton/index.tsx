@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "src/contexts/AuthContext";
+import { facebookAuthRealService } from "src/shared/hooks/auth/facebookAuthReal";
 
 interface FacebookLoginButtonProps {
   onSuccess?: () => void;
@@ -14,26 +14,48 @@ export const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
   className = "",
   children,
 }) => {
-  const { loginWithFacebook, isLoading } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleFacebookLogin = async () => {
+    console.log("🖱️ Facebook button clicked!");
     try {
       setIsLoggingIn(true);
-      await loginWithFacebook();
+      console.log("🔄 Calling loginWithFacebook...");
+
+      // Lấy thông tin user từ Facebook OAuth
+      const facebookUser = await facebookAuthRealService.loginWithFacebook();
+      console.log("✅ Facebook user received:", facebookUser);
+
+      // TODO: Gọi API backend để xử lý Facebook login và nhận token
+      // Ví dụ: const response = await authAPI.facebookLogin({
+      //   id: facebookUser.id,
+      //   email: facebookUser.email,
+      //   name: facebookUser.name,
+      //   accessToken: facebookUser.tokens?.access_token
+      // });
+      //
+      // Sau đó set credentials:
+      // dispatch(setCredentials({
+      //   token: response.data.token,
+      //   user: response.data.user
+      // }));
+
+      // Tạm thời: chỉ log và gọi onSuccess
+      console.log("✅ loginWithFacebook completed, calling onSuccess");
       onSuccess?.();
     } catch (error) {
-      console.error("Facebook login error:", error);
+      console.error("❌ Facebook login error:", error);
       onError?.(error as Error);
     } finally {
       setIsLoggingIn(false);
+      console.log("🏁 Facebook login handler finished");
     }
   };
 
   return (
     <button
       onClick={handleFacebookLogin}
-      disabled={isLoading || isLoggingIn}
+      disabled={isLoggingIn}
       className={`
         flex items-center justify-center gap-3 px-6 py-3 
         bg-[#1877F2] hover:bg-[#166FE5] 
