@@ -10,11 +10,11 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
   onToggle,
 }) => {
   return (
-    <div className="mb-8">
+    <div className="mb-3 ">
       <div className="flex bg-gray-100 rounded-lg p-1">
         <button
           onClick={onToggle}
-          className={`flex-1 py-2 px-4 rounded-md font-medium transition-all duration-200 ${
+          className={`flex-1 min-w-0 py-2 px-4 rounded-md font-medium transition-all duration-200 text-center whitespace-nowrap ${
             isLogin
               ? "bg-white text-blue-600 shadow-sm"
               : "text-gray-600 hover:text-gray-800"
@@ -24,7 +24,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
         </button>
         <button
           onClick={onToggle}
-          className={`flex-1 py-2 px-4 rounded-md font-medium transition-all duration-200 ${
+          className={`flex-1 min-w-0 py-2 px-4 rounded-md font-medium transition-all duration-200 text-center whitespace-nowrap ${
             !isLogin
               ? "bg-white text-green-600 shadow-sm"
               : "text-gray-600 hover:text-gray-800"

@@ -51,50 +51,138 @@ class GoogleAuthRealService {
         return;
       }
 
+      let resolved = false;
+
+      const cleanup = () => {
+        window.removeEventListener("message", messageListener);
+        clearInterval(checkInterval);
+        try {
+          if (popup && !popup.closed) {
+            popup.close();
+          }
+        } catch (error) {
+          console.error("Error closing popup:", error);
+        }
+      };
+
+      const handleSuccess = (userData: any, tokens?: any) => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        resolve({
+          ...userData,
+          tokens,
+        });
+      };
+
+      const handleError = (error: string) => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        reject(new Error(error));
+      };
+
+      // Check popup URL periodically to detect redirect
+      const checkInterval = setInterval(() => {
+        try {
+          if (popup.closed) {
+            if (!resolved) {
+              cleanup();
+              reject(new Error("Popup was closed by user"));
+            }
+            return;
+          }
+
+          // Try to access popup location (may throw if cross-origin)
+          const popupUrl = popup.location.href;
+
+          // Check if we're on the callback URL
+          if (popupUrl.includes("/auth/callback/google")) {
+            // Check for error in URL
+            const urlParams = new URLSearchParams(popup.location.search);
+            const hashParams = new URLSearchParams(
+              popup.location.hash.substring(1)
+            );
+
+            const error = urlParams.get("error") || hashParams.get("error");
+            if (error) {
+              handleError(error || "Authentication failed");
+              return;
+            }
+
+            // Check for success indicators
+            const code = urlParams.get("code");
+            const accessToken = hashParams.get("access_token");
+
+            if (code || accessToken) {
+              // Backend should handle this, but we'll wait for postMessage
+              // If no message comes, we'll try to extract from URL
+              setTimeout(() => {
+                if (!resolved) {
+                  // Fallback: assume success if we have code/token
+                  handleSuccess({
+                    id: "",
+                    name: "",
+                    email: "",
+                    picture: "",
+                    verified_email: false,
+                  });
+                }
+              }, 1000);
+            }
+          }
+        } catch (error) {
+          // Cross-origin error is expected, ignore
+        }
+      }, 500);
+
+      // Listen for postMessage from popup
       const messageListener = (event: MessageEvent) => {
+        // Allow messages from API URL or same origin
         if (
           event.origin !== `${ENV.API_URL}` &&
-          event.origin !== window.location.origin
-        )
+          event.origin !== window.location.origin &&
+          !event.origin.includes(ENV.API_URL || "")
+        ) {
           return;
+        }
 
         if (event.data.type === "GOOGLE_LOGIN_SUCCESS") {
-          window.removeEventListener("message", messageListener);
-          popupClosed = true;
-          try {
-            if (popup) {
-              popup.close();
-            }
-          } catch (error) {}
+          // Handle response with token and user
+          const userData = event.data.user || {};
+          const token = event.data.token || event.data.tokens?.access_token;
+          const tokens = token
+            ? {
+                access_token: token,
+                token_type: "Bearer",
+              }
+            : event.data.tokens;
 
-          resolve({
-            ...event.data.user,
-            tokens: event.data.tokens,
-          });
+          handleSuccess(userData, tokens);
         } else if (event.data.type === "GOOGLE_LOGIN_ERROR") {
-          window.removeEventListener("message", messageListener);
-          popupClosed = true;
-          try {
-            if (popup) {
-              popup.close();
-            }
-          } catch (error) {}
-          reject(new Error(event.data.error));
+          handleError(event.data.error || "Google login failed");
+        } else if (event.data.type === "OAUTH_SUCCESS") {
+          // Generic OAuth success
+          const userData = event.data.user || {};
+          const token = event.data.token || event.data.tokens?.access_token;
+          const tokens = token
+            ? {
+                access_token: token,
+                token_type: "Bearer",
+              }
+            : event.data.tokens;
+          handleSuccess(userData, tokens);
+        } else if (event.data.type === "OAUTH_ERROR") {
+          handleError(event.data.error || "OAuth authentication failed");
         }
       };
 
       window.addEventListener("message", messageListener);
 
-      let popupClosed = false;
-
+      // Timeout after 5 minutes
       setTimeout(() => {
-        if (!popupClosed) {
-          try {
-            if (popup) {
-              popup.close();
-            }
-          } catch (error) {}
-          window.removeEventListener("message", messageListener);
+        if (!resolved) {
+          cleanup();
           reject(new Error("Login timeout"));
         }
       }, 300000);

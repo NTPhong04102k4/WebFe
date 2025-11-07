@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaRegUser } from "react-icons/fa";
 import { IoMdArrowDropdown } from "react-icons/io";
-import { useNavigate } from "react-router";
+import { IoCartOutline } from "react-icons/io5";
+import { useNavigate, useLocation } from "react-router";
 import styled from "styled-components";
 import { DropdownMenuProps, FEATURES, menuItems } from "./data";
+import { useAuth } from "src/shared/hooks/auth/index.ts";
 
 export function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState<{
     home: boolean;
     listings: boolean;
@@ -18,6 +22,21 @@ export function Header() {
     blogs: false,
     pages: false,
   });
+
+  // Chặn truy cập vào /auth/* khi đã đăng nhập
+  useEffect(() => {
+    if (isAuthenticated && location.pathname.startsWith("/auth/")) {
+      navigate("/home", { replace: true });
+    }
+  }, [isAuthenticated, location.pathname, navigate]);
+
+  const handleNavigate = (path: string) => {
+    // Chặn navigation đến /auth/* nếu đã đăng nhập
+    if (isAuthenticated && path.startsWith("/auth/")) {
+      return;
+    }
+    navigate(path);
+  };
 
   const toggleDropdown = (
     name: FEATURES.LISTINGS | FEATURES.BLOGS | FEATURES.PAGES | FEATURES.HOME
@@ -39,10 +58,17 @@ export function Header() {
     });
   };
 
+  const getUserName = () => {
+    if (!user) return "";
+    if (user.fullName) return user.fullName;
+    if (user.username) return user.username;
+    return "User";
+  };
+
   return (
-    <div className="w-full px-[5%] py-4 flex items-center justify-between relative z-20 bg-[#050b2b]">
-      <h2 className="font-bold text-white text-2xl">BOXCARS</h2>
-      <div className="inline-flex gap-4 relative">
+    <HeaderContainer>
+      <Logo>BOXCARS</Logo>
+      <NavMenu>
         <DropdownMenu
           label="Home"
           dropdownOpen={dropdownOpen.home}
@@ -57,7 +83,6 @@ export function Header() {
           closeDropdowns={closeDropdowns}
           items={menuItems.listings}
         />
-
         <DropdownMenu
           label="Pages"
           dropdownOpen={dropdownOpen.pages}
@@ -65,19 +90,30 @@ export function Header() {
           closeDropdowns={closeDropdowns}
           items={menuItems.pages}
         />
-        <Func onClick={() => navigate("/about")}>About</Func>
-        <Func onClick={() => navigate("/contact")}>Contact</Func>
-        <Func onClick={() => navigate("/auth/login")}>
-          <FaRegUser size={24} /> Sign in
-        </Func>
-        <ButtonSignIn
-          style={{ width: 120 }}
-          onClick={() => navigate("/auth/login/admin/page_manage")}
-        >
-          Admin
-        </ButtonSignIn>
-      </div>
-    </div>
+        <NavItem onClick={() => handleNavigate("/about")}>About</NavItem>
+        <NavItem onClick={() => handleNavigate("/contact")}>Contact</NavItem>
+
+        {isAuthenticated ? (
+          <>
+            <NavItem>
+              <IoCartOutline size={24} />
+            </NavItem>
+            <NavItem>Tên: {getUserName()}</NavItem>
+          </>
+        ) : (
+          <>
+            <NavItem onClick={() => handleNavigate("/auth/login")}>
+              <FaRegUser size={24} /> Sign in
+            </NavItem>
+            <ButtonSignIn
+              onClick={() => handleNavigate("/auth/login/admin/page_manage")}
+            >
+              Admin
+            </ButtonSignIn>
+          </>
+        )}
+      </NavMenu>
+    </HeaderContainer>
   );
 }
 
@@ -92,10 +128,13 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
   const data = items.pages;
   const pathFeats = items.path ? items.path : "/error";
   return (
-    <div className="relative  flex items-center justify-center   ">
-      <Func onClick={() => navigate(pathFeats)} onMouseEnter={toggleDropdown}>
+    <DropdownWrapper>
+      <NavItem
+        onClick={() => navigate(pathFeats)}
+        onMouseEnter={toggleDropdown}
+      >
         {label} <IoMdArrowDropdown size={16} />
-      </Func>
+      </NavItem>
       {dropdownOpen && (
         <DropdownContent onMouseLeave={closeDropdowns}>
           {data.map((item) => (
@@ -111,11 +150,64 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
           ))}
         </DropdownContent>
       )}
-    </div>
+    </DropdownWrapper>
   );
 };
 
-const Func = styled.h1`
+const HeaderContainer = styled.div`
+  width: 100%;
+  padding: 1rem 5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 20;
+  background-color: #050b2b;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 2%;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.75rem 1%;
+  }
+`;
+
+const Logo = styled.h2`
+  font-weight: bold;
+  color: #fff;
+  font-size: 1.5rem;
+
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.125rem;
+  }
+`;
+
+const NavMenu = styled.div`
+  display: inline-flex;
+  gap: 1rem;
+  position: relative;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+`;
+
+const NavItem = styled.h1`
   font-size: 16px;
   font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
   font-weight: 500;
@@ -126,6 +218,16 @@ const Func = styled.h1`
   position: relative;
   cursor: pointer;
   color: #fff;
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    gap: 2px;
+  }
 `;
 
 const ButtonSignIn = styled.button`
@@ -136,6 +238,24 @@ const ButtonSignIn = styled.button`
   border-width: 1px 2px;
   background-color: #fff;
   cursor: pointer;
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+    padding: 8px 8px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    padding: 6px 6px;
+  }
+`;
+
+const DropdownWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const DropdownContent = styled.div`
@@ -149,6 +269,10 @@ const DropdownContent = styled.div`
   display: flex;
   flex-direction: column;
   min-width: 160px;
+
+  @media (max-width: 480px) {
+    min-width: 140px;
+  }
 `;
 
 const DropdownItem = styled.a`
@@ -156,7 +280,14 @@ const DropdownItem = styled.a`
   text-decoration: none;
   color: #000;
   cursor: pointer;
+  font-size: 14px;
+
   &:hover {
     background-color: #f1f1f1;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 12px;
   }
 `;

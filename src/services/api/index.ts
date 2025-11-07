@@ -30,6 +30,29 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Xử lý lỗi 401 (Unauthorized) hoặc 400 (Bad Request) do token không hợp lệ
+    if (error.response) {
+      const status = error.response.status;
+
+      // Nếu token không hợp lệ hoặc đã hết hạn, xóa token và redirect về login
+      if (
+        status === 401 ||
+        (status === 400 &&
+          error.response.data?.message?.toLowerCase().includes("token"))
+      ) {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_user");
+
+        // Chỉ redirect nếu không phải đang ở trang login
+        if (
+          window.location.pathname !== "/auth/login" &&
+          window.location.pathname !== "/login"
+        ) {
+          window.location.href = "/auth/login";
+        }
+      }
+    }
+
     return Promise.reject(error);
   }
 );

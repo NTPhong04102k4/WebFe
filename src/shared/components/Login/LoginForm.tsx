@@ -1,77 +1,129 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { loginSchema, LoginFormData } from "src/shared/validation/authSchemas";
+
+const REMEMBER_ME_KEY = "remembered_email";
 
 interface LoginFormProps {
-  formData: {
-    name: string;
-    email: string;
-    password: string;
-  };
-  onInputChange: (field: string, value: string) => void;
-  onLogin: () => void;
+  onLogin: (data: LoginFormData) => void;
   isLoading: boolean;
-  isHide: boolean;
-  onToggleHide: () => void;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({
-  formData,
-  onInputChange,
-  onLogin,
-  isLoading,
-  isHide,
-  onToggleHide,
-}) => {
+export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, isLoading }) => {
+  const [isHide, setIsHide] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: yupResolver(loginSchema),
+    mode: "onChange",
+  });
+
+  const emailValue = watch("email");
+
+  // Load remembered email when component mounts
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem(REMEMBER_ME_KEY);
+    if (rememberedEmail) {
+      setValue("email", rememberedEmail);
+      setRememberMe(true);
+    }
+  }, [setValue]);
+
+  // Save or remove email from localStorage based on rememberMe checkbox
+  useEffect(() => {
+    if (rememberMe && emailValue) {
+      localStorage.setItem(REMEMBER_ME_KEY, emailValue);
+    } else if (!rememberMe) {
+      localStorage.removeItem(REMEMBER_ME_KEY);
+    }
+  }, [rememberMe, emailValue]);
+
+  const onSubmit = (data: LoginFormData) => {
+    if (rememberMe) {
+      localStorage.setItem(REMEMBER_ME_KEY, data.email);
+    } else {
+      localStorage.removeItem(REMEMBER_ME_KEY);
+    }
+    onLogin(data);
+  };
+
+  const hasErrors = !!errors.email || !!errors.password;
+
   return (
-    <div className="space-y-6">
-      {/* Email Input */}
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Mail className="h-5 w-5 text-gray-400" />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+            <Mail className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Email hoặc số điện thoại"
+            {...register("email")}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 ${
+              errors.email
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300"
+            }`}
+            disabled={isLoading}
+          />
         </div>
-        <input
-          type="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={(e) => onInputChange("email", e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200"
-          disabled={isLoading}
-        />
+        {errors.email && (
+          <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+        )}
       </div>
 
       {/* Password Input */}
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Lock className="h-5 w-5 text-gray-400" />
+      <div>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+            <Lock className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type={isHide ? "password" : "text"}
+            placeholder="Mật khẩu"
+            {...register("password")}
+            className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 ${
+              errors.password
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300"
+            }`}
+            disabled={isLoading}
+          />
+          <button
+            type="button"
+            onClick={() => setIsHide(!isHide)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center z-10"
+            disabled={isLoading}
+          >
+            {isHide ? (
+              <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+            ) : (
+              <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+            )}
+          </button>
         </div>
-        <input
-          type={isHide ? "password" : "text"}
-          placeholder="Mật khẩu"
-          value={formData.password}
-          onChange={(e) => onInputChange("password", e.target.value)}
-          className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200"
-          disabled={isLoading}
-        />
-        <button
-          type="button"
-          onClick={onToggleHide}
-          className="absolute inset-y-0 right-0 pr-3 flex items-center"
-          disabled={isLoading}
-        >
-          {isHide ? (
-            <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-          ) : (
-            <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-          )}
-        </button>
+        {errors.password && (
+          <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+        )}
       </div>
 
       {/* Remember Me & Forgot Password */}
       <div className="flex items-center justify-between">
-        <label className="flex items-center">
+        <label className="flex items-center cursor-pointer">
           <input
             type="checkbox"
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+            disabled={isLoading}
           />
           <span className="ml-2 text-sm text-gray-600">Ghi nhớ đăng nhập</span>
         </label>
@@ -85,8 +137,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
       {/* Login Button */}
       <button
-        onClick={onLogin}
-        disabled={isLoading || !formData.email || !formData.password}
+        type="submit"
+        disabled={isLoading || hasErrors}
         className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
       >
         {isLoading ? (
@@ -117,6 +169,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           "Đăng nhập"
         )}
       </button>
-    </div>
+    </form>
   );
 };

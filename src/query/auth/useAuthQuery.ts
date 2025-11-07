@@ -73,6 +73,13 @@ export const useAuthQuery = () => {
     queryFn: () => authAPI.getProfile(),
     enabled: !!localStorage.getItem("auth_token"),
     staleTime: 5 * 60 * 1000,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 400 || error?.response?.status === 401) {
+        dispatch(clearCredentials());
+        return false;
+      }
+      return failureCount < 1;
+    },
   });
 
   return {

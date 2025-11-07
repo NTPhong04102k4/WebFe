@@ -94,67 +94,132 @@ class FacebookAuthRealService {
         return;
       }
 
+      let resolved = false;
+
+      const cleanup = () => {
+        window.removeEventListener("message", messageListener);
+        clearInterval(checkInterval);
+        try {
+          if (popup && !popup.closed) {
+            popup.close();
+          }
+        } catch (error) {
+          console.error("Error closing popup:", error);
+        }
+      };
+
+      const handleSuccess = (userData: any, tokens?: any) => {
+        if (resolved) return;
+        resolved = true;
+        console.log("🎉 Real Facebook Login Success!");
+        console.log("📋 User Information:", userData);
+        console.log("🔑 Tokens received:", tokens);
+        cleanup();
+        resolve({
+          ...userData,
+          tokens,
+        });
+      };
+
+      const handleError = (error: string) => {
+        if (resolved) return;
+        resolved = true;
+        console.error("❌ Facebook login error:", error);
+        cleanup();
+        reject(new Error(error));
+      };
+
+      const checkInterval = setInterval(() => {
+        try {
+          if (popup.closed) {
+            if (!resolved) {
+              cleanup();
+              reject(new Error("Popup was closed by user"));
+            }
+            return;
+          }
+
+          const popupUrl = popup.location.href;
+
+          if (popupUrl.includes("/auth/callback/facebook")) {
+            const urlParams = new URLSearchParams(popup.location.search);
+            const hashParams = new URLSearchParams(
+              popup.location.hash.substring(1)
+            );
+
+            const error = urlParams.get("error") || hashParams.get("error");
+            if (error) {
+              const errorDescription =
+                urlParams.get("error_description") ||
+                hashParams.get("error_description");
+              handleError(errorDescription || error || "Authentication failed");
+              return;
+            }
+
+            const code = urlParams.get("code");
+            const accessToken = hashParams.get("access_token");
+
+            if (code || accessToken) {
+              // Backend should handle this, but we'll wait for postMessage
+              // If no message comes, we'll try to extract from URL
+              setTimeout(() => {
+                if (!resolved) {
+                  // Fallback: assume success if we have code/token
+                  handleSuccess({
+                    id: "",
+                    name: "",
+                    email: "",
+                    picture: "",
+                  });
+                }
+              }, 1000);
+            }
+          }
+        } catch (error) {}
+      }, 500);
+
       const messageListener = (event: MessageEvent) => {
         if (
           event.origin !== `${ENV.API_URL}` &&
-          event.origin !== window.location.origin
-        )
+          event.origin !== window.location.origin &&
+          !event.origin.includes(ENV.API_URL || "")
+        ) {
           return;
+        }
 
         if (event.data.type === "FACEBOOK_LOGIN_SUCCESS") {
-          console.log("🎉 Real Facebook Login Success!");
-          console.log("📋 User Information:");
-          console.log("ID: " + event.data.user.id);
-          console.log("Name: " + event.data.user.name);
-          console.log("Email: " + event.data.user.email);
-          console.log(
-            "Birthday: " + (event.data.user.birthday || "Not provided")
-          );
-          console.log("Gender: " + (event.data.user.gender || "Not provided"));
-          console.log(
-            "Location: " + (event.data.user.location?.name || "Not provided")
-          );
-          console.log(
-            "Hometown: " + (event.data.user.hometown?.name || "Not provided")
-          );
-          console.log("Picture: " + event.data.user.picture);
-          console.log("🔑 Tokens received:", event.data.tokens);
+          const userData = event.data.user || {};
+          const token = event.data.token || event.data.tokens?.access_token;
+          const tokens = token
+            ? {
+                access_token: token,
+                token_type: "Bearer",
+              }
+            : event.data.tokens;
 
-          window.removeEventListener("message", messageListener);
-          popupClosed = true;
-          try {
-            if (popup) {
-              popup.close();
-            }
-          } catch (error) {}
-
-          resolve({
-            ...event.data.user,
-            tokens: event.data.tokens,
-          });
+          handleSuccess(userData, tokens);
         } else if (event.data.type === "FACEBOOK_LOGIN_ERROR") {
-          console.error("❌ Facebook login error:", event.data.error);
-          window.removeEventListener("message", messageListener);
-          popupClosed = true;
-          try {
-            if (popup) {
-              popup.close();
-            }
-          } catch (error) {}
-          reject(new Error(event.data.error));
+          handleError(event.data.error || "Facebook login failed");
+        } else if (event.data.type === "OAUTH_SUCCESS") {
+          const userData = event.data.user || {};
+          const token = event.data.token || event.data.tokens?.access_token;
+          const tokens = token
+            ? {
+                access_token: token,
+                token_type: "Bearer",
+              }
+            : event.data.tokens;
+          handleSuccess(userData, tokens);
+        } else if (event.data.type === "OAUTH_ERROR") {
+          handleError(event.data.error || "OAuth authentication failed");
         }
       };
 
       window.addEventListener("message", messageListener);
-      let popupClosed = false;
+
       setTimeout(() => {
-        if (!popupClosed) {
-          try {
-            if (popup) {
-              popup.close();
-            }
-          } catch (error) {}
-          window.removeEventListener("message", messageListener);
+        if (!resolved) {
+          cleanup();
           reject(new Error("Login timeout"));
         }
       }, 300000);
