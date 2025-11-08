@@ -28,7 +28,7 @@ export const DATA_FEATS: Feats[] = [
   },
   {
     id: 2,
-    name: "Blogs",
+    name: "Accessory",
     icon: PostsIcon,
   },
   {

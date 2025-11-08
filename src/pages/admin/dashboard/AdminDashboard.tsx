@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Sidebar } from './ItemDashboard/SideBar';
 import { HeaderDashBoard } from './ItemDashboard/HeaderDashBoard';
 import { RevenueTab } from './ItemDashboard/mainDashBoard/Revenue';
-import { BlogsTab } from './ItemDashboard/mainDashBoard/Blog';
+import { AccessoryTab } from './ItemDashboard/mainDashBoard/Accessory';
 import { UsersTab } from './ItemDashboard/mainDashBoard/UserContract';
 import { SellTab } from './ItemDashboard/mainDashBoard/SellCar';
 import { PurchaseTab } from './ItemDashboard/mainDashBoard/Purchased';
@@ -10,7 +10,7 @@ import { PurchaseTab } from './ItemDashboard/mainDashBoard/Purchased';
 enum ActiveTab {
   REVENUE = 0,
   USERS = 1,
-  BLOGS = 2,
+  ACCESSORY = 2,
   FORSELL = 3,
   PURCHASE = 4,
 }
@@ -22,8 +22,8 @@ const AdminDashboard: React.FC = () => {
     switch (activeTabIdx) {
       case ActiveTab.REVENUE:
         return <RevenueTab />;
-      case ActiveTab.BLOGS:
-        return <BlogsTab />;
+      case ActiveTab.ACCESSORY:
+        return <AccessoryTab />;
       case ActiveTab.USERS:
         return <UsersTab />;
       case ActiveTab.FORSELL:

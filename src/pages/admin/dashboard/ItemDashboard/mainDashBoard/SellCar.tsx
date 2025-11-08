@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { SearchIcon } from "../icon";
+import apiClient from "src/services/api/functions/api";
 
 type ListingStatus = "Active" | "Pending" | "Hidden" | "Sold";
 type VehicleCondition = "New" | "Used";
@@ -94,7 +95,16 @@ export const SellTab: React.FC = () => {
   const [selectedListing, setSelectedListing] = useState<CarListing | null>(
     null
   );
-
+  async function getListings() {
+    const response = await apiClient.get("/admin",{
+      params: {
+        page: 1,
+        limit: 10,
+      },
+    });
+    const data = response.data;
+  }
+  
   const brands = useMemo(() => {
     const uniqueBrands = Array.from(
       new Set(LISTINGS.map((listing) => listing.brand))
