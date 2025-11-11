@@ -1,0 +1,64 @@
+export interface CarPagingRequest {
+  page: number;
+  pageSize: number;
+  brandCode: string;
+  bodyCode: string;
+  PriceFrom?: number | null;
+  PriceTo?: number | null;
+}
+export interface CarDetailUpdateRequest {
+  userUUID: string;
+  roles: string;
+  carCode: string;
+  vin: string;
+  carName: string;
+  brandID: number;
+  modelName: string;
+  modelYear: number;
+  bodyTypeID: number;
+  statusID: number;
+  condition: string;
+  locationID: number;
+  price: number;
+  importPrice: number;
+  salePrice: number;
+  engineSize: number;
+  fuelType: string;
+  transmission: string;
+  driveType: string;
+  doors: number;
+  seats: number;
+  color: string;
+  mileage: number;
+  videoPath: any | null;
+  imagePaths: any[];
+  detailedDescription: string | null;
+  shortDescription: string;
+  isFeature: boolean;
+  viewCount: number;
+  soldDate: string;
+  createdBy: number;
+  isActive: boolean;
+}
+export interface TechSpecDetailUpdateRequest {
+  carID: number;
+  length_mm: number;
+  width_mm: number;
+  height_mm: number;
+  wheelbase_mm: number;
+  groundClearance_mm: number;
+  curbWeight_kg: number;
+  grossWeight_kg: number | null;
+  payloadCapacity_kg: number | null;
+  engineCode: string;
+  cylinders: number;
+  maxPower_hp: number;
+  maxTorque_nm: number;
+  abs: boolean;
+  esp: boolean;
+  airConditioning: boolean;
+  sunRoof: boolean;
+  leatherSeats: boolean;
+  navigationSystem: boolean;
+  bluetoothConnectivity: boolean;
+}

@@ -1,8 +1,9 @@
+/* eslint-disable react/jsx-no-undef */
 import React, { useEffect, useState } from "react";
 import { Sidebar } from "./ItemDashboard/SideBar";
 import { HeaderDashBoard } from "./ItemDashboard/HeaderDashBoard";
-
-import { Accessories } from "./ItemDashboard/mainDashBoard/Accessories/index";
+import { Accessories } from "./ItemDashboard/mainDashBoard/Accessories";
+import { Cars } from "./ItemDashboard/mainDashBoard/Cars";
 
 enum ActiveTab {
   USERS = 0,
@@ -24,8 +25,8 @@ const AdminDashboard: React.FC = () => {
         //   return <UsersTab />;
         // case ActiveTab.STAFF:
         //   return <UsersTab />;
-        // case ActiveTab.CARS:
-        //   return <SellTab />;
+        case ActiveTab.CARS:
+          return <Cars />;
         // case ActiveTab.INVOICES:
         //   return <PurchaseTab />;
         // case ActiveTab.SERVICES:
