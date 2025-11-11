@@ -1,5 +1,7 @@
 import * as yup from "yup";
 
+const strictUsernameRegex = /^[A-Za-z0-9]{8,}$/;
+
 // Login validation schema
 export const loginSchema = yup.object().shape({
   email: yup
@@ -33,12 +35,11 @@ export const loginSchema = yup.object().shape({
 export const registerSchema = yup.object().shape({
   name: yup
     .string()
-    .required("Vui lòng nhập tên người dùng")
-    .min(3, "Tên người dùng phải có ít nhất 3 ký tự")
-    .max(30, "Tên người dùng không được vượt quá 30 ký tự")
+    .trim()
+    .required("Vui lòng nhập tên đăng nhập")
     .matches(
-      /^[a-zA-Z0-9_]+$/,
-      "Tên người dùng chỉ được chứa chữ cái, số và dấu gạch dưới"
+      strictUsernameRegex,
+      "Tên đăng nhập phải có ít nhất 8 ký tự và chỉ gồm chữ cái, chữ số"
     ),
   email: yup
     .string()

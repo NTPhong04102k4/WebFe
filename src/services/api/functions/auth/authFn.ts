@@ -14,21 +14,24 @@ import {
 } from "src/shared/types/Reponse/auth/user";
 import { AdminLoginRequest } from "src/shared/types/Request/auth/admin";
 import { AdminLoginResponse } from "src/shared/types/Reponse/auth/admin";
+import { AUTH_ROUTES } from "./auth.routes";
 
 export const authAPI = {
   // user authentication
   login: (credentials: LoginRequest) =>
-    apiClient.post<LoginResponse>("/auth/login", credentials),
+    apiClient.post<LoginResponse>(AUTH_ROUTES.LOGIN, credentials),
   register: (data: RegisterRequest) =>
-    apiClient.post<RegisterResponse>("/auth/register", data),
-  logout: () => apiClient.post("/auth/logout"),
+    apiClient.post<RegisterResponse>(AUTH_ROUTES.REGISTER, data),
+  logout: () => apiClient.post(AUTH_ROUTES.LOGOUT),
   verifyOtp: (data: VerifyOtpRequest) =>
-    apiClient.post<RegisterVerifyResponse>("/auth/verify-otp", data),
+    apiClient.post<RegisterVerifyResponse>(AUTH_ROUTES.VERIFY_OTP, data),
   resendOtp: (data: ResendOtpRequest) =>
-    apiClient.post<ResendOtpResponse>("/auth/resend-otp", data),
+    apiClient.post<ResendOtpResponse>(AUTH_ROUTES.RESEND_OTP, data),
   getProfile: (data: string) =>
     apiClient.get<UserResponse>("/user/detail", { params: data }),
   // admin authentication
   adminLogin: (data: AdminLoginRequest) =>
-    apiClient.post<AdminLoginResponse>("/auth/admin/login", data),
+    apiClient.post<AdminLoginResponse>(AUTH_ROUTES.ADMIN_LOGIN, data),
+  adminLogout: () => apiClient.post("/auth/admin/logout"),
+  userLogout: () => apiClient.post(AUTH_ROUTES.LOGOUT),
 };

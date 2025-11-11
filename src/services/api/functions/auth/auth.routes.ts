@@ -11,4 +11,5 @@ export const AUTH_ROUTES = {
   // OAuth
   GOOGLE_LOGIN: "/auth/login/google",
   FACEBOOK_LOGIN: "/auth/login/facebook",
+  LOGOUT: "/auth/logout",
 } as const;

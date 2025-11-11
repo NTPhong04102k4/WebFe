@@ -1,13 +1,17 @@
 import React, { useState } from "react";
-import { FaRegUser } from "react-icons/fa";
 import { PiDeviceMobileSpeaker } from "react-icons/pi";
+import { IoCartOutline } from "react-icons/io5";
 import { useNavigate } from "react-router";
 import styled from "styled-components";
 import { FEATURES, menuItems } from "src/shared/components/header/data";
 import { DropdownMenu } from "./DropDownMenu";
+import { useAuth } from "src/shared/hooks/auth/index.ts";
+import { UserMenu } from "src/shared/components/UserMenu";
 
-export const HeaderBar = React.memo(() => {
+const HeaderBarComponent = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+
   const [dropdownOpen, setDropdownOpen] = useState<{
     home: boolean;
     listings: boolean;
@@ -40,6 +44,12 @@ export const HeaderBar = React.memo(() => {
     });
   };
 
+  const getUserName = () => {
+    if (!user) return "";
+    if (user.fullName) return user.fullName;
+    if (user.username) return user.username;
+    return "User";
+  };
   return (
     <HeaderBarContainer>
       <Features>
@@ -72,27 +82,65 @@ export const HeaderBar = React.memo(() => {
           closeDropdowns={closeDropdowns}
           items={menuItems.pages}
         />
-        <Func onClick={() => navigate("/about")}>About</Func>
-        <Func onClick={() => navigate("/contact")}>Contact</Func>
+        <Func
+          onClick={() => {
+            closeDropdowns();
+            navigate("/about");
+          }}
+        >
+          About
+        </Func>
+        <Func
+          onClick={() => {
+            closeDropdowns();
+            navigate("/contact");
+          }}
+        >
+          Contact
+        </Func>
         <Func>
           {" "}
           <PiDeviceMobileSpeaker /> +75 123 456 789
         </Func>
       </Features>
       <Features>
-        <Func onClick={() => navigate("/auth/login")}>
-          <FaRegUser size={24} /> Sign in
-        </Func>
-        <ButtonSignIn
-          style={{ width: 130 }}
-          onClick={() => navigate("/login/admin")}
-        >
-          Admin
-        </ButtonSignIn>
+        {isAuthenticated ? (
+          <>
+            <Func>
+              <IoCartOutline size={24} />
+            </Func>
+            <UserMenu
+              theme={"light"}
+              name={getUserName() || "User"}
+              closeAll={() =>
+                setDropdownOpen({
+                  listings: false,
+                  blogs: false,
+                  pages: false,
+                  home: false,
+                })
+              }
+            />
+          </>
+        ) : (
+          <>
+            <Func onClick={() => navigate("/auth/login")}>Sign in</Func>
+            <ButtonSignIn
+              style={{ width: 130 }}
+              onClick={() => navigate("/login/admin")}
+            >
+              Admin
+            </ButtonSignIn>
+          </>
+        )}
       </Features>
     </HeaderBarContainer>
   );
-});
+};
+
+export const HeaderBar = React.memo(HeaderBarComponent);
+HeaderBar.displayName = "HeaderBar";
+
 const HeaderBarContainer = styled.div`
   flex-direction: row;
   display: flex;

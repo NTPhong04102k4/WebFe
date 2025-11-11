@@ -17,9 +17,9 @@ const getStoredUser = (): any | null => {
     if (!storedUser || storedUser === "undefined" || storedUser === "null") {
       return null;
     }
-    return JSON.parse(storedUser);
+    const parsedUser = JSON.parse(storedUser);
+    return parsedUser;
   } catch (error) {
-    console.error("Error parsing stored user:", error);
     return null;
   }
 };
@@ -50,17 +50,13 @@ export const authSlice = createSlice({
         isAuthenticated?: boolean;
       }>
     ) => {
-      // Create new object references to ensure React re-renders
       state.token = action.payload.token;
-      // Always create a new user object reference, even if values are the same
       state.user = action.payload.user ? { ...action.payload.user } : null;
-      // Calculate isAuthenticated from token if not provided, or use provided value
       state.isAuthenticated =
         action.payload.isAuthenticated !== undefined
           ? action.payload.isAuthenticated
           : !!action.payload.token;
 
-      // Save to localStorage
       if (action.payload.token) {
         localStorage.setItem("auth_token", action.payload.token);
       } else {
@@ -72,21 +68,12 @@ export const authSlice = createSlice({
       } else {
         localStorage.removeItem("auth_user");
       }
-
-      // Debug log
-      console.log("🔄 Redux - setCredentials called:", {
-        hasToken: !!state.token,
-        hasUser: !!state.user,
-        isAuthenticated: state.isAuthenticated,
-        userName: state.user?.fullName || state.user?.username || "No user",
-      });
     },
     clearCredentials: (state) => {
       state.token = null;
       state.user = null;
       state.isAuthenticated = false;
 
-      // Clear localStorage
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
     },

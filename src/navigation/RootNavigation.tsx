@@ -37,6 +37,7 @@ const ListingBody = React.lazy(
 const PaymentForm = React.lazy(
   () => import("src/components/payment/PaymentForm")
 );
+const Profile = React.lazy(() => import("src/pages/profile/UserProfileForm"));
 export function RootNavigation() {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
@@ -112,6 +113,7 @@ export function RootNavigation() {
                 path="/auth/callback/facebook"
               />
               <Route element={<ContactUs />} path="/contact" />
+              <Route element={<Profile />} path="/profile" />
               <Route element={<ErrorPage />} path="*" />
               <Route element={<Services />} path="/home/services" />
               <Route element={<Shop />} path="/home/shop" />

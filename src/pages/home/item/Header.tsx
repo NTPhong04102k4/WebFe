@@ -6,10 +6,10 @@ import { LiaSearchSolid } from "react-icons/lia";
 import { useNavigate } from "react-router";
 import { CarDetail, FeatBrand } from "../../home/item/typeData";
 import { DATA_CAR } from "src/pages/listings/item/data";
+import bgcTitleImg from "src/assets/images/homepage/bgc_title.jpg";
+import homepageOnlImg from "src/assets/images/homepage/homepage_onl.png";
+import latestBlogCarImg from "src/assets/images/homepage/latest_blog_car_4.jpg";
 import { HeaderBar } from "./Headerbar";
-import bgcTitleImg from 'src/assets/images/homepage/bgc_title.jpg';
-import homepageOnlImg from 'src/assets/images/homepage/homepage_onl.png';
-import latestBlogCarImg from 'src/assets/images/homepage/latest_blog_car_4.jpg';
 
 const DATA_BGC = [bgcTitleImg, homepageOnlImg, latestBlogCarImg];
 export interface SearchableCarProps {
@@ -17,19 +17,24 @@ export interface SearchableCarProps {
   onSelect?: (car: CarDetail) => void;
 }
 
-export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, data: FeatBrand[] }) => {
+export const HeaderHome = ({
+  data,
+}: {
+  SearchableCarProps?: SearchableCarProps;
+  data: FeatBrand[];
+}) => {
   const navigate = useNavigate();
-  const [idxSelectBgc,setIdxSelectBgc]=useState(0);
+  const [idxSelectBgc, setIdxSelectBgc] = useState(0);
   const DATA = data;
   React.useEffect(() => {
     const interval = setInterval(() => {
-      setIdxSelectBgc(prev => (prev < DATA_BGC.length - 1 ? prev + 1 : 0));
+      setIdxSelectBgc((prev) => (prev < DATA_BGC.length - 1 ? prev + 1 : 0));
     }, 5000);
-  
+
     // Cleanup the interval on component unmount
     return () => clearInterval(interval);
   }, []);
-  const [searchText, setSearchText] = useState<string>('');
+  const [searchText, setSearchText] = useState<string>("");
   const [suggestions, setSuggestions] = useState<CarDetail[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
@@ -38,8 +43,10 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
 
   const filterCars = (text: string) => {
     const filteredSuggestions = DATA_CAR.filter((car) => {
-      return car.name.toLowerCase().includes(text.toLowerCase()) ||
+      return (
+        car.name.toLowerCase().includes(text.toLowerCase()) ||
         car.body.toLowerCase().includes(text.toLowerCase())
+      );
     });
     setSuggestions(filteredSuggestions);
   };
@@ -55,7 +62,7 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
     if (suggestionsRef.current) {
       const container = suggestionsRef.current;
       const selectedItem = container.children[index] as HTMLElement;
-      
+
       if (selectedItem) {
         // Lấy kích thước và vị trí của container
         const containerHeight = container.clientHeight;
@@ -89,33 +96,35 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
     if (!isInputFocused || suggestions.length === 0) return;
 
     switch (e.key) {
-      case 'ArrowDown':
+      case "ArrowDown":
         e.preventDefault();
-        setSelectedIndex(prev => {
+        setSelectedIndex((prev) => {
           const nextIndex = prev === suggestions.length - 1 ? prev : prev + 1;
           ensureScrollIntoView(nextIndex);
           return nextIndex;
         });
         break;
 
-      case 'ArrowUp':
+      case "ArrowUp":
         e.preventDefault();
-        setSelectedIndex(prev => {
+        setSelectedIndex((prev) => {
           const nextIndex = prev <= 0 ? suggestions.length - 1 : prev - 1;
           ensureScrollIntoView(nextIndex);
           return nextIndex;
         });
         break;
 
-      case 'Enter':
+      case "Enter":
         e.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
           handleSelect(suggestions[selectedIndex]);
-          navigate('/cars/details',{state:{subItem:suggestions[selectedIndex]}})
+          navigate("/cars/details", {
+            state: { subItem: suggestions[selectedIndex] },
+          });
         }
         break;
 
-      case 'Escape':
+      case "Escape":
         e.preventDefault();
         setIsInputFocused(false);
         inputRef.current?.blur();
@@ -126,7 +135,7 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
         break;
     }
   };
- 
+
   const handleSelect = (car: CarDetail): void => {
     setSearchText(`${car.name} - ${car.body}`);
     setSuggestions([]);
@@ -140,9 +149,9 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
         handleKeyDown(e);
       }
     };
-    document.addEventListener('keydown', handleGlobalKeyDown);
+    document.addEventListener("keydown", handleGlobalKeyDown);
     return () => {
-      document.removeEventListener('keydown', handleGlobalKeyDown);
+      document.removeEventListener("keydown", handleGlobalKeyDown);
     };
   }, [selectedIndex, suggestions, isInputFocused]);
 
@@ -153,12 +162,22 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
         <Content>The World's Largest Used Car Dealership</Content>
         <Title>Find Your Perfect Vehicle Online</Title>
         <div className="inline-flex w-full pl-7 pr-7 justify-between bg-transparent">
-          <ButtonIcon onClick={()=>{setIdxSelectBgc(prev=>prev>0?prev-1:DATA_BGC.length);
-            
-          }}>
+          <ButtonIcon
+            onClick={() => {
+              setIdxSelectBgc((prev) =>
+                prev > 0 ? prev - 1 : DATA_BGC.length
+              );
+            }}
+          >
             <SlArrowLeft size={24} color="#FFF" />
           </ButtonIcon>
-          <ButtonIcon onClick={()=>{setIdxSelectBgc(prev=>prev<DATA_BGC.length?prev+1:0)}}>
+          <ButtonIcon
+            onClick={() => {
+              setIdxSelectBgc((prev) =>
+                prev < DATA_BGC.length ? prev + 1 : 0
+              );
+            }}
+          >
             <SlArrowRight size={24} color="#FFF" />
           </ButtonIcon>
         </div>
@@ -171,7 +190,13 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
             return (
               <div key={item.id} className="flex flex-row flex-1 w-full">
                 <ItemFooter>
-                  <TextButton onClick={() => { item.id ===0?navigate('/listings/car_old'):navigate('/listings/all') }}>
+                  <TextButton
+                    onClick={() => {
+                      item.id === 0
+                        ? navigate("/listings/car_old")
+                        : navigate("/listings/all");
+                    }}
+                  >
                     {propsItemExpand ? item?.name : item?.name + " :"}
                   </TextButton>
                   {propsItemExpand ? (
@@ -179,10 +204,17 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
                       size={24}
                       color="#FFF"
                       className="cursor-pointer"
-                      onClick={() => { item.id ===0?navigate('/listings/car_old'):navigate('/listings/all') }}                    />
+                      onClick={() => {
+                        item.id === 0
+                          ? navigate("/listings/car_old")
+                          : navigate("/listings/all");
+                      }}
+                    />
                   ) : (
                     <div className="inline-flex 2xl:gap-8 justify-between gap-4 items-center">
-                      <p className="font-medium text-[#FFF] text-[18px]">All Prices</p>
+                      <p className="font-medium text-[#FFF] text-[18px]">
+                        All Prices
+                      </p>
                       <div className="relative">
                         <div className="border-white border rounded w-auto flex flex-row justify-center items-center">
                           <input
@@ -200,20 +232,21 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
                         </div>
 
                         {isInputFocused && suggestions.length > 0 && (
-                          <div 
-                            ref={suggestionsRef} 
+                          <div
+                            ref={suggestionsRef}
                             className="absolute w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto z-50"
                           >
                             {suggestions.map((suggestion, index) => (
                               <div
                                 key={suggestion.id}
                                 className={`p-2 cursor-pointer hover:bg-gray-100 ${
-                                  index === selectedIndex ? 'bg-blue-100' : ''
+                                  index === selectedIndex ? "bg-blue-100" : ""
                                 }`}
                                 onClick={() => handleSelect(suggestion)}
                                 onMouseEnter={() => setSelectedIndex(index)}
                               >
-                                {suggestion.name} - {suggestion.body} {suggestion.priceBuy}
+                                {suggestion.name} - {suggestion.body}{" "}
+                                {suggestion.priceBuy}
                               </div>
                             ))}
                           </div>
@@ -222,7 +255,11 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
                     </div>
                   )}
                 </ItemFooter>
-                <div className={`${propsItemExpand && "w-[1px]"} bg-white mt-2 mb-2 h-[80%]`} />
+                <div
+                  className={`${
+                    propsItemExpand && "w-[1px]"
+                  } bg-white mt-2 mb-2 h-[80%]`}
+                />
               </div>
             );
           })}
@@ -231,7 +268,7 @@ export const HeaderHome = ({ data }: { SearchableCarProps?: SearchableCarProps, 
     </div>
   );
 };
-const SlideShown = styled.div<({img:string})>`
+const SlideShown = styled.div<{ img: string }>`
   width: 90%;
   margin-right: 90px;
   margin-left: 90px;

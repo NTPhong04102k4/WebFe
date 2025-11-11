@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FaRegUser } from "react-icons/fa";
 import { IoMdArrowDropdown } from "react-icons/io";
 import { IoCartOutline } from "react-icons/io5";
 import { useNavigate, useLocation } from "react-router";
 import styled from "styled-components";
 import { DropdownMenuProps, FEATURES, menuItems } from "./data";
 import { useAuth } from "src/shared/hooks/auth/index.ts";
+import { UserMenu } from "src/shared/components/UserMenu";
 
 export function Header() {
   const navigate = useNavigate();
@@ -18,8 +18,11 @@ export function Header() {
       isAuthenticated,
       user,
       userName: user?.fullName || user?.username || "No user",
+      userObject: user,
     });
   }, [isAuthenticated, user]);
+
+  // Force re-render debug removed; rely on state updates from store
 
   const [dropdownOpen, setDropdownOpen] = useState<{
     home: boolean;
@@ -67,9 +70,20 @@ export function Header() {
   };
 
   const getUserName = () => {
-    if (!user) return "";
-    if (user.fullName) return user.fullName;
-    if (user.username) return user.username;
+    console.log("🔍 getUserName called with user:", user);
+    if (!user) {
+      console.log("❌ No user object");
+      return "";
+    }
+    if (user.fullName) {
+      console.log("✅ Using fullName:", user.fullName);
+      return user.fullName;
+    }
+    if (user.username) {
+      console.log("✅ Using username:", user.username);
+      return user.username;
+    }
+    console.log("⚠️ No fullName or username found");
     return "User";
   };
 
@@ -98,20 +112,45 @@ export function Header() {
           closeDropdowns={closeDropdowns}
           items={menuItems.pages}
         />
-        <NavItem onClick={() => handleNavigate("/about")}>About</NavItem>
-        <NavItem onClick={() => handleNavigate("/contact")}>Contact</NavItem>
+        <NavItem
+          onClick={() => {
+            closeDropdowns();
+            handleNavigate("/about");
+          }}
+        >
+          About
+        </NavItem>
+        <NavItem
+          onClick={() => {
+            closeDropdowns();
+            handleNavigate("/contact");
+          }}
+        >
+          Contact
+        </NavItem>
 
         {isAuthenticated ? (
           <>
             <NavItem>
               <IoCartOutline size={24} />
             </NavItem>
-            <NavItem>Tên: {getUserName() || "Loading..."}</NavItem>
+            <UserMenu
+              theme={"dark"}
+              name={getUserName() || "User"}
+              closeAll={() =>
+                setDropdownOpen({
+                  listings: false,
+                  blogs: false,
+                  pages: false,
+                  home: false,
+                })
+              }
+            />
           </>
         ) : (
           <>
             <NavItem onClick={() => handleNavigate("/auth/login")}>
-              <FaRegUser size={24} /> Sign in
+              Sign in
             </NavItem>
             <ButtonSignIn
               onClick={() => handleNavigate("/auth/login/admin/page_manage")}

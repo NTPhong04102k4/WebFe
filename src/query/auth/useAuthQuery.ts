@@ -13,7 +13,9 @@ export const useAuthQuery = () => {
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const authState = useAppSelector(selectAuth);
-  const userName = getTokenClaims(authState.token)?.sub;
+  const userName = getTokenClaims(authState.token);
+  console.log("🔍 userName:", userName);
+
   const loginMutation = useMutation({
     mutationFn: authAPI.login,
     onSuccess: async (response) => {
@@ -25,7 +27,7 @@ export const useAuthQuery = () => {
         })
       );
       try {
-        const profileResponse = await authAPI.getProfile(userName!);
+        const profileResponse = await authAPI.getProfile(userName?.sub ?? "");
         if (profileResponse?.data) {
           dispatch(
             setCredentials({
@@ -78,11 +80,19 @@ export const useAuthQuery = () => {
   const profileQuery = useQuery({
     queryKey: ["profile"],
     queryFn: () => authAPI.getProfile(authState.user?.userUUID ?? ""),
-    enabled: authState.isAuthenticated,
+    enabled: authState.isAuthenticated && !!authState.user?.userUUID,
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error: any) => {
-      if (error?.response?.status === 400 || error?.response?.status === 401) {
+      if (error?.response?.status === 401) {
+        console.warn("⚠️ Profile query returned 401 - clearing credentials");
         dispatch(clearCredentials());
+        return false;
+      }
+      if (error?.response?.status === 400) {
+        console.warn(
+          "⚠️ Profile query returned 400 - skipping retry but keeping auth state:",
+          error?.response?.data
+        );
         return false;
       }
       return failureCount < 1;
@@ -94,36 +104,24 @@ export const useAuthQuery = () => {
     loginAsync: loginMutation.mutateAsync,
     isLoginLoading: loginMutation.isPending,
     loginError: loginMutation.error,
-
-    // Register
     register: registerMutation.mutate,
     registerAsync: registerMutation.mutateAsync,
     isRegisterLoading: registerMutation.isPending,
     registerError: registerMutation.error,
-
-    // Verify OTP
     verifyOtp: verifyOtpMutation.mutate,
     verifyOtpAsync: verifyOtpMutation.mutateAsync,
     isVerifyOtpLoading: verifyOtpMutation.isPending,
     verifyOtpError: verifyOtpMutation.error,
-
-    // Resend OTP
     resendOtp: resendOtpMutation.mutate,
     resendOtpAsync: resendOtpMutation.mutateAsync,
     isResendOtpLoading: resendOtpMutation.isPending,
     resendOtpError: resendOtpMutation.error,
-
-    // Logout
     logout: logoutMutation.mutate,
     isLogoutLoading: logoutMutation.isPending,
-
-    // Profile
     profile: profileQuery.data?.data,
     isProfileLoading: profileQuery.isLoading,
     profileError: profileQuery.error,
     refetchProfile: profileQuery.refetch,
-
-    // Combined states
     isLoading:
       loginMutation.isPending ||
       registerMutation.isPending ||
