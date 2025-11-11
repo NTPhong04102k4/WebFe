@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, Suspense, useMemo } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Admin from "src/pages/admin";
 import styled from "styled-components";
 
@@ -8,6 +8,8 @@ import { LoadingScreen } from "src/shared/components/loading";
 import { Header } from "src/shared/components/header";
 import { FooterComponent } from "src/shared/components/footer";
 import { Theme } from "src/shared/components/footer/data";
+import { useAppSelector } from "src/redux/hook";
+import { selectIsAuthenticated, selectUser } from "src/redux/Slice/AuthSlice";
 
 const About = React.lazy(() => import("src/pages/about"));
 const Accessory = React.lazy(() => import("src/pages/accessory"));
@@ -41,7 +43,17 @@ const Profile = React.lazy(() => import("src/pages/profile/UserProfileForm"));
 export function RootNavigation() {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const prevLocation = useRef(location);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const user = useAppSelector(selectUser);
+  const roles: string[] = useMemo(() => {
+    const r =
+      (user as any)?.roles ||
+      (user as any)?.authorities ||
+      ((user as any)?.role ? [(user as any)?.role] : []);
+    return Array.isArray(r) ? r.map((x) => String(x).toLowerCase()) : [];
+  }, [user]);
 
   useEffect(() => {
     const isHome = location.pathname === "/home";
@@ -57,6 +69,26 @@ export function RootNavigation() {
 
     prevLocation.current = location;
   }, [location]);
+
+  // Role-based navigation enforcement
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const isCustomer = roles.includes("customer");
+    const isOnAdminRoutes =
+      location.pathname === "/login/admin" ||
+      location.pathname.startsWith("/auth/login/admin");
+
+    // Customers cannot access admin routes
+    if (isCustomer && isOnAdminRoutes) {
+      navigate("/home", { replace: true });
+      return;
+    }
+
+    // Non-customers (e.g., admin/staff) are locked to admin area
+    if (!isCustomer && !isOnAdminRoutes) {
+      navigate("/auth/login/admin/page_manage", { replace: true });
+    }
+  }, [isAuthenticated, roles, location.pathname, navigate]);
 
   // Determine if Header should be hidden for specific routes
   const shouldHideHeader = useMemo(() => {

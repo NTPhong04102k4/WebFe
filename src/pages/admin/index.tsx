@@ -1,73 +1,287 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useState } from "react";
 import { GoArrowRight } from "react-icons/go";
 import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import * as yup from "yup";
+import { authAPI } from "src/services/api/functions/auth/authFn";
+import { useAppDispatch } from "src/redux/hook";
+import { setCredentials } from "src/redux/Slice/AuthSlice";
+import { getTokenClaims } from "src/services/decode";
 
 const Admin = React.memo(() => {
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
-  useEffect(() => {
-    // Giả sử API của bạn có đường dẫn /api/admins
-    fetch("/api/admins")
-      .then((response) => response.json())
-      .then((data) => setData(data))
-      .catch((error) => console.error("Error fetching data:", error));
-    console.log("adminAPi:", data);
-  }, [data]);
+  const dispatch = useAppDispatch();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    username?: string;
+    password?: string;
+  }>({});
 
-  function handleClick() {
-    navigate("/auth/login/admin/page_manage");
+  const adminLoginSchema = yup.object().shape({
+    username: yup
+      .string()
+      .required("Vui lòng nhập tài khoản")
+      .min(3, "Tài khoản phải có ít nhất 3 ký tự"),
+    password: yup
+      .string()
+      .required("Vui lòng nhập mật khẩu")
+      .min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+  });
+
+  async function handleLogin() {
+    // reset errors
+    setFieldErrors({});
+    setError(null);
+    // validate
+    try {
+      await adminLoginSchema.validate(
+        { username, password },
+        { abortEarly: false }
+      );
+    } catch (err: any) {
+      const fe: { username?: string; password?: string } = {};
+      err.inner?.forEach((e: any) => {
+        if (e.path && !fe[e.path as "username" | "password"]) {
+          fe[e.path as "username" | "password"] = e.message;
+        }
+      });
+      setFieldErrors(fe);
+      setError("Vui lòng kiểm tra lại các trường đã nhập");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await authAPI.adminLogin({ username, password });
+      const token = res.data.token;
+      const claims = getTokenClaims(token);
+      const roles =
+        (claims?.roles as string[]) ||
+        (claims?.authorities as string[]) ||
+        (claims?.role ? [claims.role] : []);
+
+      dispatch(
+        setCredentials({
+          token,
+          user: {
+            fullName: res.data.fullName,
+            username,
+            roles,
+            claims,
+          } as any,
+          isAuthenticated: true,
+        })
+      );
+      navigate("/auth/login/admin/page_manage");
+    } catch (e: any) {
+      setError(
+        e?.response?.data?.message ||
+          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="flex flex-col  bg-sky-50 w-full h-screen justify-center items-center">
-      <div className="w-[35%] h-auto   flex flex-col border border-gray bg-white rounded-lg  self-center  items-center drop-shadow hover:drop-shadow-xl ">
-        <div className=" flex flex-col rounded-t-lg 2xl:py-12  py-12 w-full  bg-purple-400 self-center justify-center items-center">
-          <h2 className="text-blue-600  font-sans font-bold text-2xl 2xl:text-4xl  self-center flex">
-            Admin Login
-          </h2>
-          <h3 className="text-black font-sans font-normal text-base 2xl:text-xl ">
+    <Page>
+      <Card>
+        <Header>
+          <Title>Admin Login</Title>
+          <Subtitle>
             Hello there, Sign in and start managing your website
-          </h3>
-        </div>
+          </Subtitle>
+        </Header>
 
-        <div className="inline-flex gap-6 mt-4 justify-center w-full min-h-8 relative py-3 px-6 items-center 2xl:py-5 2xl:px-7">
-          <h2 className="text-gray-600 font-sans w-[15%] font-medium text-base 2xl:text-xl">
-            Admin:
-          </h2>
-          <input
-            className="hover:drop-shadow-md focus:outline-none py-2 px-2 w-[70%] border rounded-sm border-gray-100 focus:border-gray-400 text-gray-700 font-sans text-sm 2xl:text-base font-normal"
-            type="text"
-            placeholder="Admin_User"
-          />
-        </div>
-        <div className="hover:drop-shadow-md inline-flex gap-6 justify-center w-full min-h-8 relative py-3 px-6 items-center">
-          <h2 className="text-gray-600 font-sans w-[15%] font-medium text-base 2xl:text-xl">
-            Password:
-          </h2>
-          <input
-            className="focus:outline-none py-2 px-2 w-[70%] border rounded-sm border-gray-100 focus:border-gray-400 text-gray-700 font-sans text-sm 2xl:text-base font-normal"
-            type="password"
-            placeholder="@123456..."
-          />
-        </div>
-        <div className="inline-flex items-center gap-2 px-12 2xl:px-16 w-full mt-2">
-          <input type="checkbox" className="size-4" />
-          <h3 className="text-gray-700 font-sans font-normal text-base 2xl:text-xl">
-            Remember Me
-          </h3>
-        </div>
+        <FieldRow>
+          <Label>Admin:</Label>
+          <FieldCol>
+            <Input
+              type="text"
+              placeholder="Admin_User"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              aria-invalid={!!fieldErrors.username}
+            />
+            {fieldErrors.username && (
+              <ErrorText>{fieldErrors.username}</ErrorText>
+            )}
+          </FieldCol>
+        </FieldRow>
+        <FieldRow>
+          <Label>Password:</Label>
+          <FieldCol>
+            <Input
+              type="password"
+              placeholder="@123456..."
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              aria-invalid={!!fieldErrors.password}
+            />
+            {fieldErrors.password && (
+              <ErrorText>{fieldErrors.password}</ErrorText>
+            )}
+          </FieldCol>
+        </FieldRow>
+        {error && <FormError>{error}</FormError>}
 
-        <button
-          className="inline-flex gap-2  mt-6 mb-6 border  drop-shadow border-gray-300  active:bg-gray-600 active:scale-90 transition duration-300 text-gray-900 text-xl w-[50%] rounded-3xl  py-1 px-6 self-center justify-center items-center"
-          onClick={handleClick}
-          aria-label="Login"
-        >
-          Login
-          <GoArrowRight size={24} className="active:text-gray-300" />
-        </button>
-      </div>
-    </div>
+        <Actions>
+          <LoginButton
+            onClick={handleLogin}
+            aria-label="Login"
+            disabled={loading}
+          >
+            {loading ? "Đang đăng nhập..." : "Login"}
+            <GoArrowRight size={24} />
+          </LoginButton>
+        </Actions>
+      </Card>
+    </Page>
   );
 });
 
 export default Admin;
+
+const Page = styled.div`
+  display: flex;
+  flex-direction: column;
+  background: #e0f2fe; /* sky-50 */
+  width: 100%;
+  min-height: 100vh;
+  justify-content: center;
+  align-items: center;
+`;
+
+const Card = styled.div`
+  width: 35%;
+  min-width: 320px;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+`;
+
+const Header = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding: 48px 0;
+  width: 100%;
+  background: #a78bfa; /* purple-400 */
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const Title = styled.h2`
+  color: #2563eb; /* blue-600 */
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+    Cantarell, Noto Sans, sans-serif, "Helvetica Neue", Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  font-weight: 700;
+  font-size: 28px;
+  margin: 0 0 6px 0;
+`;
+
+const Subtitle = styled.h3`
+  color: #111827;
+  font-weight: 400;
+  font-size: 16px;
+  margin: 0;
+`;
+
+const FieldRow = styled.div`
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 32px;
+  position: relative;
+  padding: 16px 24px;
+`;
+
+const Label = styled.h2`
+  color: #4b5563;
+  width: 15%;
+  min-width: 90px;
+  font-weight: 500;
+  font-size: 16px;
+  margin: 0;
+`;
+
+const FieldCol = styled.div`
+  width: 70%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const Input = styled.input`
+  padding: 10px 10px;
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid #f3f4f6;
+  color: #374151;
+  font-size: 14px;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus {
+    border-color: #9ca3af;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+
+  &[aria-invalid="true"] {
+    border-color: #ef4444;
+  }
+`;
+
+const ErrorText = styled.div`
+  color: #dc2626;
+  font-size: 12px;
+`;
+
+const FormError = styled.div`
+  color: #dc2626;
+  font-size: 14px;
+  padding: 0 24px;
+  text-align: center;
+`;
+
+const Actions = styled.div`
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 24px 0;
+`;
+
+const LoginButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d1d5db;
+  color: #111827;
+  font-size: 18px;
+  border-radius: 24px;
+  padding: 8px 24px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+
+  &:active {
+    transform: scale(0.98);
+    background: #f3f4f6;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
