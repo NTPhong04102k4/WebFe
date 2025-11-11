@@ -26,12 +26,23 @@ export type AccessoryRequestCreate = {
   warrantyMonths?: number | null;
   createdBy: number;
 };
-
-export type AccessoryRequestUpdate = Omit<
-  AccessoryRequestCreate,
-  "createdBy"
-> & {
-  accessoryID?: number;
+export type AccessoryRequestUpdate = {
+  accessoryID: number;
+  accessoryCode: string;
+  accessoryName: string;
+  categoryID: number;
+  brandAccessoryID?: number | null;
+  description: string;
+  price: number;
+  costPrice?: number | null;
+  stockQuantity?: number;
+  minStockLevel?: number;
+  maxStockLevel?: number;
+  compatibleCarModels: string; // JSON string
+  imagePath?: File | null;
+  installationVideo?: File | null;
+  warrantyMonths?: number | null;
+  createdBy: number;
 };
 
 export type { AccessoryRequestCreate as AccessoriesRequest };

@@ -227,6 +227,7 @@ export const UpdateAccessoryEditor: React.FC<Props> = ({
         warrantyMonths: form.warrantyMonths
           ? Number(form.warrantyMonths)
           : null,
+        createdBy: 1,
       };
       await accessoryRouteFn.update(Number(accessoryId), payload);
       onSaved?.();
