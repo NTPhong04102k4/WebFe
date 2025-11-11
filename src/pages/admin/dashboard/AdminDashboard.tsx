@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Sidebar } from "./ItemDashboard/SideBar";
 import { HeaderDashBoard } from "./ItemDashboard/HeaderDashBoard";
-import { RevenueTab } from "./ItemDashboard/mainDashBoard/Revenue";
-import { UsersTab } from "./ItemDashboard/mainDashBoard/UserContract";
-import { SellTab } from "./ItemDashboard/mainDashBoard/SellCar";
-import { PurchaseTab } from "./ItemDashboard/mainDashBoard/Purchased";
+
 import { Accessories } from "./ItemDashboard/mainDashBoard/Accessories/index";
 
 enum ActiveTab {
@@ -23,20 +20,20 @@ const AdminDashboard: React.FC = () => {
   const ActiveTabContent = React.useCallback(
     ({ activeTabIdx }: { activeTabIdx: ActiveTab }) => {
       switch (activeTabIdx) {
-        case ActiveTab.USERS:
-          return <UsersTab />;
-        case ActiveTab.STAFF:
-          return <UsersTab />;
-        case ActiveTab.CARS:
-          return <SellTab />;
-        case ActiveTab.INVOICES:
-          return <PurchaseTab />;
-        case ActiveTab.SERVICES:
-          return <Accessories />;
+        // case ActiveTab.USERS:
+        //   return <UsersTab />;
+        // case ActiveTab.STAFF:
+        //   return <UsersTab />;
+        // case ActiveTab.CARS:
+        //   return <SellTab />;
+        // case ActiveTab.INVOICES:
+        //   return <PurchaseTab />;
+        // case ActiveTab.SERVICES:
+        //   return <Accessories />;
         case ActiveTab.ACCESSORIES:
           return <Accessories />;
-        case ActiveTab.REVENUE:
-          return <RevenueTab />;
+        // case ActiveTab.REVENUE:
+        // return <RevenueTab />;
         default:
           return null;
       }

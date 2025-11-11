@@ -164,7 +164,6 @@ const UserInfo: React.FC = () => {
     try {
       await authAPI.logout();
     } catch (e) {
-      // ignore
     } finally {
       dispatch(clearCredentials());
       navigate("/auth/login");

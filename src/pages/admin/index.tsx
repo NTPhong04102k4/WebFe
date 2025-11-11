@@ -74,6 +74,8 @@ const Admin = React.memo(() => {
           isAuthenticated: true,
         })
       );
+      // Persist token for apiClient interceptor
+      localStorage.setItem("auth_token", token);
       navigate("/auth/login/admin/page_manage");
     } catch (e: any) {
       setError(

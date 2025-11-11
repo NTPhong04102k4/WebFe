@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useRef, Suspense, useMemo } from "react";
-import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  useLocation,
+  useNavigate,
+  Navigate,
+} from "react-router-dom";
 import Admin from "src/pages/admin";
 import styled from "styled-components";
 
@@ -40,6 +46,12 @@ const PaymentForm = React.lazy(
   () => import("src/components/payment/PaymentForm")
 );
 const Profile = React.lazy(() => import("src/pages/profile/UserProfileForm"));
+const AccessoryEditorPage = React.lazy(
+  () =>
+    import(
+      "src/pages/admin/dashboard/ItemDashboard/mainDashBoard/Accessories/EditAccessories/AccessoryEditorPage"
+    )
+);
 export function RootNavigation() {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
@@ -72,20 +84,26 @@ export function RootNavigation() {
 
   // Role-based navigation enforcement
   useEffect(() => {
+    const isAdminLoginPage = location.pathname === "/login/admin";
+    const isAdminArea = location.pathname.startsWith("/auth/login/admin");
+
+    // Block unauthenticated users from admin routes
+    if (!isAuthenticated && isAdminArea) {
+      navigate("/auth/login", { replace: true });
+      return;
+    }
+
     if (!isAuthenticated) return;
     const isCustomer = roles.includes("customer");
-    const isOnAdminRoutes =
-      location.pathname === "/login/admin" ||
-      location.pathname.startsWith("/auth/login/admin");
 
     // Customers cannot access admin routes
-    if (isCustomer && isOnAdminRoutes) {
+    if (isCustomer && (isAdminArea || isAdminLoginPage)) {
       navigate("/home", { replace: true });
       return;
     }
 
     // Non-customers (e.g., admin/staff) are locked to admin area
-    if (!isCustomer && !isOnAdminRoutes) {
+    if (!isCustomer && !isAdminArea && !isAdminLoginPage) {
       navigate("/auth/login/admin/page_manage", { replace: true });
     }
   }, [isAuthenticated, roles, location.pathname, navigate]);
@@ -132,7 +150,16 @@ export function RootNavigation() {
           <Suspense fallback={<LoadingScreen />}>
             <Routes location={location}>
               <Route element={<Home />} path="/home" />
-              <Route element={<Home />} path="/" />
+              <Route
+                element={
+                  isAuthenticated && !roles.includes("customer") ? (
+                    <Navigate to="/auth/login/admin/page_manage" replace />
+                  ) : (
+                    <Home />
+                  )
+                }
+                path="/"
+              />
               <Route element={<About />} path="/about" />
               <Route element={<CalculatorFeatures />} path="/home/calculator" />
               <Route element={<Login />} path="/auth/login" />
@@ -157,10 +184,53 @@ export function RootNavigation() {
                 path="/pages/term_&_condition"
               />
               <Route element={<TermAndConditions />} path="/pages/privacy" />
-              <Route element={<Admin />} path="/login/admin" />
               <Route
-                element={<AdminDashboard />}
+                element={
+                  !isAuthenticated ? (
+                    <Admin />
+                  ) : roles.includes("customer") ? (
+                    <Navigate to="/home" replace />
+                  ) : (
+                    <Navigate to="/auth/login/admin/page_manage" replace />
+                  )
+                }
+                path="/login/admin"
+              />
+              <Route
+                element={
+                  !isAuthenticated ? (
+                    <Navigate to="/auth/login" replace />
+                  ) : roles.includes("customer") ? (
+                    <Navigate to="/home" replace />
+                  ) : (
+                    <AdminDashboard />
+                  )
+                }
                 path="/auth/login/admin/page_manage"
+              />
+              <Route
+                element={
+                  !isAuthenticated ? (
+                    <Navigate to="/auth/login" replace />
+                  ) : roles.includes("customer") ? (
+                    <Navigate to="/home" replace />
+                  ) : (
+                    <AccessoryEditorPage />
+                  )
+                }
+                path="/auth/login/admin/accessories/edit/:id"
+              />
+              <Route
+                element={
+                  !isAuthenticated ? (
+                    <Navigate to="/auth/login" replace />
+                  ) : roles.includes("customer") ? (
+                    <Navigate to="/home" replace />
+                  ) : (
+                    <AccessoryEditorPage />
+                  )
+                }
+                path="/auth/login/admin/accessories/new"
               />
 
               <Route element={<ListingAll />} path="/listings/all" />

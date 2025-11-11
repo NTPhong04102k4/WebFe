@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { brandRouteFn } from "src/services/api/functions/accessories/brand/Route.Fn";
 import {
@@ -65,7 +65,6 @@ export const BrandControls: React.FC<Props> = ({
           name: form.name.trim(),
           description: form.description?.trim() ?? "",
           image: form.image ?? null,
-          id: editingId,
         };
         await brandRouteFn.updateBrand(payload);
       } else {
