@@ -88,10 +88,3 @@ const ActionButton = styled.button`
     background: #f9fafb;
   }
 `;
-
-const DeleteButton = styled(ActionButton)`
-  color: #dc2626;
-  &:hover {
-    background: #fef2f2;
-  }
-`;

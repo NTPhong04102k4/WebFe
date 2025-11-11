@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { brandRouteFn } from "src/services/api/functions/accessories/brand/Route.Fn";
 import { accessoryRouteFn } from "src/services/api/functions/accessories/accessory/Routes.Fn";
-import { BrandFilter } from "./Item/BrandFilter";
-import { AccessoryGrid } from "./Item/AccessoryGrid";
-import { Pagination } from "./Item/Pagination";
-import { BrandControls } from "./Item/BrandControls";
-import { AccessoryEditor } from "./Item/AccessoryEditor";
+import { BrandFilter } from "./Component/BrandFilter";
+import { AccessoryGrid } from "./Component/AccessoryGrid";
+import { Pagination } from "./Component/Pagination";
+import { BrandControls } from "./Component/BrandControls";
 import { BrandAccessoryResponse } from "src/shared/types/Reponse/accessories/brand";
 import {
   AccessoriesListItem,
@@ -13,11 +13,11 @@ import {
 } from "src/shared/types/Reponse/accessories/accessory";
 
 export const Accessories = () => {
+  const navigate = useNavigate();
   const [brands, setBrands] = useState<BrandAccessoryResponse[]>([]);
   const [loadingBrands, setLoadingBrands] = useState<boolean>(false);
   const [selectedBrandControlId, setSelectedBrandControlId] =
     useState<string>("");
-
   const [allRaw, setAllRaw] = useState<AccessoriesListItem[]>([]);
   const [loadingItems, setLoadingItems] = useState<boolean>(false);
   const [currentPage, setPage] = useState<number>(1);
@@ -42,10 +42,7 @@ export const Accessories = () => {
       return p;
     });
   }, [totalPages]);
-  const pagedItems = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredItems.slice(start, start + pageSize);
-  }, [filteredItems, currentPage]);
+
   const refreshBrands = async () => {
     setLoadingBrands(true);
     try {
@@ -65,6 +62,9 @@ export const Accessories = () => {
     }
   };
 
+  useEffect(() => {
+    refreshBrands();
+  }, []);
   const refreshAccessories = async () => {
     setLoadingItems(true);
     try {
@@ -85,11 +85,6 @@ export const Accessories = () => {
     })();
   }, []);
 
-  const [editorOpen, setEditorOpen] = useState<boolean>(false);
-  const [editingAccessoryId, setEditingAccessoryId] = useState<
-    string | number | null
-  >(null);
-
   return (
     <div className="bg-white rounded-lg shadow p-4 transition-opacity duration-300">
       <h2 className="text-xl font-bold mb-4">Quản lý Phụ kiện</h2>
@@ -107,8 +102,7 @@ export const Accessories = () => {
           type="button"
           className="px-3 py-1.5 rounded border text-sm hover:bg-gray-50"
           onClick={() => {
-            setEditingAccessoryId(null);
-            setEditorOpen(true);
+            navigate("/auth/login/admin/accessories/new");
           }}
         >
           + Thêm phụ kiện
@@ -148,8 +142,7 @@ export const Accessories = () => {
         loading={loadingItems}
         emptyText="Chưa có dữ liệu phụ kiện"
         onEdit={(id) => {
-          setEditingAccessoryId(id);
-          setEditorOpen(true);
+          navigate(`/auth/login/admin/accessories/edit/${id}`);
         }}
       />
 
@@ -161,15 +154,6 @@ export const Accessories = () => {
         }}
         onNext={() => {
           if (currentPage < totalPages) setPage((p) => p + 1);
-        }}
-      />
-
-      <AccessoryEditor
-        open={editorOpen}
-        accessoryId={editingAccessoryId}
-        onClose={() => setEditorOpen(false)}
-        onSaved={async () => {
-          await refreshAccessories();
         }}
       />
     </div>

@@ -39,7 +39,7 @@ export const brandRouteFn = {
   },
   updateBrand: async (data: BrandRequestUpdate) => {
     const form = toFormDataBrand(data);
-    const response = await apiClient.patch<BrandAccessoryResponse>(
+    const response = await apiClient.put<BrandAccessoryResponse>(
       brandRoute.updateBrand,
       form,
       {

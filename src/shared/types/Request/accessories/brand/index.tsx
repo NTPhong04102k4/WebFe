@@ -2,7 +2,6 @@ type BrandRequestUpdate = {
   name: string;
   image: File | string | null;
   description: string;
-  id?: number | string | null;
 };
 type BrandRequestCreate = {
   name: string;

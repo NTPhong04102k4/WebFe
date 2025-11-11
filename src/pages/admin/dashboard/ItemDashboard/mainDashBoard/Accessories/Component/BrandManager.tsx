@@ -82,7 +82,6 @@ export const BrandManager: React.FC<Props> = ({ onChanged }) => {
       setError(null);
       if (isEditing && editingId) {
         const payload: BrandRequestUpdate = {
-          id: editingId,
           name: form.name.trim(),
           description: form.description?.trim() ?? "",
           image: form.image ?? null,

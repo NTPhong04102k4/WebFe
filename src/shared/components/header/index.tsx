@@ -37,13 +37,21 @@ export function Header() {
   });
 
   useEffect(() => {
-    if (isAuthenticated && location.pathname.startsWith("/auth/")) {
+    if (
+      isAuthenticated &&
+      location.pathname.startsWith("/auth/") &&
+      !location.pathname.startsWith("/auth/login/admin")
+    ) {
       navigate("/home", { replace: true });
     }
   }, [isAuthenticated, location.pathname, navigate]);
 
   const handleNavigate = (path: string) => {
-    if (isAuthenticated && path.startsWith("/auth/")) {
+    if (
+      isAuthenticated &&
+      path.startsWith("/auth/") &&
+      !path.startsWith("/auth/login/admin")
+    ) {
       return;
     }
     navigate(path);
@@ -152,9 +160,7 @@ export function Header() {
             <NavItem onClick={() => handleNavigate("/auth/login")}>
               Sign in
             </NavItem>
-            <ButtonSignIn
-              onClick={() => handleNavigate("/auth/login/admin/page_manage")}
-            >
+            <ButtonSignIn onClick={() => handleNavigate("/login/admin")}>
               Admin
             </ButtonSignIn>
           </>

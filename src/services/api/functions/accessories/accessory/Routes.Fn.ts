@@ -7,7 +7,6 @@ import {
 } from "src/shared/types/Request/accessories/accessory";
 import {
   AccessoryDetailResponse,
-  AccessoriesListItem,
   AccessoryListResponse,
 } from "src/shared/types/Reponse/accessories/accessory";
 
@@ -77,7 +76,7 @@ export const accessoryRouteFn = {
     return response.data;
   },
 
-  update: async (id: number | string, data: AccessoryRequestUpdate) => {
+  update: async (id: number, data: AccessoryRequestUpdate) => {
     const form = toFormData(data);
     const response = await apiClient.put<AccessoryDetailResponse>(
       accessoryRoute.update,
