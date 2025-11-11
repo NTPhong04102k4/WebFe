@@ -1,6 +1,7 @@
 
 import React from "react";
 import { BuyCarIcon, MenuIcon, PostsIcon, RevenueIcon, SellCarIcon, UserIcon } from "./icon";
+import { CarIcon } from "./icon";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -16,31 +17,13 @@ export type Feats = {
 };
 
 export const DATA_FEATS: Feats[] = [
-  {
-    id: 0,
-    name: "Revenue",
-    icon: RevenueIcon,
-  },
-  {
-    id: 1,
-    name: "Users",
-    icon: UserIcon,
-  },
-  {
-    id: 2,
-    name: "Accessory",
-    icon: PostsIcon,
-  },
-  {
-    id: 3,
-    name: "For Sale",
-    icon: SellCarIcon,
-  },
-  {
-    id: 4,
-    name: "Purchase",
-    icon: BuyCarIcon,
-  },
+  { id: 0, name: "Quản lí user", icon: UserIcon },
+  { id: 1, name: "Quản lí nhân viên", icon: UserIcon },
+  { id: 2, name: "Quản lí car", icon: CarIcon },
+  { id: 3, name: "Quản lí hóa đơn", icon: PostsIcon },
+  { id: 4, name: "Quản lí dịch vụ", icon: PostsIcon },
+  { id: 5, name: "Quản lí phụ kiện", icon: SellCarIcon },
+  { id: 6, name: "Thống kê doanh thu", icon: RevenueIcon },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, onToggle, isActiveTab, setIsActiveTab }) => {

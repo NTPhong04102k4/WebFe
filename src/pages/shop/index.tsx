@@ -1,6 +1,4 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Header } from "src/shared/components/header";
-import { FooterComponent } from "src/shared/components/footer";
 import { DATA_CATEGORIES, DetailItem } from "./data";
 import { CustomPriceSlider } from "./item/SliderPrice";
 import { ProductCard } from "./item/ProductCard";
@@ -75,7 +73,6 @@ const Shop: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full bg-[#050b2b]">
-      <Header />
       <main className="bg-white rounded-b-lg p-8">
         <nav className="text-base  mb-0 font-sans ">Home / Shop</nav>
         <h2 className="text-2xl mb-6 font-sans font-medium">Shop</h2>
@@ -137,7 +134,6 @@ const Shop: React.FC = () => {
           </section>
         </div>
       </main>
-      <FooterComponent />
     </div>
   );
 };

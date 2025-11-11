@@ -1,5 +1,9 @@
-import React, { useState } from "react";
-import { useAuth } from "src/contexts/AuthContext";
+import React from "react";
+import { setCredentials } from "src/redux/Slice/AuthSlice";
+import { useAppDispatch } from "src/redux/hook";
+import { useFacebookAuth } from "src/shared/hooks/auth/useFacebookAuth";
+import { useSocialAuthMapper } from "src/shared/hooks/auth/useSocialAuthMapper";
+import { UserResponse } from "src/shared/types/Reponse/auth/user";
 
 interface FacebookLoginButtonProps {
   onSuccess?: () => void;
@@ -14,26 +18,62 @@ export const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
   className = "",
   children,
 }) => {
-  const { loginWithFacebook, isLoading } = useAuth();
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const dispatch = useAppDispatch();
+  const { loginWithFacebook, isLoading: isLoggingIn } = useFacebookAuth();
+  const { mapFacebookUser } = useSocialAuthMapper();
 
   const handleFacebookLogin = async () => {
+    console.log("🖱️ Facebook button clicked!");
     try {
-      setIsLoggingIn(true);
-      await loginWithFacebook();
+      console.log("🔄 Calling loginWithFacebook...");
+
+      // Lấy thông tin user từ Facebook OAuth
+      const response = await loginWithFacebook();
+      console.log("✅ Facebook user received:", response);
+
+      const token = response.tokens?.access_token || "";
+      if (!token) {
+        throw new Error("Không nhận được token từ Facebook");
+      }
+
+      // Check if user data is already in UserResponse format (from backend)
+      const isBackendUserData =
+        (response as any).userID !== undefined ||
+        (response as any).userUUID !== undefined;
+
+      let userData: any;
+      if (isBackendUserData) {
+        // Use backend user data directly (already in correct format)
+        userData = response as unknown as UserResponse;
+        console.log("Using backend user data directly");
+      } else {
+        // Map social auth response to UserResponse format
+        userData = mapFacebookUser(response);
+        console.log("Mapped social auth response");
+      }
+
+      dispatch(
+        setCredentials({
+          token: token,
+          user: userData,
+          isAuthenticated: true,
+        })
+      );
+
+      console.log("✅ loginWithFacebook completed, calling onSuccess");
       onSuccess?.();
     } catch (error) {
-      console.error("Facebook login error:", error);
+      console.error("❌ Facebook login error:", error);
       onError?.(error as Error);
     } finally {
-      setIsLoggingIn(false);
+      console.log("🏁 Facebook login handler finished");
     }
   };
 
   return (
     <button
       onClick={handleFacebookLogin}
-      disabled={isLoading || isLoggingIn}
+      disabled={isLoggingIn}
       className={`
         flex items-center justify-center gap-3 px-6 py-3 
         bg-[#1877F2] hover:bg-[#166FE5] 

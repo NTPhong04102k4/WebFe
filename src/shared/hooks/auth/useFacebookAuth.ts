@@ -1,0 +1,185 @@
+import { useState, useEffect, useCallback, useRef } from "react";
+import { ENV } from "src/config/environment";
+import { FacebookUserResponse } from "src/shared/types/Reponse/auth/user";
+
+export const useFacebookAuth = () => {
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const isSDKInitialized = useRef(false);
+
+  const initFacebookSDK = useCallback(() => {
+    if (typeof window !== "undefined" && (window as any).FB) {
+      const FB = (window as any).FB;
+
+      FB.init({
+        appId: process.env.REACT_APP_FACEBOOK_APP_ID,
+        cookie: true,
+        xfbml: true,
+        version: "v18.0",
+      });
+
+      console.log("✅ Facebook SDK initialized");
+    }
+  }, []);
+
+  // Initialize Facebook SDK
+  useEffect(() => {
+    if (isSDKInitialized.current || isSDKLoaded) return;
+
+    const script = document.createElement("script");
+    script.src = "https://connect.facebook.net/en_US/sdk.js";
+    script.async = true;
+    script.defer = true;
+    script.crossOrigin = "anonymous";
+
+    script.onload = () => {
+      console.log("✅ Facebook SDK loaded successfully");
+      setIsSDKLoaded(true);
+      initFacebookSDK();
+    };
+
+    script.onerror = () => {
+      console.error("❌ Failed to load Facebook SDK");
+    };
+
+    document.head.appendChild(script);
+    isSDKInitialized.current = true;
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, [isSDKLoaded, initFacebookSDK]);
+
+  const loginWithFacebook = useCallback((): Promise<FacebookUserResponse> => {
+    return new Promise((resolve, reject) => {
+      setIsLoading(true);
+
+      const popup = window.open(
+        `https://www.facebook.com/v18.0/dialog/oauth?` +
+          `client_id=${process.env.REACT_APP_FACEBOOK_APP_ID}&` +
+          `redirect_uri=${encodeURIComponent(
+            `${ENV.API_URL}/auth/callback/facebook`
+          )}&` +
+          `response_type=code&` +
+          `scope=email,public_profile&` +
+          `state=facebook_login`,
+        "facebook-login",
+        "width=500,height=600,scrollbars=yes,resizable=yes,popup=yes"
+      );
+
+      if (!popup) {
+        setIsLoading(false);
+        reject(new Error("Popup blocked. Please allow popups for this site."));
+        return;
+      }
+
+      let resolved = false;
+
+      const cleanup = () => {
+        window.removeEventListener("message", messageListener);
+        clearInterval(checkInterval);
+        setIsLoading(false);
+        try {
+          if (popup && !popup.closed) {
+            popup.close();
+          }
+        } catch (error) {
+          console.error("Error closing popup:", error);
+        }
+      };
+
+      const handleSuccess = (userData: any, tokens?: any) => {
+        if (resolved) return;
+        resolved = true;
+        console.log("🎉 Real Facebook Login Success!");
+        console.log("📋 User Information:", userData);
+        console.log("🔑 Tokens received:", tokens);
+        cleanup();
+        resolve({
+          ...userData,
+          tokens,
+        });
+      };
+
+      const handleError = (error: string) => {
+        if (resolved) return;
+        resolved = true;
+        console.error("❌ Facebook login error:", error);
+        cleanup();
+        reject(new Error(error));
+      };
+
+      // Check popup closed status periodically
+      // Note: We can't access popup.location.href when cross-origin due to COOP policy
+      // So we rely primarily on postMessage from the backend
+      const checkInterval = setInterval(() => {
+        try {
+          // Check if popup is closed (may throw if cross-origin)
+          if (popup.closed) {
+            if (!resolved) {
+              cleanup();
+              reject(new Error("Popup was closed by user"));
+            }
+            return;
+          }
+        } catch (error) {
+          // Cross-origin error when checking popup.closed is expected
+          // We'll rely on postMessage and timeout instead
+          // Don't reject here as the popup might still be processing
+        }
+      }, 500);
+
+      const messageListener = (event: MessageEvent) => {
+        if (
+          event.origin !== `${ENV.API_URL}` &&
+          event.origin !== window.location.origin &&
+          !event.origin.includes(ENV.API_URL || "")
+        ) {
+          return;
+        }
+
+        if (event.data.type === "FACEBOOK_LOGIN_SUCCESS") {
+          const userData = event.data.user || {};
+          const token = event.data.token || event.data.tokens?.access_token;
+          const tokens = token
+            ? {
+                access_token: token,
+                token_type: "Bearer",
+              }
+            : event.data.tokens;
+
+          handleSuccess(userData, tokens);
+        } else if (event.data.type === "FACEBOOK_LOGIN_ERROR") {
+          handleError(event.data.error || "Facebook login failed");
+        } else if (event.data.type === "OAUTH_SUCCESS") {
+          const userData = event.data.user || {};
+          const token = event.data.token || event.data.tokens?.access_token;
+          const tokens = token
+            ? {
+                access_token: token,
+                token_type: "Bearer",
+              }
+            : event.data.tokens;
+          handleSuccess(userData, tokens);
+        } else if (event.data.type === "OAUTH_ERROR") {
+          handleError(event.data.error || "OAuth authentication failed");
+        }
+      };
+
+      window.addEventListener("message", messageListener);
+
+      setTimeout(() => {
+        if (!resolved) {
+          cleanup();
+          reject(new Error("Login timeout"));
+        }
+      }, 300000);
+    });
+  }, []);
+
+  return {
+    loginWithFacebook,
+    isLoading,
+    isSDKLoaded,
+  };
+};

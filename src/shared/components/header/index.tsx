@@ -1,12 +1,29 @@
-import React, { useState } from "react";
-import { FaRegUser } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
 import { IoMdArrowDropdown } from "react-icons/io";
-import { useNavigate } from "react-router";
+import { IoCartOutline } from "react-icons/io5";
+import { useNavigate, useLocation } from "react-router";
 import styled from "styled-components";
 import { DropdownMenuProps, FEATURES, menuItems } from "./data";
+import { useAuth } from "src/shared/hooks/auth/index.ts";
+import { UserMenu } from "src/shared/components/UserMenu";
 
 export function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
+
+  // Debug: Log auth state changes
+  useEffect(() => {
+    console.log("🔍 Header - Auth state changed:", {
+      isAuthenticated,
+      user,
+      userName: user?.fullName || user?.username || "No user",
+      userObject: user,
+    });
+  }, [isAuthenticated, user]);
+
+  // Force re-render debug removed; rely on state updates from store
+
   const [dropdownOpen, setDropdownOpen] = useState<{
     home: boolean;
     listings: boolean;
@@ -18,6 +35,19 @@ export function Header() {
     blogs: false,
     pages: false,
   });
+
+  useEffect(() => {
+    if (isAuthenticated && location.pathname.startsWith("/auth/")) {
+      navigate("/home", { replace: true });
+    }
+  }, [isAuthenticated, location.pathname, navigate]);
+
+  const handleNavigate = (path: string) => {
+    if (isAuthenticated && path.startsWith("/auth/")) {
+      return;
+    }
+    navigate(path);
+  };
 
   const toggleDropdown = (
     name: FEATURES.LISTINGS | FEATURES.BLOGS | FEATURES.PAGES | FEATURES.HOME
@@ -39,10 +69,28 @@ export function Header() {
     });
   };
 
+  const getUserName = () => {
+    console.log("🔍 getUserName called with user:", user);
+    if (!user) {
+      console.log("❌ No user object");
+      return "";
+    }
+    if (user.fullName) {
+      console.log("✅ Using fullName:", user.fullName);
+      return user.fullName;
+    }
+    if (user.username) {
+      console.log("✅ Using username:", user.username);
+      return user.username;
+    }
+    console.log("⚠️ No fullName or username found");
+    return "User";
+  };
+
   return (
-    <div className="w-full px-[5%] py-4 flex items-center justify-between relative z-20 bg-[#050b2b]">
-      <h2 className="font-bold text-white text-2xl">BOXCARS</h2>
-      <div className="inline-flex gap-4 relative">
+    <HeaderContainer>
+      <Logo>BOXCARS</Logo>
+      <NavMenu>
         <DropdownMenu
           label="Home"
           dropdownOpen={dropdownOpen.home}
@@ -58,32 +106,61 @@ export function Header() {
           items={menuItems.listings}
         />
         <DropdownMenu
-          label="Blog"
-          dropdownOpen={dropdownOpen.blogs}
-          toggleDropdown={() => toggleDropdown(FEATURES.BLOGS)}
-          closeDropdowns={closeDropdowns}
-          items={menuItems.blog}
-        />
-        <DropdownMenu
           label="Pages"
           dropdownOpen={dropdownOpen.pages}
           toggleDropdown={() => toggleDropdown(FEATURES.PAGES)}
           closeDropdowns={closeDropdowns}
           items={menuItems.pages}
         />
-        <Func onClick={() => navigate("/about")}>About</Func>
-        <Func onClick={() => navigate("/contact")}>Contact</Func>
-        <Func onClick={() => navigate("/auth/login")}>
-          <FaRegUser size={24} /> Sign in
-        </Func>
-        <ButtonSignIn
-          style={{ width: 120 }}
-          onClick={() => navigate("/auth/login/admin/page_manage")}
+        <NavItem
+          onClick={() => {
+            closeDropdowns();
+            handleNavigate("/about");
+          }}
         >
-          Admin
-        </ButtonSignIn>
-      </div>
-    </div>
+          About
+        </NavItem>
+        <NavItem
+          onClick={() => {
+            closeDropdowns();
+            handleNavigate("/contact");
+          }}
+        >
+          Contact
+        </NavItem>
+
+        {isAuthenticated ? (
+          <>
+            <NavItem>
+              <IoCartOutline size={24} />
+            </NavItem>
+            <UserMenu
+              theme={"dark"}
+              name={getUserName() || "User"}
+              closeAll={() =>
+                setDropdownOpen({
+                  listings: false,
+                  blogs: false,
+                  pages: false,
+                  home: false,
+                })
+              }
+            />
+          </>
+        ) : (
+          <>
+            <NavItem onClick={() => handleNavigate("/auth/login")}>
+              Sign in
+            </NavItem>
+            <ButtonSignIn
+              onClick={() => handleNavigate("/auth/login/admin/page_manage")}
+            >
+              Admin
+            </ButtonSignIn>
+          </>
+        )}
+      </NavMenu>
+    </HeaderContainer>
   );
 }
 
@@ -98,10 +175,13 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
   const data = items.pages;
   const pathFeats = items.path ? items.path : "/error";
   return (
-    <div className="relative  flex items-center justify-center   ">
-      <Func onClick={() => navigate(pathFeats)} onMouseEnter={toggleDropdown}>
+    <DropdownWrapper>
+      <NavItem
+        onClick={() => navigate(pathFeats)}
+        onMouseEnter={toggleDropdown}
+      >
         {label} <IoMdArrowDropdown size={16} />
-      </Func>
+      </NavItem>
       {dropdownOpen && (
         <DropdownContent onMouseLeave={closeDropdowns}>
           {data.map((item) => (
@@ -117,11 +197,72 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
           ))}
         </DropdownContent>
       )}
-    </div>
+    </DropdownWrapper>
   );
 };
 
-const Func = styled.h1`
+const HeaderContainer = styled.div`
+  width: 100%;
+  padding: 1rem 5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 20;
+  background-color: #050b2b;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 2%;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.75rem 1%;
+  }
+`;
+
+const Logo = styled.h2`
+  font-weight: bold;
+  color: #fff;
+  font-size: 1.5rem;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.125rem;
+  }
+`;
+
+const NavMenu = styled.div`
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1rem;
+  position: relative;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+`;
+
+const NavItem = styled.h1`
   font-size: 16px;
   font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
   font-weight: 500;
@@ -132,6 +273,18 @@ const Func = styled.h1`
   position: relative;
   cursor: pointer;
   color: #fff;
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    gap: 2px;
+  }
 `;
 
 const ButtonSignIn = styled.button`
@@ -142,6 +295,24 @@ const ButtonSignIn = styled.button`
   border-width: 1px 2px;
   background-color: #fff;
   cursor: pointer;
+  white-space: nowrap;
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+    padding: 8px 8px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    padding: 6px 6px;
+  }
+`;
+
+const DropdownWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const DropdownContent = styled.div`
@@ -155,6 +326,10 @@ const DropdownContent = styled.div`
   display: flex;
   flex-direction: column;
   min-width: 160px;
+
+  @media (max-width: 480px) {
+    min-width: 140px;
+  }
 `;
 
 const DropdownItem = styled.a`
@@ -162,7 +337,14 @@ const DropdownItem = styled.a`
   text-decoration: none;
   color: #000;
   cursor: pointer;
+  font-size: 14px;
+
   &:hover {
     background-color: #f1f1f1;
+  }
+
+  @media (max-width: 480px) {
+    padding: 10px 12px;
+    font-size: 12px;
   }
 `;

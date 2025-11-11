@@ -11,8 +11,15 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   items,
 }) => {
   const navigate = useNavigate();
+
+  // Null check để tránh lỗi khi items là undefined
+  if (!items || !items.pages) {
+    return null;
+  }
+
   const data = items.pages;
   const pathFeats = items.path ? items.path : "";
+
   return (
     <div className="relative  flex items-center justify-center">
       <Func onClick={() => navigate(pathFeats)} onMouseEnter={toggleDropdown}>

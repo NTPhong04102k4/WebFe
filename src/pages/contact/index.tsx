@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Header } from "src/shared/components/header";
 import MapComponent from "src/shared/components/address";
-import { FooterComponent } from "src/shared/components/footer";
 import { FormContact } from "./FormContact";
 import { AddressContact } from "./AddressContact";
 import { DATA_SOCIAL } from "src/shared/components/footer/data";
@@ -34,7 +32,6 @@ export const ContactUs = React.memo(() => {
   }, []);
   return (
     <div className="flex w-full flex-col  relative bg-[#050b2b]  ">
-      <Header />
       <div className="w-full px-[5%] bg-white rounded-b-[48px] pb-14 h-auto relative flex flex-col">
         <h2 className="text-xl pl-[5%] font-normal font-sans text-black mt-8  ">
           {" "}
@@ -59,8 +56,6 @@ export const ContactUs = React.memo(() => {
         <FormContact data={DATA_SOCIAL} />
         <AddressContact />
       </div>
-
-      <FooterComponent show={true} />
     </div>
   );
 });

@@ -2,7 +2,6 @@ import React, { useState, ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Header } from "src/shared/components/header";
 import { useNavigate } from "react-router";
 
 // Define interfaces for form data
@@ -75,7 +74,6 @@ const Accessory: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 w-full relative">
-      <Header />
       <main
         className={`container mx-auto px-[10%] py-8 relative z-10 transition-all duration-300 ${
           showDialog ? "blur-sm opacity-50" : "opacity-100"

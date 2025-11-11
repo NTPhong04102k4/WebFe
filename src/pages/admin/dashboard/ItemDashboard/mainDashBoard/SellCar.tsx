@@ -97,12 +97,9 @@ export const SellTab: React.FC = () => {
   );
   async function getListings() {
     const response = await apiClient.get("/admin",{
-      params: {
-        page: 1,
-        limit: 10,
-      },
+
     });
-    const data = response.data;
+    const data = await response;
   }
   
   const brands = useMemo(() => {
@@ -119,6 +116,7 @@ export const SellTab: React.FC = () => {
     ).length;
     const pending = LISTINGS.filter(
       (listing) => listing.status === "Pending"
+      
     ).length;
     return { total, active, pending };
   }, []);

@@ -1,48 +1,63 @@
 import React, { useState, useEffect } from "react";
-import { Header } from "src/shared/components/header";
-import { FooterComponent } from "src/shared/components/footer";
-import { useAuth } from "../../contexts/AuthContext";
-import { Theme } from "src/shared/components/footer/data";
+import { useNavigate } from "react-router-dom";
+import { TabNavigation, MessageDisplay } from "../../shared/components/Login";
+import { LoginContent } from "./components/LoginContent";
+import { useAuthQuery } from "src/query/auth/useAuthQuery";
 import {
-  TabNavigation,
-  MessageDisplay,
-  LoginForm,
-  RegisterForm,
-  SocialLoginButtons,
-} from "../../shared/components/Login";
-import { OtpVerificationForm } from "../../shared/components/Login/OtpVerificationForm";
+  LoginFormData,
+  RegisterFormData,
+} from "src/shared/validation/authSchemas";
+import { useAppSelector } from "src/redux/hook";
+import { selectAuth } from "src/redux/Slice/AuthSlice";
+import { useSocialLogin } from "src/shared/hooks/auth/useSocialLogin";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const authState = useAppSelector(selectAuth);
   const [isLogin, setIsLogin] = useState(true);
-  const [isHide, setIsHide] = useState(true);
   const [showOtpVerification, setShowOtpVerification] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isResendingOtp, setIsResendingOtp] = useState(false);
 
-  const {
-    loginWithGoogle,
-    loginWithFacebook,
-    loginWithEmail,
-    registerWithEmail,
-    verifyOtp,
-    resendOtp,
-    isLoading,
-    isAuthenticated,
-  } = useAuth();
+  // Log auth state whenever it changes
   useEffect(() => {
-    if (isAuthenticated) {
-      window.location.href = "/";
-    }
-  }, [isAuthenticated]);
+    console.group("🔐 AUTH STORE STATE");
+    console.log("Auth State:", authState);
+    console.log("Token:", authState.token);
+    console.log("User:", authState.user);
+    console.log("Is Authenticated:", authState.isAuthenticated);
+    console.groupEnd();
+  }, [authState]);
 
-  // Check for OAuth errors
+  const {
+    verifyOtpAsync,
+    resendOtpAsync,
+    loginAsync,
+    registerAsync,
+    isLoginLoading,
+    isRegisterLoading,
+    isVerifyOtpLoading,
+    isResendOtpLoading,
+  } = useAuthQuery();
+
+  // Social login hook
+  const { handleGoogleLogin, handleFacebookLogin } = useSocialLogin({
+    isLogin,
+    onError: setError,
+    onSuccess: setSuccess,
+  });
+
+  // Initialize isLogin based on URL
   useEffect(() => {
+    const path = window.location.pathname;
+    if (path === "/auth/signUp") {
+      setIsLogin(false);
+    } else if (path === "/auth/signin") {
+      setIsLogin(true);
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get("error");
     if (error === "oauth_failed") {
@@ -50,63 +65,91 @@ export default function Login() {
     }
   }, []);
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // Update URL when switching tabs
+  useEffect(() => {
+    const newPath = isLogin ? "/auth/signin" : "/auth/signUp";
+    if (window.location.pathname !== newPath) {
+      window.history.pushState({}, "", newPath);
+    }
+  }, [isLogin]);
+
+  // Clear error when switching tabs
+  useEffect(() => {
     setError("");
     setSuccess("");
-  };
+  }, [isLogin]);
 
-  const handleLogin = async () => {
-    if (!formData.email || !formData.password) {
-      setError("Vui lòng nhập đầy đủ thông tin");
-      return;
-    }
+  const handleLogin = async (data: LoginFormData) => {
+    setError("");
     try {
-      var res = await loginWithEmail(formData.email, formData.password);
-      console.log(res);
-      // chuyer màn o]tong quan
+      const res = await loginAsync({
+        usernameOrPhoneOrEmail: data.email,
+        password: data.password,
+      });
+      console.log(res.data.message);
       setSuccess("Đăng nhập thành công!");
+      setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 1000);
     } catch (error: any) {
-      setError(error.message || "Đăng nhập thất bại");
+      setError(
+        error?.response?.data?.message || error?.message || "Đăng nhập thất bại"
+      );
     }
   };
 
-  const handleRegister = async () => {
-    if (!formData.name || !formData.email || !formData.password) {
-      setError("Vui lòng nhập đầy đủ thông tin");
-      return;
-    }
-    console.log("🔄 handleRegister called from login page!");
-    console.log("🔄 formData:", formData);
+  const handleRegister = async (data: RegisterFormData) => {
+    setError("");
+    setEmail(data.email);
     try {
-      await registerWithEmail(formData.name, formData.email, formData.password);
+      await registerAsync({
+        username: data.name,
+        email: data.email,
+        password: data.password,
+      });
       setSuccess("Mã OTP đã được gửi đến email của bạn!");
       setShowOtpVerification(true);
     } catch (error: any) {
-      setError(error.message || "Đăng ký thất bại");
+      setError(
+        error?.response?.data?.message || error?.message || "Đăng ký thất bại"
+      );
     }
   };
 
   const handleVerifyOtp = async (otpCode: string) => {
+    setError("");
     try {
-      await verifyOtp(formData.email, otpCode);
+      await verifyOtpAsync({
+        email: email,
+        otpCode: otpCode,
+      });
       setSuccess("Đăng ký thành công! Chào mừng bạn đến với SoldCars!");
-      // Redirect to home page after successful registration
       setTimeout(() => {
-        window.location.href = "/";
+        navigate("/", { replace: true });
       }, 2000);
     } catch (error: any) {
-      setError(error.message || "Xác thực OTP thất bại");
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Xác thực OTP thất bại"
+      );
     }
   };
 
   const handleResendOtp = async () => {
     setIsResendingOtp(true);
+    setError("");
     try {
-      await resendOtp(formData.email);
+      await resendOtpAsync({
+        email: email,
+      });
       setSuccess("Mã OTP mới đã được gửi đến email của bạn!");
     } catch (error: any) {
-      setError(error.message || "Không thể gửi lại mã OTP");
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Không thể gửi lại mã OTP"
+      );
     } finally {
       setIsResendingOtp(false);
     }
@@ -118,116 +161,54 @@ export default function Login() {
     setSuccess("");
   };
 
-  const handleGoogleLogin = async () => {
-    console.log("🎯 handleGoogleLogin called from login page!");
-    setError("");
-    try {
-      console.log("🔄 Calling loginWithGoogle from page...");
-      await loginWithGoogle();
-      console.log("✅ loginWithGoogle completed, setting success message");
-      const message = isLogin
-        ? "Đăng nhập Google thành công!"
-        : "Đăng ký Google thành công!";
-      setSuccess(message);
-    } catch (error) {
-      console.error("❌ Error in handleGoogleLogin:", error);
-      const errorMessage = isLogin
-        ? "Đăng nhập Google thất bại. Vui lòng thử lại."
-        : "Đăng ký Google thất bại. Vui lòng thử lại.";
-      setError(errorMessage);
-    }
-  };
-
-  const handleFacebookLogin = async () => {
-    console.log("🎯 handleFacebookLogin called from login page!");
-    setError("");
-    try {
-      console.log("🔄 Calling loginWithFacebook from page...");
-      await loginWithFacebook();
-      console.log("✅ loginWithFacebook completed, setting success message");
-      const message = isLogin
-        ? "Đăng nhập Facebook thành công!"
-        : "Đăng ký Facebook thành công!";
-      setSuccess(message);
-    } catch (error) {
-      console.error("❌ Error in handleFacebookLogin:", error);
-      const errorMessage = isLogin
-        ? "Đăng nhập Facebook thất bại. Vui lòng thử lại."
-        : "Đăng ký Facebook thất bại. Vui lòng thử lại.";
-      setError(errorMessage);
-    }
+  const handleToggleTab = () => {
+    setIsLogin((prev) => !prev);
   };
 
   return (
-    <div className="flex flex-1 w-[90%] self-center flex-col bg-[#050b2b]">
-      <Header />
+    <div className="flex flex-1 w-[100%] self-center flex-col bg-[#050b2b]">
       <div className="rounded-3xl flex flex-col flex-1 w-full bg-white pb-20">
-        <div className="flex self-center w-[30%] 2xl:w-1/4 flex-col">
-          <TabNavigation
-            isLogin={isLogin}
-            onToggle={() => setIsLogin((prev) => !prev)}
-          />
+        <div className="flex self-center w-[30%] 2xl:w-1/4 flex-col pt-9">
+          <TabNavigation isLogin={isLogin} onToggle={handleToggleTab} />
 
           <MessageDisplay error={error} success={success} />
-
-          {showOtpVerification ? (
-            <OtpVerificationForm
-              email={formData.email}
+          <div className="">
+            <LoginContent
+              isLogin={isLogin}
+              showOtpVerification={showOtpVerification}
+              email={email}
+              error={error}
+              success={success}
+              isResendingOtp={isResendingOtp}
+              isLoginLoading={isLoginLoading}
+              isRegisterLoading={isRegisterLoading}
+              isVerifyOtpLoading={isVerifyOtpLoading}
+              isResendOtpLoading={isResendOtpLoading}
+              onLogin={handleLogin}
+              onRegister={handleRegister}
               onVerifyOtp={handleVerifyOtp}
               onResendOtp={handleResendOtp}
-              onBack={handleBackToRegister}
-              isLoading={isLoading}
-              isResending={isResendingOtp}
-              error={error}
+              onBackToRegister={handleBackToRegister}
+              onGoogleLogin={handleGoogleLogin}
+              onFacebookLogin={handleFacebookLogin}
+              onGoogleError={() =>
+                setError(
+                  isLogin
+                    ? "Đăng nhập Google thất bại. Vui lòng thử lại."
+                    : "Đăng ký Google thất bại. Vui lòng thử lại."
+                )
+              }
+              onFacebookError={() =>
+                setError(
+                  isLogin
+                    ? "Đăng nhập Facebook thất bại. Vui lòng thử lại."
+                    : "Đăng ký Facebook thất bại. Vui lòng thử lại."
+                )
+              }
             />
-          ) : isLogin ? (
-            <>
-              <LoginForm
-                formData={formData}
-                onInputChange={handleInputChange}
-                onLogin={handleLogin}
-                isLoading={isLoading}
-                isHide={isHide}
-                onToggleHide={() => setIsHide((prev) => !prev)}
-              />
-              <SocialLoginButtons
-                onGoogleSuccess={handleGoogleLogin}
-                onGoogleError={() =>
-                  setError("Đăng nhập Google thất bại. Vui lòng thử lại.")
-                }
-                onFacebookSuccess={handleFacebookLogin}
-                onFacebookError={() =>
-                  setError("Đăng nhập Facebook thất bại. Vui lòng thử lại.")
-                }
-                isLogin={true}
-              />
-            </>
-          ) : (
-            <>
-              <RegisterForm
-                formData={formData}
-                onInputChange={handleInputChange}
-                onRegister={handleRegister}
-                isLoading={isLoading}
-                isHide={isHide}
-                onToggleHide={() => setIsHide((prev) => !prev)}
-              />
-              <SocialLoginButtons
-                onGoogleSuccess={handleGoogleLogin}
-                onGoogleError={() =>
-                  setError("Đăng ký Google thất bại. Vui lòng thử lại.")
-                }
-                onFacebookSuccess={handleFacebookLogin}
-                onFacebookError={() =>
-                  setError("Đăng ký Facebook thất bại. Vui lòng thử lại.")
-                }
-                isLogin={false}
-              />
-            </>
-          )}
+          </div>
         </div>
       </div>
-      <FooterComponent theme={Theme.DARK} />
     </div>
   );
 }

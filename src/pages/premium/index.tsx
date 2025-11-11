@@ -1,15 +1,12 @@
 import React, { useState } from "react";
 import { IoMdCheckmark } from "react-icons/io";
 import { DATA_PREMIUM } from "./data";
-import { Header } from "src/shared/components/header";
-import { FooterComponent } from "src/shared/components/footer";
 
 const MembershipPlans: React.FC = () => {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   return (
     <div className="min-h-screen bg-[#050b2b] w-full">
-      <Header />
       <div className="w-full bg-white rounded-b-[65px] pt-12 pb-4">
         <h1 className="text-3xl md:text-4xl font-bold text-center mb-12">
           Membership Plans
@@ -133,7 +130,6 @@ const MembershipPlans: React.FC = () => {
           </div>
         </div>
       </div>
-      <FooterComponent show={true} />
     </div>
   );
 };

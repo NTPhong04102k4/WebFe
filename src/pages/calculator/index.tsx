@@ -1,12 +1,9 @@
 import React from "react";
-import { FooterComponent } from "src/shared/components/footer";
-import { Header } from "src/shared/components/header";
 import { GoArrowUpRight } from "react-icons/go";
 
 const CalculatorFeatures = React.memo(() => {
   return (
     <div className="w-full flex flex-col bg-[#050b2b]">
-      <Header />
       <div className="w-full bg-white  rounded-[35px]  flex items-center justify-center py-12">
         <div className="w-[85%] border border-gray-400 rounded-xl  justify-between flex flex-row  ">
           <div className="w-[65%] gap-2 flex  flex-col px-[2.5%] py-4 space-y-4 pl-8 mb-3">
@@ -87,7 +84,6 @@ const CalculatorFeatures = React.memo(() => {
           </div>
         </div>
       </div>
-      <FooterComponent show={true} />
     </div>
   );
 });
