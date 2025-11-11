@@ -6,11 +6,11 @@ import { DATA_FOOTER, DATA_SOCIAL, Theme } from "./data";
 export const Footer = ({ theme }: { theme?: number }) => {
   const colorText = theme === Theme.LIGHT ? "text-black" : "text-white";
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col w-full max-w-full overflow-x-hidden box-border">
       <div
         className={`${
           theme === Theme.LIGHT ? "bg-[#fff] " : "bg-[#050b2b] "
-        } flex flex-col sm:flex-row sm:flex-wrap lg:inline-flex w-full px-4 sm:px-6 md:px-[5%] justify-between pt-6 sm:pt-[3%] pb-6 sm:pb-[5%] gap-6 sm:gap-4 lg:gap-0`}
+        } flex flex-col sm:flex-row sm:flex-wrap lg:inline-flex w-full max-w-full px-4 sm:px-6 md:px-[5%] justify-between pt-6 sm:pt-[3%] pb-6 sm:pb-[5%] gap-6 sm:gap-4 lg:gap-0 box-border overflow-x-hidden`}
       >
         {DATA_FOOTER.map((item) => {
           return (
@@ -83,7 +83,7 @@ export const Footer = ({ theme }: { theme?: number }) => {
         </div>
       </div>
       <hr className="text-gray-500" />
-      <div className="flex flex-col sm:flex-row sm:justify-between px-4 sm:px-6 md:px-[5%] py-4 gap-3 sm:gap-0">
+      <div className="flex flex-col sm:flex-row sm:justify-between px-4 sm:px-6 md:px-[5%] py-4 gap-3 sm:gap-0 w-full max-w-full box-border overflow-x-hidden">
         <h2
           className={`${colorText} text-xs sm:text-sm md:text-base font-sans text-center sm:text-left`}
         >
@@ -122,9 +122,13 @@ export const FooterComponent = ({
 }) => {
   const colorText = theme === Theme.LIGHT ? "text-black" : "text-white";
   return (
-    <div className="flex flex-col w-full">
+    <div
+      className={`flex flex-col w-full max-w-full overflow-x-hidden box-border ${
+        theme === Theme.LIGHT ? "bg-[#fff]" : "bg-[#050b2b]"
+      }`}
+    >
       {show && (
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between px-4 sm:px-6 md:px-[5%] lg:px-[10%] w-full py-4 md:py-6 gap-4 md:gap-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between px-4 sm:px-6 md:px-[5%] lg:px-[10%] w-full max-w-full py-4 md:py-6 gap-4 md:gap-0 box-border overflow-x-hidden">
           <div className="flex-col flex justify-center">
             <h2
               className={`${colorText} text-base md:text-lg font-sans font-medium `}
@@ -165,7 +169,7 @@ export const FooterComponent = ({
       <div
         className={`${
           theme === Theme.LIGHT ? "bg-[#fff] " : "bg-[#050b2b] "
-        } flex flex-col sm:flex-row sm:flex-wrap lg:inline-flex w-full px-4 sm:px-6 md:px-[5%] lg:px-[10%] justify-between pt-6 sm:pt-[3%] pb-6 sm:pb-[5%] gap-6 sm:gap-4 lg:gap-0`}
+        } flex flex-col sm:flex-row sm:flex-wrap lg:inline-flex w-full max-w-full px-4 sm:px-6 md:px-[5%] lg:px-[10%] justify-between pt-6 sm:pt-[3%] pb-6 sm:pb-[5%] gap-6 sm:gap-4 lg:gap-0 box-border overflow-x-hidden`}
       >
         {DATA_FOOTER.map((item) => {
           return (
@@ -226,7 +230,7 @@ export const FooterComponent = ({
         </div>
       </div>
       <hr className="text-gray-500" />
-      <div className="flex flex-col sm:flex-row sm:justify-between px-4 sm:px-6 md:px-[5%] lg:px-[10%] py-4 gap-3 sm:gap-0">
+      <div className="flex flex-col sm:flex-row sm:justify-between px-4 sm:px-6 md:px-[5%] lg:px-[10%] py-4 gap-3 sm:gap-0 w-full max-w-full box-border overflow-x-hidden">
         <h2
           className={`${colorText} text-xs sm:text-sm md:text-base font-sans text-center sm:text-left`}
         >

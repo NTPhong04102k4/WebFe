@@ -40,9 +40,6 @@ apiClient.interceptors.response.use(
         (status === 400 &&
           error.response.data?.message?.toLowerCase().includes("token"))
       ) {
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("auth_user");
-
         // Chỉ redirect nếu không phải đang ở trang login
         if (
           window.location.pathname !== "/auth/login" &&

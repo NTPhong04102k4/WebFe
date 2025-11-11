@@ -1,7 +1,5 @@
 import React, { useCallback, useState } from "react";
 import { GoArrowUpRight } from "react-icons/go";
-import { FooterComponent } from "src/shared/components/footer";
-import { Header } from "src/shared/components/header";
 import { Pagination } from "./Paingation";
 import { TbManualGearbox } from "react-icons/tb";
 import { LiaGasPumpSolid } from "react-icons/lia";
@@ -79,7 +77,6 @@ const ListingBody = () => {
   };
   return (
     <div className="w-full min-h-screen flex flex-col  bg-[#050b2b]">
-      <Header />
       <div className="flex flex-col w-full bg-white px-[5%] pb-12 ">
         <nav className="text-blue-500 font-sans mt-12">
           Home / <span>Listings/Body/{dataBody[0].body}</span>
@@ -176,7 +173,6 @@ const ListingBody = () => {
           onPageChange={changePage}
         />
       </div>
-      <FooterComponent show={true} />
     </div>
   );
 };

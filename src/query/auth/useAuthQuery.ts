@@ -1,31 +1,37 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAppDispatch } from "src/redux/hook";
-import { clearCredentials, setCredentials } from "src/redux/Slice/AuthSlice";
+import { useAppDispatch, useAppSelector } from "src/redux/hook";
+import {
+  clearCredentials,
+  selectAuth,
+  setCredentials,
+} from "src/redux/Slice/AuthSlice";
 import { authAPI } from "src/services/api/functions/auth/authFn";
-import { RegisterVerifyResponse } from "src/shared/types/Reponse/auth/user/input";
+import { getTokenClaims } from "src/services/decode";
+import { RegisterVerifyResponse } from "src/shared/types/Reponse/auth/user";
 
 export const useAuthQuery = () => {
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
-
+  const authState = useAppSelector(selectAuth);
+  const userName = getTokenClaims(authState.token)?.sub;
   const loginMutation = useMutation({
     mutationFn: authAPI.login,
     onSuccess: async (response) => {
-      const token = response.data.token;
-
       dispatch(
         setCredentials({
-          token: token,
+          token: response.data.token ?? null,
           user: null,
+          isAuthenticated: response.data.token ? true : false,
         })
       );
       try {
-        const profileResponse = await authAPI.getProfile();
+        const profileResponse = await authAPI.getProfile(userName!);
         if (profileResponse?.data) {
           dispatch(
             setCredentials({
-              token: token,
+              token: response.data.token ?? null,
               user: profileResponse.data,
+              isAuthenticated: response.data.token ? true : false,
             })
           );
           queryClient.setQueryData(["profile"], profileResponse);
@@ -46,9 +52,10 @@ export const useAuthQuery = () => {
     onSuccess: (response) => {
       dispatch(
         setCredentials({
-          token: response.data.data.token,
+          token: response.data.data.token ?? null,
           user: response.data.data
             .user as RegisterVerifyResponse["data"]["user"],
+          isAuthenticated: response.data.data.token ? true : false,
         })
       );
       queryClient.invalidateQueries({ queryKey: ["profile"] });
@@ -70,8 +77,8 @@ export const useAuthQuery = () => {
 
   const profileQuery = useQuery({
     queryKey: ["profile"],
-    queryFn: () => authAPI.getProfile(),
-    enabled: !!localStorage.getItem("auth_token"),
+    queryFn: () => authAPI.getProfile(authState.user?.userUUID ?? ""),
+    enabled: authState.isAuthenticated,
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error: any) => {
       if (error?.response?.status === 400 || error?.response?.status === 401) {

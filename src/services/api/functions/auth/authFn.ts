@@ -11,7 +11,7 @@ import {
   RegisterVerifyResponse,
   ResendOtpResponse,
   UserResponse,
-} from "src/shared/types/Reponse/auth/user/input";
+} from "src/shared/types/Reponse/auth/user";
 import { AdminLoginRequest } from "src/shared/types/Request/auth/admin";
 import { AdminLoginResponse } from "src/shared/types/Reponse/auth/admin";
 
@@ -26,7 +26,8 @@ export const authAPI = {
     apiClient.post<RegisterVerifyResponse>("/auth/verify-otp", data),
   resendOtp: (data: ResendOtpRequest) =>
     apiClient.post<ResendOtpResponse>("/auth/resend-otp", data),
-  getProfile: () => apiClient.get<UserResponse>("/user/detail"),
+  getProfile: (data: string) =>
+    apiClient.get<UserResponse>("/user/detail", { params: data }),
   // admin authentication
   adminLogin: (data: AdminLoginRequest) =>
     apiClient.post<AdminLoginResponse>("/auth/admin/login", data),

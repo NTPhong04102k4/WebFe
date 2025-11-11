@@ -1,8 +1,5 @@
 import React, { useCallback, useState, useMemo } from "react";
 import styled from "styled-components";
-import { Header } from "src/shared/components/header";
-import { Footer } from "src/shared/components/footer";
-import { Theme } from "src/shared/components/footer/data";
 // Import data from a separate file
 import { DATA_BLOG } from "../home/item/data";
 import { ServicesSection } from "./item/ServiceProps";
@@ -44,7 +41,6 @@ const Services: React.FC = React.memo(() => {
 
   return (
     <Container>
-      <Header />
       <ContentWrapper>
         <BreadcrumbWrapper>
           <Breadcrumb>
@@ -62,8 +58,6 @@ const Services: React.FC = React.memo(() => {
         />
         <ScheduleServices />
       </ContentWrapper>
-
-      <Footer theme={Theme.DARK} />
     </Container>
   );
 });

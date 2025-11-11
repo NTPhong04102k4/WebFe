@@ -1,5 +1,9 @@
-import React, { useState } from "react";
-import { facebookAuthRealService } from "src/shared/hooks/auth/facebookAuthReal";
+import React from "react";
+import { setCredentials } from "src/redux/Slice/AuthSlice";
+import { useAppDispatch } from "src/redux/hook";
+import { useFacebookAuth } from "src/shared/hooks/auth/useFacebookAuth";
+import { useSocialAuthMapper } from "src/shared/hooks/auth/useSocialAuthMapper";
+import { UserResponse } from "src/shared/types/Reponse/auth/user";
 
 interface FacebookLoginButtonProps {
   onSuccess?: () => void;
@@ -14,40 +18,54 @@ export const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
   className = "",
   children,
 }) => {
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const dispatch = useAppDispatch();
+  const { loginWithFacebook, isLoading: isLoggingIn } = useFacebookAuth();
+  const { mapFacebookUser } = useSocialAuthMapper();
 
   const handleFacebookLogin = async () => {
     console.log("🖱️ Facebook button clicked!");
     try {
-      setIsLoggingIn(true);
       console.log("🔄 Calling loginWithFacebook...");
 
       // Lấy thông tin user từ Facebook OAuth
-      const facebookUser = await facebookAuthRealService.loginWithFacebook();
-      console.log("✅ Facebook user received:", facebookUser);
+      const response = await loginWithFacebook();
+      console.log("✅ Facebook user received:", response);
 
-      // TODO: Gọi API backend để xử lý Facebook login và nhận token
-      // Ví dụ: const response = await authAPI.facebookLogin({
-      //   id: facebookUser.id,
-      //   email: facebookUser.email,
-      //   name: facebookUser.name,
-      //   accessToken: facebookUser.tokens?.access_token
-      // });
-      //
-      // Sau đó set credentials:
-      // dispatch(setCredentials({
-      //   token: response.data.token,
-      //   user: response.data.user
-      // }));
+      const token = response.tokens?.access_token || "";
+      if (!token) {
+        throw new Error("Không nhận được token từ Facebook");
+      }
 
-      // Tạm thời: chỉ log và gọi onSuccess
+      // Check if user data is already in UserResponse format (from backend)
+      const isBackendUserData =
+        (response as any).userID !== undefined ||
+        (response as any).userUUID !== undefined;
+
+      let userData: any;
+      if (isBackendUserData) {
+        // Use backend user data directly (already in correct format)
+        userData = response as unknown as UserResponse;
+        console.log("Using backend user data directly");
+      } else {
+        // Map social auth response to UserResponse format
+        userData = mapFacebookUser(response);
+        console.log("Mapped social auth response");
+      }
+
+      dispatch(
+        setCredentials({
+          token: token,
+          user: userData,
+          isAuthenticated: true,
+        })
+      );
+
       console.log("✅ loginWithFacebook completed, calling onSuccess");
       onSuccess?.();
     } catch (error) {
       console.error("❌ Facebook login error:", error);
       onError?.(error as Error);
     } finally {
-      setIsLoggingIn(false);
       console.log("🏁 Facebook login handler finished");
     }
   };

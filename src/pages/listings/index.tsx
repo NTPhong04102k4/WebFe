@@ -1,6 +1,4 @@
 import React, { useCallback, useState } from "react";
-import { Header } from "src/shared/components/header";
-import { FooterComponent } from "src/shared/components/footer";
 import { SiSpeedtest } from "react-icons/si";
 import { LiaGasPumpSolid } from "react-icons/lia";
 import { TbManualGearbox } from "react-icons/tb";
@@ -80,7 +78,6 @@ const Listings = () => {
   };
   return (
     <div className="w-full min-h-screen flex flex-col bg-[#050b2b]">
-      <Header />
       <div className="rounded-b-[45px] flex flex-col w-full px-[5%] bg-white">
         <main className="bg-white rounded-b-lg py-8">
           <nav className="text-blue-500 font-sans">
@@ -183,7 +180,6 @@ const Listings = () => {
           </div>
         </main>
       </div>
-      <FooterComponent show={true} />
     </div>
   );
 };

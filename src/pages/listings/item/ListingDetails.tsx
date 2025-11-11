@@ -8,8 +8,6 @@ import { SiSpeedtest } from "react-icons/si";
 import { SlLocationPin } from "react-icons/sl";
 import { TbManualGearbox } from "react-icons/tb";
 import { useLocation } from "react-router";
-import { FooterComponent } from "src/shared/components/footer";
-import { Header } from "src/shared/components/header";
 import { CarDetail } from "src/pages/home/item/typeData";
 
 const DetailsCar = () => {
@@ -17,7 +15,6 @@ const DetailsCar = () => {
   const propsData = location.state?.subItem as CarDetail;
   return (
     <div className="w-full flex flex-col bg-[#050b2b] ">
-      <Header />
       <div className="bg-white rounded-b-[45px] py-6 w-full px-[10%] ">
         <nav className="inline-flex items-center text-blue-500 ">
           Listings/<span>Details/{propsData?.name}</span>
@@ -126,7 +123,6 @@ const DetailsCar = () => {
           </div>
         </div>
       </div>
-      <FooterComponent show={true} />
     </div>
   );
 };

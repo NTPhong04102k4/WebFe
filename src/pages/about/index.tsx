@@ -15,8 +15,6 @@ import { QuestionFrequently } from "./item/QuestionFrequently";
 import { ContentReview } from "./item/ContentReview";
 import { ImageIntroduce } from "./item/ImageIntroduce";
 import { ReviewAboutUs } from "./item/ReviewAboutUs";
-import { Header } from "src/shared/components/header";
-import { FooterComponent } from "src/shared/components/footer";
 export const About = React.memo(() => {
   const [resultReviewCustomer, setResultReviewCustomer] = useState({
     totalStars: 0,
@@ -70,7 +68,6 @@ export const About = React.memo(() => {
   }, [resultReviewCustomer]);
   return (
     <Container className="bg-[#050b2b]">
-      <Header />
       <div className="rounded-b-[45px] flex flex-col relative bg-white pb-[45px] px-[5%]">
         <h2 className="text-xl pl-[5%] font-normal font-sans text-black mt-8  ">
           {" "}
@@ -151,7 +148,6 @@ export const About = React.memo(() => {
 
         <QuestionFrequently />
       </div>
-      <FooterComponent show={true} />
     </Container>
   );
 });

@@ -19,9 +19,7 @@ import {
 } from "./item/ItemSugest";
 import { CustomerComment, DATA_REVIEWS } from "./item/CustomerComment";
 import LatestBlogList from "./item/LatestBlog";
-import { Footer } from "src/shared/components/footer";
 import { HeaderHome } from "./item/Header";
-import { Theme } from "src/shared/components/footer/data";
 import { DATA_CAR } from "../listings/item/data";
 const Home = React.memo(() => {
   return (
@@ -46,7 +44,6 @@ const Home = React.memo(() => {
         detail={true}
       />
       <Question />
-      <Footer theme={Theme.LIGHT} />
     </Container>
   );
 });

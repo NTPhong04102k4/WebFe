@@ -11,6 +11,16 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
+
+  // Debug: Log auth state changes
+  useEffect(() => {
+    console.log("🔍 Header - Auth state changed:", {
+      isAuthenticated,
+      user,
+      userName: user?.fullName || user?.username || "No user",
+    });
+  }, [isAuthenticated, user]);
+
   const [dropdownOpen, setDropdownOpen] = useState<{
     home: boolean;
     listings: boolean;
@@ -23,7 +33,6 @@ export function Header() {
     pages: false,
   });
 
-  // Chặn truy cập vào /auth/* khi đã đăng nhập
   useEffect(() => {
     if (isAuthenticated && location.pathname.startsWith("/auth/")) {
       navigate("/home", { replace: true });
@@ -31,7 +40,6 @@ export function Header() {
   }, [isAuthenticated, location.pathname, navigate]);
 
   const handleNavigate = (path: string) => {
-    // Chặn navigation đến /auth/* nếu đã đăng nhập
     if (isAuthenticated && path.startsWith("/auth/")) {
       return;
     }
@@ -98,7 +106,7 @@ export function Header() {
             <NavItem>
               <IoCartOutline size={24} />
             </NavItem>
-            <NavItem>Tên: {getUserName()}</NavItem>
+            <NavItem>Tên: {getUserName() || "Loading..."}</NavItem>
           </>
         ) : (
           <>
@@ -163,6 +171,8 @@ const HeaderContainer = styled.div`
   position: relative;
   z-index: 20;
   background-color: #050b2b;
+  flex-shrink: 0;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -179,6 +189,9 @@ const Logo = styled.h2`
   font-weight: bold;
   color: #fff;
   font-size: 1.5rem;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
 
   @media (max-width: 768px) {
     font-size: 1.25rem;
@@ -190,10 +203,13 @@ const Logo = styled.h2`
 `;
 
 const NavMenu = styled.div`
-  display: inline-flex;
+  display: flex;
+  flex-wrap: nowrap;
   gap: 1rem;
   position: relative;
   align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
 
   @media (max-width: 768px) {
     flex-wrap: wrap;
@@ -219,6 +235,8 @@ const NavItem = styled.h1`
   cursor: pointer;
   color: #fff;
   white-space: nowrap;
+  margin: 0;
+  padding: 0;
 
   @media (max-width: 768px) {
     font-size: 14px;

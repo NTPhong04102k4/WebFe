@@ -1,65 +1,13 @@
-// Real Facebook Authentication using Facebook SDK
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ENV } from "src/config/environment";
+import { FacebookUserResponse } from "src/shared/types/Reponse/auth/user";
 
-export interface FacebookUser {
-  id: string;
-  name: string;
-  email: string;
-  picture: string;
-  birthday?: string;
-  gender?: string;
-  location?: {
-    name: string;
-  };
-  hometown?: {
-    name: string;
-  };
-  tokens?: {
-    access_token: string;
-    refresh_token?: string;
-    expires_in: number;
-    token_type: string;
-  };
-}
+export const useFacebookAuth = () => {
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const isSDKInitialized = useRef(false);
 
-class FacebookAuthRealService {
-  private static instance: FacebookAuthRealService;
-  private isSDKLoaded = false;
-
-  private constructor() {
-    this.initializeFacebookSDK();
-  }
-
-  public static getInstance(): FacebookAuthRealService {
-    if (!FacebookAuthRealService.instance) {
-      FacebookAuthRealService.instance = new FacebookAuthRealService();
-    }
-    return FacebookAuthRealService.instance;
-  }
-
-  private initializeFacebookSDK(): void {
-    if (this.isSDKLoaded) return;
-
-    const script = document.createElement("script");
-    script.src = "https://connect.facebook.net/en_US/sdk.js";
-    script.async = true;
-    script.defer = true;
-    script.crossOrigin = "anonymous";
-
-    script.onload = () => {
-      console.log("✅ Facebook SDK loaded successfully");
-      this.isSDKLoaded = true;
-      this.initFacebookSDK();
-    };
-
-    script.onerror = () => {
-      console.error("❌ Failed to load Facebook SDK");
-    };
-
-    document.head.appendChild(script);
-  }
-
-  private initFacebookSDK(): void {
+  const initFacebookSDK = useCallback(() => {
     if (typeof window !== "undefined" && (window as any).FB) {
       const FB = (window as any).FB;
 
@@ -72,10 +20,40 @@ class FacebookAuthRealService {
 
       console.log("✅ Facebook SDK initialized");
     }
-  }
+  }, []);
 
-  public async loginWithFacebook(): Promise<FacebookUser> {
+  // Initialize Facebook SDK
+  useEffect(() => {
+    if (isSDKInitialized.current || isSDKLoaded) return;
+
+    const script = document.createElement("script");
+    script.src = "https://connect.facebook.net/en_US/sdk.js";
+    script.async = true;
+    script.defer = true;
+    script.crossOrigin = "anonymous";
+
+    script.onload = () => {
+      console.log("✅ Facebook SDK loaded successfully");
+      setIsSDKLoaded(true);
+      initFacebookSDK();
+    };
+
+    script.onerror = () => {
+      console.error("❌ Failed to load Facebook SDK");
+    };
+
+    document.head.appendChild(script);
+    isSDKInitialized.current = true;
+
+    return () => {
+      // Cleanup if needed
+    };
+  }, [isSDKLoaded, initFacebookSDK]);
+
+  const loginWithFacebook = useCallback((): Promise<FacebookUserResponse> => {
     return new Promise((resolve, reject) => {
+      setIsLoading(true);
+
       const popup = window.open(
         `https://www.facebook.com/v18.0/dialog/oauth?` +
           `client_id=${process.env.REACT_APP_FACEBOOK_APP_ID}&` +
@@ -90,6 +68,7 @@ class FacebookAuthRealService {
       );
 
       if (!popup) {
+        setIsLoading(false);
         reject(new Error("Popup blocked. Please allow popups for this site."));
         return;
       }
@@ -99,6 +78,7 @@ class FacebookAuthRealService {
       const cleanup = () => {
         window.removeEventListener("message", messageListener);
         clearInterval(checkInterval);
+        setIsLoading(false);
         try {
           if (popup && !popup.closed) {
             popup.close();
@@ -129,8 +109,12 @@ class FacebookAuthRealService {
         reject(new Error(error));
       };
 
+      // Check popup closed status periodically
+      // Note: We can't access popup.location.href when cross-origin due to COOP policy
+      // So we rely primarily on postMessage from the backend
       const checkInterval = setInterval(() => {
         try {
+          // Check if popup is closed (may throw if cross-origin)
           if (popup.closed) {
             if (!resolved) {
               cleanup();
@@ -138,44 +122,11 @@ class FacebookAuthRealService {
             }
             return;
           }
-
-          const popupUrl = popup.location.href;
-
-          if (popupUrl.includes("/auth/callback/facebook")) {
-            const urlParams = new URLSearchParams(popup.location.search);
-            const hashParams = new URLSearchParams(
-              popup.location.hash.substring(1)
-            );
-
-            const error = urlParams.get("error") || hashParams.get("error");
-            if (error) {
-              const errorDescription =
-                urlParams.get("error_description") ||
-                hashParams.get("error_description");
-              handleError(errorDescription || error || "Authentication failed");
-              return;
-            }
-
-            const code = urlParams.get("code");
-            const accessToken = hashParams.get("access_token");
-
-            if (code || accessToken) {
-              // Backend should handle this, but we'll wait for postMessage
-              // If no message comes, we'll try to extract from URL
-              setTimeout(() => {
-                if (!resolved) {
-                  // Fallback: assume success if we have code/token
-                  handleSuccess({
-                    id: "",
-                    name: "",
-                    email: "",
-                    picture: "",
-                  });
-                }
-              }, 1000);
-            }
-          }
-        } catch (error) {}
+        } catch (error) {
+          // Cross-origin error when checking popup.closed is expected
+          // We'll rely on postMessage and timeout instead
+          // Don't reject here as the popup might still be processing
+        }
       }, 500);
 
       const messageListener = (event: MessageEvent) => {
@@ -224,7 +175,11 @@ class FacebookAuthRealService {
         }
       }, 300000);
     });
-  }
-}
+  }, []);
 
-export const facebookAuthRealService = FacebookAuthRealService.getInstance();
+  return {
+    loginWithFacebook,
+    isLoading,
+    isSDKLoaded,
+  };
+};

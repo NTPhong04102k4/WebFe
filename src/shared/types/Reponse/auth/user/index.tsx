@@ -57,3 +57,44 @@ export interface ResendOtpResponse {
   message: string;
   data: null;
 }
+
+export interface GoogleUserResponse {
+  FirstName: string;
+  Address: string;
+  Image: string;
+  Username: string;
+  Email: string;
+  IdentityNumber: string;
+  Phone: string;
+  DateOfBirth: Date | null;
+  Gender: string;
+  LastName: string;
+  FullName: string;
+  UserCode: string;
+  UserID: string;
+  UserUUID: string;
+  tokens: {
+    access_token: string;
+    token_type: string;
+  };
+}
+export interface FacebookUserResponse {
+  FirstName: string;
+  Address: string;
+  Image: string;
+  Username: string;
+  Email: string;
+  IdentityNumber: string;
+  Phone: string;
+  DateOfBirth: Date | null;
+  Gender: string;
+  LastName: string;
+  FullName: string;
+  UserCode: string;
+  UserID: string;
+  UserUUID: string;
+  tokens: {
+    access_token: string;
+    token_type: string;
+  };
+}
