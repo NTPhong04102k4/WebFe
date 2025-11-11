@@ -7,6 +7,9 @@ import {
 } from "src/shared/types/Request/accessories/accessory";
 import { brandRouteFn } from "src/services/api/functions/accessories/brand/Route.Fn";
 import { BrandAccessoryResponse } from "src/shared/types/Reponse/accessories/brand";
+import { AccessoryDetailResponse } from "src/shared/types/Reponse/accessories/accessory";
+import { CategoryResponse } from "src/shared/types/Reponse/category";
+import { categoryRouteFn } from "src/services/api/functions/category/Routes.Fn";
 
 type Props = {
   open: boolean;
@@ -24,22 +27,10 @@ export const AccessoryEditor: React.FC<Props> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [brands, setBrands] = useState<BrandAccessoryResponse[]>([]);
-
-  const [form, setForm] = useState<{
-    accessoryCode: string;
-    accessoryName: string;
-    price: number | string;
-    brandAccessoryID: string;
-    description: string;
-    imagePath: File | null;
-  }>({
-    accessoryCode: "",
-    accessoryName: "",
-    price: "",
-    brandAccessoryID: "",
-    description: "",
-    imagePath: null,
-  });
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [form, setForm] = useState<AccessoryDetailResponse>();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -56,8 +47,15 @@ export const AccessoryEditor: React.FC<Props> = ({
       setBrands(mapped);
     })();
   }, [open, isEditing, accessoryId]);
+  useEffect(() => {
+    (async () => {
+      const res = await categoryRouteFn.getCategories();
+      const source: CategoryResponse[] = res;
+      setCategories(source);
+    })();
+  }, []);
   const submit = async () => {
-    if (!form.accessoryName.trim() || !form.accessoryCode.trim()) {
+    if (!form?.accessoryName.trim() || !form?.accessoryCode.trim()) {
       setError("Mã và tên phụ kiện là bắt buộc");
       return;
     }
@@ -65,44 +63,107 @@ export const AccessoryEditor: React.FC<Props> = ({
       setLoading(true);
       setError(null);
       if (isEditing && accessoryId) {
+        // Update with all required fields (server expects these fields)
         const payload: AccessoryRequestUpdate = {
           accessoryID: Number(accessoryId),
-          accessoryCode: form.accessoryCode.trim(),
-          accessoryName: form.accessoryName.trim(),
-          categoryID: 0,
-          brandAccessoryID: form.brandAccessoryID
-            ? Number(form.brandAccessoryID)
-            : null,
+          accessoryCode: form.accessoryCode,
+          accessoryName: form.accessoryName,
+          categoryID: Number(form.categoryID ?? 0),
+          brandAccessoryID:
+            form.brandAccessoryID !== undefined &&
+            form.brandAccessoryID !== null
+              ? Number(form.brandAccessoryID)
+              : (undefined as any),
           description: form.description ?? "",
-          price: Number(form.price || 0),
-          costPrice: null,
-          stockQuantity: 0,
-          minStockLevel: 0,
-          maxStockLevel: 0,
-          compatibleCarModels: "[]",
-          imagePath: form.imagePath,
-          installationVideo: null,
-          warrantyMonths: null,
-        };
+          price:
+            (form as any).price !== undefined && (form as any).price !== null
+              ? Number((form as any).price)
+              : (undefined as any),
+          costPrice:
+            (form as any).costPrice !== undefined &&
+            (form as any).costPrice !== null
+              ? Number((form as any).costPrice)
+              : (undefined as any),
+          stockQuantity:
+            (form as any).stockQuantity !== undefined &&
+            (form as any).stockQuantity !== null
+              ? Number((form as any).stockQuantity)
+              : (undefined as any),
+          minStockLevel:
+            (form as any).minStockLevel !== undefined &&
+            (form as any).minStockLevel !== null
+              ? Number((form as any).minStockLevel)
+              : (undefined as any),
+          maxStockLevel:
+            (form as any).maxStockLevel !== undefined &&
+            (form as any).maxStockLevel !== null
+              ? Number((form as any).maxStockLevel)
+              : (undefined as any),
+          compatibleCarModels:
+            form.compatibleCarModels && String(form.compatibleCarModels).trim()
+              ? String(form.compatibleCarModels).trim()
+              : (undefined as any),
+          imagePath: imageFile ?? (undefined as any),
+          installationVideo: videoFile ?? (undefined as any),
+          warrantyMonths:
+            (form as any).warrantyMonths !== undefined &&
+            (form as any).warrantyMonths !== null &&
+            String((form as any).warrantyMonths) !== ""
+              ? Number((form as any).warrantyMonths)
+              : (undefined as any),
+        } as any;
         await accessoryRouteFn.update(accessoryId, payload);
       } else {
         const payload: AccessoryRequestCreate = {
           accessoryCode: form.accessoryCode.trim(),
           accessoryName: form.accessoryName.trim(),
-          categoryID: 0,
-          brandAccessoryID: form.brandAccessoryID
-            ? Number(form.brandAccessoryID)
-            : null,
+          categoryID: Number(form.categoryID ?? 0),
+          brandAccessoryID:
+            form.brandAccessoryID !== undefined &&
+            form.brandAccessoryID !== null
+              ? Number(form.brandAccessoryID)
+              : (undefined as any),
           description: form.description ?? "",
-          price: Number(form.price || 0),
-          costPrice: null,
-          stockQuantity: 0,
-          minStockLevel: 0,
-          maxStockLevel: 0,
-          compatibleCarModels: "[]",
-          imagePath: form.imagePath,
-          installationVideo: null,
-          warrantyMonths: null,
+          price:
+            (form as any).price !== undefined && (form as any).price !== null
+              ? Number((form as any).price)
+              : 0,
+          costPrice:
+            (form as any).costPrice !== undefined &&
+            (form as any).costPrice !== null &&
+            String((form as any).costPrice) !== ""
+              ? Number((form as any).costPrice)
+              : (undefined as any),
+          stockQuantity:
+            (form as any).stockQuantity !== undefined &&
+            (form as any).stockQuantity !== null &&
+            String((form as any).stockQuantity) !== ""
+              ? Number((form as any).stockQuantity)
+              : (undefined as any),
+          minStockLevel:
+            (form as any).minStockLevel !== undefined &&
+            (form as any).minStockLevel !== null &&
+            String((form as any).minStockLevel) !== ""
+              ? Number((form as any).minStockLevel)
+              : (undefined as any),
+          maxStockLevel:
+            (form as any).maxStockLevel !== undefined &&
+            (form as any).maxStockLevel !== null &&
+            String((form as any).maxStockLevel) !== ""
+              ? Number((form as any).maxStockLevel)
+              : (undefined as any),
+          compatibleCarModels:
+            form.compatibleCarModels && String(form.compatibleCarModels).trim()
+              ? String(form.compatibleCarModels).trim()
+              : "[]",
+          imagePath: imageFile ?? (undefined as any),
+          installationVideo: videoFile ?? (undefined as any),
+          warrantyMonths:
+            (form as any).warrantyMonths !== undefined &&
+            (form as any).warrantyMonths !== null &&
+            String((form as any).warrantyMonths) !== ""
+              ? Number((form as any).warrantyMonths)
+              : (undefined as any),
           createdBy: 0,
         };
         await accessoryRouteFn.create(payload);
@@ -188,12 +249,84 @@ export const AccessoryEditor: React.FC<Props> = ({
             <Input
               type="file"
               accept="image/*"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+            />
+          </Field>
+          <Field>
+            <Label>Giá vốn</Label>
+            <Input
+              type="number"
+              value={form.costPrice}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, costPrice: e.target.value }))
+              }
+              placeholder="0"
+            />
+          </Field>
+          <Field>
+            <Label>Tồn kho</Label>
+            <Input
+              type="number"
+              value={form.stockQuantity}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, stockQuantity: e.target.value }))
+              }
+              placeholder="0"
+            />
+          </Field>
+          <Field>
+            <Label>Tồn tối thiểu</Label>
+            <Input
+              type="number"
+              value={form.minStockLevel}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, minStockLevel: e.target.value }))
+              }
+              placeholder="0"
+            />
+          </Field>
+          <Field>
+            <Label>Tồn tối đa</Label>
+            <Input
+              type="number"
+              value={form.maxStockLevel}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, maxStockLevel: e.target.value }))
+              }
+              placeholder="0"
+            />
+          </Field>
+          <Field colSpan>
+            <Label>Mẫu xe tương thích (JSON)</Label>
+            <Textarea
+              rows={2}
+              value={form.compatibleCarModels}
               onChange={(e) =>
                 setForm((f) => ({
                   ...f,
-                  imagePath: e.target.files?.[0] ?? null,
+                  compatibleCarModels: e.target.value,
                 }))
               }
+              placeholder='["Model A","Model B"]'
+            />
+          </Field>
+          <Field>
+            <Label>Video lắp đặt</Label>
+            <Input
+              type="file"
+              accept="video/*"
+              onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
+            />
+          </Field>
+          <Field>
+            <Label>Bảo hành (tháng)</Label>
+            <Input
+              type="number"
+              value={form.warrantyMonths ?? ""}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, warrantyMonths: e.target.value }))
+              }
+              placeholder="0"
             />
           </Field>
         </Grid>
