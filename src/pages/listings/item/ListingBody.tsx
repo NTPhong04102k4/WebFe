@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { GoArrowUpRight } from "react-icons/go";
 import { Pagination } from "./Paingation";
 import { TbManualGearbox } from "react-icons/tb";
@@ -7,7 +7,7 @@ import { SiSpeedtest } from "react-icons/si";
 import { CiBookmark } from "react-icons/ci";
 import { useLocation, useNavigate } from "react-router";
 import { CarDetail } from "src/pages/home/item/typeData";
-import { DATA_CAR } from "./data";
+
 const ITEMS_PER_PAGE = 12;
 
 enum StatusCar {
@@ -25,35 +25,39 @@ const ListingBody = () => {
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState<SortPrice>(SortPrice.DEFAULT);
-  const dataBody = location.state?.subItem as CarDetail[];
+  const dataBody = (location.state?.subItem as CarDetail[]) || [];
   const navigate = useNavigate();
-  const getSortedData = useCallback((sortType: SortPrice) => {
-    switch (sortType) {
-      case SortPrice.ASCENDING:
-        return [...dataBody].sort(
-          (a, b) =>
-            parseFloat(a.priceBuy.replace(/[^0-9.-]+/g, "")) -
-            parseFloat(b.priceBuy.replace(/[^0-9.-]+/g, ""))
-        );
-      case SortPrice.DESCENDING:
-        return [...dataBody].sort(
-          (a, b) =>
-            parseFloat(b.priceBuy.replace(/[^0-9.-]+/g, "")) -
-            parseFloat(a.priceBuy.replace(/[^0-9.-]+/g, ""))
-        );
-      default:
-        return [...dataBody];
-    }
-  }, []);
+
+  const getSortedData = useCallback(
+    (sortType: SortPrice, data: CarDetail[]) => {
+      switch (sortType) {
+        case SortPrice.ASCENDING:
+          return [...data].sort(
+            (a, b) =>
+              parseFloat(a.priceBuy.replace(/[^0-9.-]+/g, "")) -
+              parseFloat(b.priceBuy.replace(/[^0-9.-]+/g, ""))
+          );
+        case SortPrice.DESCENDING:
+          return [...data].sort(
+            (a, b) =>
+              parseFloat(b.priceBuy.replace(/[^0-9.-]+/g, "")) -
+              parseFloat(a.priceBuy.replace(/[^0-9.-]+/g, ""))
+          );
+        default:
+          return [...data];
+      }
+    },
+    []
+  );
 
   // Tính toán dữ liệu đã sắp xếp
-  const sortedData = React.useMemo(
-    () => getSortedData(filter),
-    [filter, getSortedData]
+  const sortedData = useMemo(
+    () => getSortedData(filter, dataBody),
+    [filter, dataBody, getSortedData]
   );
 
   // Tính toán dữ liệu cho trang hiện tại
-  const currentData = React.useMemo(() => {
+  const currentData = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return sortedData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [sortedData, currentPage]);
@@ -73,13 +77,30 @@ const ListingBody = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   const handleViewDetails = (item: CarDetail) => {
-    navigate("/listings/details", { state: { subItem: item } });
+    const carID = typeof item.id === "number" ? item.id : Number(item.id);
+    navigate("/listings/details", {
+      state: { subItem: item, carID },
+    });
   };
+
+  // Handle empty state
+  if (!dataBody || dataBody.length === 0) {
+    return (
+      <div className="w-full min-h-screen flex flex-col bg-[#050b2b]">
+        <div className="flex flex-col w-full bg-white px-[5%] pb-12">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <p className="text-lg">No cars found for this body type.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full min-h-screen flex flex-col  bg-[#050b2b]">
-      <div className="flex flex-col w-full bg-white px-[5%] pb-12 ">
+    <div className="w-full min-h-screen flex flex-col bg-[#050b2b]">
+      <div className="flex flex-col w-full bg-white px-[5%] pb-12">
         <nav className="text-blue-500 font-sans mt-12">
-          Home / <span>Listings/Body/{dataBody[0].body}</span>
+          Home / <span>Listings/Body/{dataBody[0]?.body || "Unknown"}</span>
         </nav>
         <h2 className="text-2xl mb-6 font-sans font-medium">Listings</h2>
         <div className="flex justify-between items-center mb-6">

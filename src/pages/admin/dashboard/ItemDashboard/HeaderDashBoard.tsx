@@ -190,7 +190,7 @@ const UserInfo: React.FC = () => {
             className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
             onClick={() => {
               setOpen(false);
-              navigate("/profile");
+              alert("Hồ sơ không khả dụng");
             }}
           >
             Hồ sơ

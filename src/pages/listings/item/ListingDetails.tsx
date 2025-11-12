@@ -9,10 +9,19 @@ import { SlLocationPin } from "react-icons/sl";
 import { TbManualGearbox } from "react-icons/tb";
 import { useLocation } from "react-router";
 import { CarDetail } from "src/pages/home/item/typeData";
+import { useCarDetail } from "src/shared/hooks/Car";
 
 const DetailsCar = () => {
   const location = useLocation();
   const propsData = location.state?.subItem as CarDetail;
+  const carID = location.state?.carID as number | undefined;
+
+  // Fetch car detail response (technical specifications)
+  const {
+    data: carDetailResponse,
+    isLoading: isLoadingDetail,
+    isError: isErrorDetail,
+  } = useCarDetail(carID || null);
   return (
     <div className="w-full flex flex-col bg-[#050b2b] ">
       <div className="bg-white rounded-b-[45px] py-6 w-full px-[10%] ">
@@ -47,7 +56,258 @@ const DetailsCar = () => {
             <h2 className="font-medium font-sans text-lg xl:text-lg 2xl:text-xl md:text-base mt-12">
               Car Overview
             </h2>
-            <div></div>
+            <p className="text-gray-600 mt-2">
+              {propsData?.descriptOverview || propsData?.script}
+            </p>
+
+            {/* Technical Specifications */}
+            {carDetailResponse && (
+              <div className="mt-8">
+                <h2 className="font-medium font-sans text-lg xl:text-lg 2xl:text-xl md:text-base mb-4">
+                  Technical Specifications
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {/* Dimensions */}
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-semibold text-sm text-gray-700 mb-2">
+                      Dimensions
+                    </h3>
+                    <div className="space-y-1 text-sm">
+                      <p>
+                        Length: {carDetailResponse.length_mm} mm (
+                        {(carDetailResponse.length_mm / 1000).toFixed(2)} m)
+                      </p>
+                      <p>
+                        Width: {carDetailResponse.width_mm} mm (
+                        {(carDetailResponse.width_mm / 1000).toFixed(2)} m)
+                      </p>
+                      <p>
+                        Height: {carDetailResponse.height_mm} mm (
+                        {(carDetailResponse.height_mm / 1000).toFixed(2)} m)
+                      </p>
+                      <p>
+                        Wheelbase: {carDetailResponse.wheelbase_mm} mm (
+                        {(carDetailResponse.wheelbase_mm / 1000).toFixed(2)} m)
+                      </p>
+                      {carDetailResponse.groundClearance_mm && (
+                        <p>
+                          Ground Clearance:{" "}
+                          {carDetailResponse.groundClearance_mm} mm
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Weight */}
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-semibold text-sm text-gray-700 mb-2">
+                      Weight
+                    </h3>
+                    <div className="space-y-1 text-sm">
+                      <p>Curb Weight: {carDetailResponse.curbWeight_kg} kg</p>
+                      {carDetailResponse.grossWeight_kg && (
+                        <p>
+                          Gross Weight: {carDetailResponse.grossWeight_kg} kg
+                        </p>
+                      )}
+                      {carDetailResponse.payloadCapacity_kg && (
+                        <p>
+                          Payload Capacity:{" "}
+                          {carDetailResponse.payloadCapacity_kg} kg
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Engine */}
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-semibold text-sm text-gray-700 mb-2">
+                      Engine
+                    </h3>
+                    <div className="space-y-1 text-sm">
+                      <p>Engine Code: {carDetailResponse.engineCode}</p>
+                      <p>Cylinders: {carDetailResponse.cylinders}</p>
+                      <p>Max Power: {carDetailResponse.maxPower_hp} HP</p>
+                      <p>Max Torque: {carDetailResponse.maxTorque_nm} Nm</p>
+                      {carDetailResponse.compression_ratio && (
+                        <p>
+                          Compression Ratio:{" "}
+                          {carDetailResponse.compression_ratio}:1
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Performance */}
+                  {(carDetailResponse.topSpeed_kmh ||
+                    carDetailResponse.acceleration_0_100_sec) && (
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-semibold text-sm text-gray-700 mb-2">
+                        Performance
+                      </h3>
+                      <div className="space-y-1 text-sm">
+                        {carDetailResponse.topSpeed_kmh && (
+                          <p>
+                            Top Speed: {carDetailResponse.topSpeed_kmh} km/h
+                          </p>
+                        )}
+                        {carDetailResponse.acceleration_0_100_sec && (
+                          <p>
+                            0-100 km/h:{" "}
+                            {carDetailResponse.acceleration_0_100_sec} sec
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fuel Consumption */}
+                  {(carDetailResponse.fuelConsumption_city_l100km ||
+                    carDetailResponse.fuelConsumption_highway_l100km ||
+                    carDetailResponse.fuelConsumption_combined_l100km) && (
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-semibold text-sm text-gray-700 mb-2">
+                        Fuel Consumption
+                      </h3>
+                      <div className="space-y-1 text-sm">
+                        {carDetailResponse.fuelConsumption_city_l100km && (
+                          <p>
+                            City:{" "}
+                            {carDetailResponse.fuelConsumption_city_l100km}{" "}
+                            L/100km
+                          </p>
+                        )}
+                        {carDetailResponse.fuelConsumption_highway_l100km && (
+                          <p>
+                            Highway:{" "}
+                            {carDetailResponse.fuelConsumption_highway_l100km}{" "}
+                            L/100km
+                          </p>
+                        )}
+                        {carDetailResponse.fuelConsumption_combined_l100km && (
+                          <p>
+                            Combined:{" "}
+                            {carDetailResponse.fuelConsumption_combined_l100km}{" "}
+                            L/100km
+                          </p>
+                        )}
+                        {carDetailResponse.fuelTankCapacity_l && (
+                          <p>
+                            Tank Capacity:{" "}
+                            {carDetailResponse.fuelTankCapacity_l} L
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Safety & Features */}
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-semibold text-sm text-gray-700 mb-2">
+                      Safety & Features
+                    </h3>
+                    <div className="space-y-1 text-sm">
+                      {carDetailResponse.safetyRating && (
+                        <p>Safety Rating: {carDetailResponse.safetyRating}</p>
+                      )}
+                      {carDetailResponse.airbags && (
+                        <p>Airbags: {carDetailResponse.airbags}</p>
+                      )}
+                      <div className="mt-2 space-y-1">
+                        <p className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              carDetailResponse.abs
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
+                          />
+                          ABS
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              carDetailResponse.esp
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
+                          />
+                          ESP
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              carDetailResponse.airConditioning
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
+                          />
+                          Air Conditioning
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              carDetailResponse.sunRoof
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
+                          />
+                          Sun Roof
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              carDetailResponse.leatherSeats
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
+                          />
+                          Leather Seats
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              carDetailResponse.navigationSystem
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
+                          />
+                          Navigation System
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              carDetailResponse.bluetoothConnectivity
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
+                          />
+                          Bluetooth
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Loading state for detail */}
+            {isLoadingDetail && carID && (
+              <div className="mt-8">
+                <p className="text-gray-500">
+                  Loading technical specifications...
+                </p>
+              </div>
+            )}
+
+            {/* Error state for detail */}
+            {isErrorDetail && carID && (
+              <div className="mt-8">
+                <p className="text-red-500">
+                  Unable to load technical specifications
+                </p>
+              </div>
+            )}
           </div>
           <div className=" w-[30%] gap-6 flex flex-col">
             <div className="border rounded-xl p-4 border-gray-300 shadow-md">

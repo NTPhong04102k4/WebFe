@@ -5,7 +5,6 @@ import styled from "styled-components";
 import { LiaSearchSolid } from "react-icons/lia";
 import { useNavigate } from "react-router";
 import { CarDetail, FeatBrand } from "../../home/item/typeData";
-import { DATA_CAR } from "src/pages/listings/item/data";
 import bgcTitleImg from "src/assets/images/homepage/bgc_title.jpg";
 import homepageOnlImg from "src/assets/images/homepage/homepage_onl.png";
 import latestBlogCarImg from "src/assets/images/homepage/latest_blog_car_4.jpg";
@@ -19,9 +18,11 @@ export interface SearchableCarProps {
 
 export const HeaderHome = ({
   data,
+  carsData = [],
 }: {
   SearchableCarProps?: SearchableCarProps;
   data: FeatBrand[];
+  carsData?: CarDetail[];
 }) => {
   const navigate = useNavigate();
   const [idxSelectBgc, setIdxSelectBgc] = useState(0);
@@ -42,7 +43,7 @@ export const HeaderHome = ({
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const filterCars = (text: string) => {
-    const filteredSuggestions = DATA_CAR.filter((car) => {
+    const filteredSuggestions = carsData.filter((car: CarDetail) => {
       return (
         car.name.toLowerCase().includes(text.toLowerCase()) ||
         car.body.toLowerCase().includes(text.toLowerCase())
