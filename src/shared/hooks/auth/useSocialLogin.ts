@@ -9,6 +9,7 @@ import {
   FacebookUserResponse,
   UserResponse,
 } from "src/shared/types/Reponse/auth/user";
+import { getTokenClaims } from "src/services/decode";
 
 interface UseSocialLoginOptions {
   isLogin: boolean;
@@ -33,10 +34,19 @@ export const useSocialLogin = ({
     userData: any,
     type: "GOOGLE" | "FACEBOOK"
   ) => {
+    const normalizedRoles = getTokenClaims(token)?.sub;
+    const userWithRoles = {
+      ...userData,
+      roles: normalizedRoles,
+    };
+
+    console.log("🔍 [Social Login] Token roles:", normalizedRoles);
+    console.log("🔍 [Social Login] User with roles:", userWithRoles);
+
     dispatch(
       setCredentials({
         token: token,
-        user: userData,
+        user: userWithRoles,
         isAuthenticated: true,
       })
     );
@@ -46,8 +56,17 @@ export const useSocialLogin = ({
       : `Đăng ký ${type === "GOOGLE" ? "Google" : "Facebook"} thành công!`;
 
     onSuccess?.(message);
+
+    const isSuperAdmin = normalizedRoles?.includes("superadmin");
+    console.log("🔍 [Social Login] Is SuperAdmin:", isSuperAdmin);
+
     setTimeout(() => {
-      navigate("/", { replace: true });
+      if (isSuperAdmin) {
+        navigate("/auth/login/admin/page_manage", { replace: true });
+      } else {
+        console.log("Regular user, navigating to home");
+        navigate("/", { replace: true });
+      }
     }, 3000);
   };
 

@@ -6,7 +6,7 @@ import * as yup from "yup";
 import { authAPI } from "src/services/api/functions/auth/authFn";
 import { useAppDispatch } from "src/redux/hook";
 import { setCredentials } from "src/redux/Slice/AuthSlice";
-import { getTokenClaims } from "src/services/decode";
+import { decodeToken, getTokenClaims } from "src/services/decode";
 
 const Admin = React.memo(() => {
   const navigate = useNavigate();
@@ -32,10 +32,8 @@ const Admin = React.memo(() => {
   });
 
   async function handleLogin() {
-    // reset errors
     setFieldErrors({});
     setError(null);
-    // validate
     try {
       await adminLoginSchema.validate(
         { username, password },
@@ -57,26 +55,27 @@ const Admin = React.memo(() => {
       const res = await authAPI.adminLogin({ username, password });
       const token = res.data.token;
       const claims = getTokenClaims(token);
-      const roles =
-        (claims?.roles as string[]) ||
-        (claims?.authorities as string[]) ||
-        (claims?.role ? [claims.role] : []);
+      const userData = {
+        fullName: res.data.fullName,
+        username,
+        roles: claims?.sub,
+        claims,
+      };
 
       dispatch(
         setCredentials({
           token,
-          user: {
-            fullName: res.data.fullName,
-            username,
-            roles,
-            claims,
-          } as any,
+          user: userData as any,
           isAuthenticated: true,
         })
       );
-      // Persist token for apiClient interceptor
+
       localStorage.setItem("auth_token", token);
-      navigate("/auth/login/admin/page_manage");
+      if (claims?.sub?.toLowerCase().includes("superadmin")) {
+        navigate("/auth/login/admin/page_manage", { replace: true });
+      } else {
+        navigate("/home", { replace: true });
+      }
     } catch (e: any) {
       setError(
         e?.response?.data?.message ||

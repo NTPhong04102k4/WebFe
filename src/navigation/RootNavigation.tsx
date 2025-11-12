@@ -20,6 +20,7 @@ import {
   selectUser,
   clearCredentials,
 } from "src/redux/Slice/AuthSlice";
+import { decodeToken, getTokenClaims } from "src/services/decode";
 
 const About = React.lazy(() => import("src/pages/about"));
 const Accessory = React.lazy(() => import("src/pages/accessory"));
@@ -60,47 +61,8 @@ export function RootNavigation() {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const prevLocation = useRef(location);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  const user = useAppSelector(selectUser);
-  const roles: string[] = useMemo(() => {
-    const r =
-      (user as any)?.roles ||
-      (user as any)?.authorities ||
-      ((user as any)?.role ? [(user as any)?.role] : []);
-    return Array.isArray(r) ? r.map((x) => String(x).toLowerCase()) : [];
-  }, [user]);
-
-  // Handle unauthorized errors from API interceptor
-  useEffect(() => {
-    const handleUnauthorized = (event: CustomEvent) => {
-      // Clear credentials
-      dispatch(clearCredentials());
-      // Navigate to login page without reload
-      const currentPath = location.pathname;
-      if (
-        currentPath !== "/auth/login" &&
-        currentPath !== "/login" &&
-        currentPath !== "/auth/signin" &&
-        currentPath !== "/auth/signUp"
-      ) {
-        navigate("/auth/login", { replace: true });
-      }
-    };
-
-    window.addEventListener(
-      "auth:unauthorized",
-      handleUnauthorized as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        "auth:unauthorized",
-        handleUnauthorized as EventListener
-      );
-    };
-  }, [dispatch, navigate, location.pathname]);
 
   useEffect(() => {
     const isHome = location.pathname === "/home";
@@ -116,52 +78,43 @@ export function RootNavigation() {
 
     prevLocation.current = location;
   }, [location]);
+  const token = localStorage.getItem("auth_token");
+  const isSuperAdmin = getTokenClaims(token)
+    ?.sub?.toLowerCase()
+    .includes("superadmin");
 
-  // Role-based navigation enforcement
   useEffect(() => {
-    const isAdminLoginPage = location.pathname === "/login/admin";
     const isAdminArea = location.pathname.startsWith("/auth/login/admin");
 
-    // Block unauthenticated users from admin routes
     if (!isAuthenticated && isAdminArea) {
       navigate("/auth/login", { replace: true });
       return;
     }
 
     if (!isAuthenticated) return;
-    const isCustomer = roles.includes("customer");
 
-    // Customers cannot access admin routes
-    if (isCustomer && (isAdminArea || isAdminLoginPage)) {
+    if (!isSuperAdmin && isAdminArea) {
       navigate("/home", { replace: true });
       return;
     }
 
-    // Non-customers (e.g., admin/staff) are locked to admin area
-    if (!isCustomer && !isAdminArea && !isAdminLoginPage) {
+    if (isSuperAdmin && !isAdminArea) {
       navigate("/auth/login/admin/page_manage", { replace: true });
     }
-  }, [isAuthenticated, roles, location.pathname, navigate]);
+  }, [isAuthenticated, location.pathname, navigate]);
 
-  // Determine if Header should be hidden for specific routes
   const shouldHideHeader = useMemo(() => {
     return (
-      location.pathname === "/login/admin" ||
       location.pathname.startsWith("/auth/login/admin") ||
       location.pathname === "/home" ||
       location.pathname === "/"
     );
   }, [location.pathname]);
 
-  // Determine if Footer should be hidden for specific routes (only admin pages)
   const shouldHideFooter = useMemo(() => {
-    return (
-      location.pathname === "/login/admin" ||
-      location.pathname.startsWith("/auth/login/admin")
-    );
+    return location.pathname.startsWith("/auth/login/admin");
   }, [location.pathname]);
 
-  // Determine footer theme based on route
   const footerTheme = useMemo(() => {
     const lightThemeRoutes = ["/home", "/"];
     return lightThemeRoutes.includes(location.pathname)
@@ -169,7 +122,6 @@ export function RootNavigation() {
       : Theme.DARK;
   }, [location.pathname]);
 
-  // Determine if footer should show newsletter section
   const showFooterNewsletter = useMemo(() => {
     const hideNewsletterRoutes = ["/home", "/"];
     return !hideNewsletterRoutes.includes(location.pathname);
@@ -187,7 +139,7 @@ export function RootNavigation() {
               <Route element={<Home />} path="/home" />
               <Route
                 element={
-                  isAuthenticated && !roles.includes("customer") ? (
+                  isAuthenticated && isSuperAdmin ? (
                     <Navigate to="/auth/login/admin/page_manage" replace />
                   ) : (
                     <Home />
@@ -223,7 +175,7 @@ export function RootNavigation() {
                 element={
                   !isAuthenticated ? (
                     <Admin />
-                  ) : roles.includes("customer") ? (
+                  ) : !isSuperAdmin ? (
                     <Navigate to="/home" replace />
                   ) : (
                     <Navigate to="/auth/login/admin/page_manage" replace />
@@ -235,7 +187,7 @@ export function RootNavigation() {
                 element={
                   !isAuthenticated ? (
                     <Navigate to="/auth/login" replace />
-                  ) : roles.includes("customer") ? (
+                  ) : !isSuperAdmin ? (
                     <Navigate to="/home" replace />
                   ) : (
                     <AdminDashboard />
@@ -247,7 +199,7 @@ export function RootNavigation() {
                 element={
                   !isAuthenticated ? (
                     <Navigate to="/auth/login" replace />
-                  ) : roles.includes("customer") ? (
+                  ) : !isSuperAdmin ? (
                     <Navigate to="/home" replace />
                   ) : (
                     <AccessoryEditorPage />
@@ -259,7 +211,9 @@ export function RootNavigation() {
                 element={
                   !isAuthenticated ? (
                     <Navigate to="/auth/login" replace />
-                  ) : roles.includes("customer") ? (
+                  ) : !decodeToken(
+                      localStorage.getItem("auth_token")
+                    )?.sub?.includes("superadmin") ? (
                     <Navigate to="/home" replace />
                   ) : (
                     <AccessoryEditorPage />
