@@ -7,21 +7,56 @@ import { LuSmartphoneNfc } from "react-icons/lu";
 import { SiSpeedtest } from "react-icons/si";
 import { SlLocationPin } from "react-icons/sl";
 import { TbManualGearbox } from "react-icons/tb";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { CarDetail } from "src/pages/home/item/typeData";
+import { useAuth } from "src/shared/hooks/auth/index.ts";
 import { useCarDetail } from "src/shared/hooks/Car";
 
 const DetailsCar = () => {
   const location = useLocation();
   const propsData = location.state?.subItem as CarDetail;
   const carID = location.state?.carID as number | undefined;
-
-  // Fetch car detail response (technical specifications)
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const {
     data: carDetailResponse,
     isLoading: isLoadingDetail,
     isError: isErrorDetail,
   } = useCarDetail(carID || null);
+  const handleMakeAnOffer = () => {
+    if (!user) {
+      alert("Please login to make an offer");
+      setTimeout(() => {
+        navigate("/auth/login");
+      }, 1000);
+      return;
+    }
+    const priceString = propsData?.priceBuy?.replace(/[$,]/g, "") || "0";
+    const priceUSD = parseFloat(priceString) || 0;
+
+    const depositPercentage = 0.1; // 10% deposit
+    const orderAmountVND = Math.max(
+      Math.round(priceUSD * 25000 * depositPercentage),
+      10000
+    );
+
+    const orderId = carID
+      ? `ORDER_${carID}_${Date.now()}`
+      : `ORDER_${Date.now()}`;
+
+    const customerId = user?.userUUID || user?.userID?.toString() || "";
+
+    navigate("/payment", {
+      state: {
+        orderId: orderId,
+        customerId: customerId,
+        orderAmount: orderAmountVND,
+        orderDescription: `Đặt cọc mua xe ${propsData?.name || ""}`,
+        paymentMethod: undefined,
+      },
+    });
+    return;
+  };
   return (
     <div className="w-full flex flex-col bg-[#050b2b] ">
       <div className="bg-white rounded-b-[45px] py-6 w-full px-[10%] ">
@@ -332,13 +367,12 @@ const DetailsCar = () => {
                   ${propsData.priceBuy}
                 </h3>
               )}
-              <button className="text-white bg-blue-500 rounded-xl  gap-3 inline-flex items-center py-3 my-3 px-4 w-full justify-center hover:bg-blue-700 transition duration-300 active:scale-95">
+              <button
+                onClick={() => handleMakeAnOffer()}
+                className="text-white bg-blue-500 rounded-xl  gap-3 inline-flex items-center py-3 my-3 px-4 w-full justify-center hover:bg-blue-700 transition duration-300 active:scale-95"
+              >
                 <IoPricetagOutline className="" size={20} />
-                Make An Office Price
-              </button>
-              <button className="border border-gray-800 px-4 py-3 w-full items-center justify-center gap-2 rounded-xl inline-flex hover:bg-gray-200 active:scale-95 transition duration-300 my-3">
-                <GiSteeringWheel size={20} />
-                Schedule Test Drive
+                Deposit
               </button>
             </div>
             <div className="border rounded-xl py-4 px-[7%] border-gray-300 shadow flex flex-col">

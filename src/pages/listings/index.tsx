@@ -10,7 +10,7 @@ import { CarDetail } from "../home/item/typeData";
 import { useCarList } from "src/shared/hooks/Car";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 100;
 
 enum StatusCar {
   GREATE_PRICE = "Great Price",

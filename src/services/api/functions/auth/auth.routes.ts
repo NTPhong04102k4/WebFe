@@ -4,6 +4,7 @@ export const AUTH_ROUTES = {
   REGISTER: "/auth/register",
   VERIFY_OTP: "/auth/verify-otp",
   RESEND_OTP: "/auth/resend-otp",
+  UPDATE_PROFILE: "/user/update-profile",
 
   // Admin Authentication
   ADMIN_LOGIN: "/auth/admin/login",

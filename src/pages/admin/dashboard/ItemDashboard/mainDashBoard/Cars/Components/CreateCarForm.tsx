@@ -66,7 +66,6 @@ export const CreateCarForm: React.FC<{
     }
   };
 
-  // Handle video selection
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -110,7 +109,6 @@ export const CreateCarForm: React.FC<{
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Parse imagePaths back to array (for existing URLs if any)
     const imagePathsArray = form.imagePaths
       ? form.imagePaths
           .split(",")
@@ -120,7 +118,7 @@ export const CreateCarForm: React.FC<{
 
     const createData: CarDetailUpdateRequest = {
       userUUID: user?.userUUID || "",
-      roles: "", // TODO: Get roles from user or API
+      roles: "",
       carCode: form.carCode || "",
       vin: form.vin || "",
       carName: form.carName,
@@ -142,22 +140,19 @@ export const CreateCarForm: React.FC<{
       seats: Number(form.seats),
       color: form.color,
       mileage: Number(form.mileage),
-      videoPath: null, // Video is sent as VideoFile, not videoPath
+      videoPath: null,
       imagePaths: imagePathsArray,
       detailedDescription: form.detailedDescription || null,
       shortDescription: form.shortDescription,
       isFeature: form.isFeature,
       viewCount: 0,
       soldDate: "",
-      createdBy: 1, // TODO: Get from auth context
+      createdBy: 1,
       isActive: true,
     };
 
-    // Create FormData for multipart/form-data
-    // API expects PascalCase field names
     const formData = new FormData();
 
-    // Append all fields with PascalCase names as per API spec
     formData.append("userUUID", createData.userUUID || "");
     formData.append("roles", createData.roles || "");
     formData.append("CarCode", createData.carCode || "");
@@ -192,12 +187,10 @@ export const CreateCarForm: React.FC<{
     formData.append("CreatedBy", String(createData.createdBy || 0));
     formData.append("IsActive", String(createData.isActive || false));
 
-    // Append image files (API expects ImageFiles array)
     selectedImages.forEach((image) => {
       formData.append("ImageFiles", image);
     });
 
-    // Append video file (API expects VideoFile)
     if (selectedVideo) {
       formData.append("VideoFile", selectedVideo);
     }
@@ -207,7 +200,6 @@ export const CreateCarForm: React.FC<{
       {
         onSuccess: () => {
           onCreated?.();
-          // Reset form
           setForm({
             carCode: "",
             vin: "",
@@ -381,7 +373,7 @@ export const CreateCarForm: React.FC<{
             >
               <option value="">Chọn hãng</option>
               {brandCar.map((b) => (
-                <option key={b.brandCode} value={b.id}>
+                <option key={b.id} value={b.id}>
                   {b.brandName}
                 </option>
               ))}

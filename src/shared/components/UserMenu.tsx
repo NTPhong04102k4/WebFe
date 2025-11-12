@@ -53,7 +53,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({
       navigate("/home");
     } catch (error) {
       console.error("Logout failed:", error);
-      // Still clear credentials and redirect even if API call fails
       dispatch(clearCredentials());
       setIsOpen(false);
       closeAll();

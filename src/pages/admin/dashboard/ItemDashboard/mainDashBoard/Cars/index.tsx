@@ -32,11 +32,9 @@ export const Cars: React.FC = () => {
   // Get brands and bodyTypes for mapping
   const { brandCar } = useBrandCar();
   const { bodyTypes } = useBodyType();
-
-  // Fetch ALL cars (with large pageSize to get all data)
   const { data: allCarsData, refetch: refetchCarList } = useCarList({
     page: 1,
-    pageSize: 10000, // Large number to get all cars
+    pageSize: 100,
     brandCode: "",
     bodyCode: "",
   });

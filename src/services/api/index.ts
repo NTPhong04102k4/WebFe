@@ -27,8 +27,7 @@ apiClient.interceptors.request.use(
         config.url
       );
     }
-    // If data is FormData, remove Content-Type header to let axios set it with boundary
-    // This prevents CORS issues and ensures proper multipart/form-data encoding
+
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     }
@@ -44,18 +43,14 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Xử lý lỗi 401 (Unauthorized) hoặc 400 (Bad Request) do token không hợp lệ
     if (error.response) {
       const status = error.response.status;
 
-      // Nếu token không hợp lệ hoặc đã hết hạn, dispatch event để component handle redirect
-      // This prevents page reload by using React Router navigation instead
       if (
         status === 401 ||
         (status === 400 &&
           error.response.data?.message?.toLowerCase().includes("token"))
       ) {
-        // Only trigger redirect event if not already on login page
         const currentPath = window.location.pathname;
         if (
           currentPath !== "/auth/login" &&
@@ -63,8 +58,6 @@ apiClient.interceptors.response.use(
           currentPath !== "/auth/signin" &&
           currentPath !== "/auth/signUp"
         ) {
-          // Dispatch custom event for navigation handling
-          // Components listening to this event can use React Router navigate
           window.dispatchEvent(
             new CustomEvent("auth:unauthorized", {
               detail: { status, path: currentPath },

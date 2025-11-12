@@ -8,6 +8,10 @@ import {
   profileSchema,
   ProfileFormValues,
 } from "src/shared/validation/profileSchema";
+import { authAPI } from "src/services/api/functions/auth/authFn";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAppDispatch } from "src/redux/hook";
+import { setCredentials } from "src/redux/Slice/AuthSlice";
 
 const Container = styled.div`
   min-height: calc(100vh - 160px);
@@ -182,8 +186,10 @@ const buildAvatar = (fullName: string, avatar?: string | null) => {
 };
 
 const UserProfileForm: React.FC = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const queryClient = useQueryClient();
+  const dispatch = useAppDispatch();
 
   const initialValues = useMemo(
     () => ({
@@ -272,28 +278,91 @@ const UserProfileForm: React.FC = () => {
     event.target.value = "";
   };
 
-  const onSubmit: SubmitHandler<ProfileFormValues> = (values) => {
+  const onSubmit: SubmitHandler<ProfileFormValues> = async (values) => {
     const ok = window.confirm("Xác nhận lưu thay đổi hồ sơ?");
     if (!ok) {
       reset(initialValues);
       setHasImageError(false);
       return;
     }
-    const payload = {
-      firstName: values.firstName.trim(),
-      lastName: values.lastName.trim(),
-      username: values.username.trim(),
-      fullName: fullName.trim(),
-      identityNumber: values.identityNumber.trim(),
-      phone: values.phone.trim(),
-      dateOfBirth: values.dateOfBirth,
-      image:
-        values.image instanceof File
-          ? values.image
-          : values.image || previewUrl,
-      email,
-    };
-    console.log("payload", payload);
+
+    try {
+      // Backend requires FormData for all cases (even without file)
+      // API expects PascalCase field names for FormData
+      const payload = new FormData();
+      payload.append("FirstName", values.firstName.trim());
+      payload.append("LastName", values.lastName.trim());
+      payload.append("Username", values.username.trim());
+      payload.append("Phone", values.phone.trim());
+      payload.append("Email", email);
+
+      if (values.identityNumber) {
+        payload.append("IdentityNumber", values.identityNumber.trim());
+      }
+      if (values.dateOfBirth) {
+        payload.append("DateOfBirth", values.dateOfBirth);
+      }
+
+      // Handle image: if it's a File, append it; otherwise append the URL string
+      if (values.image instanceof File) {
+        payload.append("Image", values.image);
+      } else if (values.image) {
+        payload.append("Image", values.image);
+      } else if (previewUrl) {
+        payload.append("Image", previewUrl);
+      }
+
+      // Optional fields
+      payload.append("Address", ""); // Add if you have address field
+      payload.append("IsActive", "true");
+
+      await authAPI.updateProfile(payload);
+
+      // Refresh user profile data
+      try {
+        if (user?.userUUID && token) {
+          const profileResponse = await authAPI.getProfile(user.userUUID);
+          if (profileResponse?.data) {
+            // Update Redux store with new user data
+            dispatch(
+              setCredentials({
+                token: token,
+                user: profileResponse.data,
+                isAuthenticated: true,
+              })
+            );
+            // Invalidate and refetch profile query
+            queryClient.invalidateQueries({ queryKey: ["profile"] });
+            queryClient.setQueryData(["profile"], profileResponse);
+
+            // Update form with new values
+            const newInitialValues = {
+              firstName: profileResponse.data.firstName ?? "",
+              lastName: profileResponse.data.lastName ?? "",
+              username: profileResponse.data.username ?? "",
+              identityNumber: profileResponse.data.identityNumber ?? "",
+              phone: profileResponse.data.phone ?? "",
+              dateOfBirth: profileResponse.data.dateOfBirth
+                ? formatDate(profileResponse.data.dateOfBirth.toISOString())
+                : "",
+              image: profileResponse.data.image ?? "",
+            };
+            reset(newInitialValues);
+          }
+        }
+      } catch (profileError) {
+        console.error("Failed to refresh profile:", profileError);
+        // Still show success message even if refresh fails
+      }
+
+      window.alert("Cập nhật thông tin thành công");
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      window.alert(
+        error?.response?.data?.message ||
+          "Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại."
+      );
+    }
   };
 
   return (

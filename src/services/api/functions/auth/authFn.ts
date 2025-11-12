@@ -23,6 +23,9 @@ export const authAPI = {
   register: (data: RegisterRequest) =>
     apiClient.post<RegisterResponse>(AUTH_ROUTES.REGISTER, data),
   logout: () => apiClient.post(AUTH_ROUTES.LOGOUT),
+  updateProfile: (data: FormData) => {
+    return apiClient.post(AUTH_ROUTES.UPDATE_PROFILE, data);
+  },
   verifyOtp: (data: VerifyOtpRequest) =>
     apiClient.post<RegisterVerifyResponse>(AUTH_ROUTES.VERIFY_OTP, data),
   resendOtp: (data: ResendOtpRequest) =>

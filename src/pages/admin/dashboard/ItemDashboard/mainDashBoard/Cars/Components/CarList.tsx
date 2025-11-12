@@ -1,7 +1,13 @@
 import React from "react";
 import type { CarFiltersValue } from "./CarFilters";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
-
+const BRAND_CAR = {
+  TOYOTA: 1,
+  HONDA: 2,
+  FORD: 3,
+  BMW: 4,
+  MERCEDES: 5,
+};
 export const CarList: React.FC<{
   query: CarFiltersValue;
   cars: CarResponseItem[];
@@ -20,7 +26,22 @@ export const CarList: React.FC<{
   onPageSizeChange,
 }) => {
   const items = cars;
-
+  const getBrandName = (idBrand: number) => {
+    switch (idBrand) {
+      case BRAND_CAR.TOYOTA:
+        return "Toyota";
+      case BRAND_CAR.HONDA:
+        return "Honda";
+      case BRAND_CAR.FORD:
+        return "Ford";
+      case BRAND_CAR.BMW:
+        return "BMW";
+      case BRAND_CAR.MERCEDES:
+        return "Mercedes";
+      default:
+        return "Toyota";
+    }
+  };
   return (
     <div className="border rounded-md p-4">
       <div className="flex items-center justify-between mb-3">
@@ -135,7 +156,7 @@ export const CarList: React.FC<{
                       )}
                     </td>
                     <td className="py-2 pr-3">{c.carName}</td>
-                    <td className="py-2 pr-3">{c.brandID}</td>
+                    <td className="py-2 pr-3">{getBrandName(c.brandID)}</td>
                     <td className="py-2 pr-3">{c.modelYear}</td>
                     <td className="py-2 pr-3">
                       <div className="flex gap-2">

@@ -12,7 +12,6 @@ export function Header() {
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
 
-  // Debug: Log auth state changes
   useEffect(() => {
     console.log("🔍 Header - Auth state changed:", {
       isAuthenticated,
@@ -21,8 +20,6 @@ export function Header() {
       userObject: user,
     });
   }, [isAuthenticated, user]);
-
-  // Force re-render debug removed; rely on state updates from store
 
   const [dropdownOpen, setDropdownOpen] = useState<{
     home: boolean;
@@ -179,11 +176,21 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
 }) => {
   const navigate = useNavigate();
   const data = items.pages;
-  const pathFeats = items.path ? items.path : "/error";
+
+  const handlePathClick = (path: string | null | undefined) => {
+    if (!path) return;
+
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      window.open(path, "_blank", "noopener,noreferrer");
+    } else {
+      navigate(path);
+    }
+  };
+
   return (
     <DropdownWrapper>
       <NavItem
-        onClick={() => navigate(pathFeats)}
+        onClick={() => handlePathClick(items.path)}
         onMouseEnter={toggleDropdown}
       >
         {label} <IoMdArrowDropdown size={16} />
@@ -194,7 +201,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
             <DropdownItem
               key={item.name}
               onClick={() => {
-                navigate(item.path);
+                handlePathClick(item.path);
                 closeDropdowns();
               }}
             >

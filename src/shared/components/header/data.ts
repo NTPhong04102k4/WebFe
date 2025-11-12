@@ -44,9 +44,15 @@ export const menuItems: {
   pages: {
     pages: [
       { name: "FAQs", path: "/pages/faqs" },
-      { name: "Terms & Conditions", path: "/pages/term_&_condition" },
-      { name: "Privacy Policy", path: "/pages/privacy" },
+      {
+        name: "Terms & Conditions",
+        path: "https://sites.google.com/view/privacy-policy-ntphong",
+      },
+      {
+        name: "Privacy Policy",
+        path: "https://sites.google.com/view/privacy-policy-ntphong",
+      },
     ],
-    path: null,
+    path: "/pages/faqs",
   },
 };
