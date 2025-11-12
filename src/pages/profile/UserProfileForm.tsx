@@ -293,7 +293,7 @@ const UserProfileForm: React.FC = () => {
           : values.image || previewUrl,
       email,
     };
-    console.table(payload);
+    console.log("payload", payload);
   };
 
   return (

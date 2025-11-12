@@ -217,9 +217,7 @@ export function RootNavigation() {
                 element={
                   !isAuthenticated ? (
                     <Navigate to="/auth/login" replace />
-                  ) : !decodeToken(
-                      localStorage.getItem("auth_token")
-                    )?.sub?.includes("superadmin") ? (
+                  ) : !isSuperAdmin ? (
                     <Navigate to="/home" replace />
                   ) : (
                     <AccessoryEditorPage />
