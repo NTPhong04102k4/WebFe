@@ -8,8 +8,9 @@ import { CarList } from "./Components/CarList";
 import { Pagination } from "./Components/Pagination";
 import { CreateCarForm } from "./Components/CreateCarForm";
 import { EditCarForm } from "./Components/EditCarForm";
+import { CarDetailView } from "./Components/CarDetailView";
 
-type ViewMode = "list" | "create" | "edit";
+type ViewMode = "list" | "create" | "edit" | "detail";
 
 export const Cars: React.FC = () => {
   const [query, setQuery] = React.useState<{
@@ -117,6 +118,11 @@ export const Cars: React.FC = () => {
     setViewMode("edit");
   };
 
+  const handleViewDetailClick = (id: string) => {
+    setSelectedCarId(Number(id));
+    setViewMode("detail");
+  };
+
   const handleBackToList = () => {
     setViewMode("list");
     setSelectedCarId(null);
@@ -156,6 +162,7 @@ export const Cars: React.FC = () => {
             cars={filteredAndPaginatedCars.data}
             isLoading={!allCarsData}
             onSelectCar={handleEditClick}
+            onViewDetail={handleViewDetailClick}
             onPageChange={(page) => setQuery((prev) => ({ ...prev, page }))}
             onPageSizeChange={(pageSize) =>
               setQuery((prev) => ({ ...prev, pageSize, page: 1 }))
@@ -202,6 +209,10 @@ export const Cars: React.FC = () => {
             onCancel={handleBackToList}
           />
         </div>
+      )}
+
+      {viewMode === "detail" && selectedCar && (
+        <CarDetailView car={selectedCar} onBack={handleBackToList} />
       )}
     </div>
   );

@@ -17,6 +17,15 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem("auth_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      // Log for debugging (only in development)
+      if (process.env.NODE_ENV === "development") {
+        console.log("🔐 Adding Authorization header to request:", config.url);
+      }
+    } else {
+      console.warn(
+        "⚠️ No auth token found in localStorage for request:",
+        config.url
+      );
     }
     // If data is FormData, remove Content-Type header to let axios set it with boundary
     // This prevents CORS issues and ensures proper multipart/form-data encoding
@@ -39,18 +48,28 @@ apiClient.interceptors.response.use(
     if (error.response) {
       const status = error.response.status;
 
-      // Nếu token không hợp lệ hoặc đã hết hạn, xóa token và redirect về login
+      // Nếu token không hợp lệ hoặc đã hết hạn, dispatch event để component handle redirect
+      // This prevents page reload by using React Router navigation instead
       if (
         status === 401 ||
         (status === 400 &&
           error.response.data?.message?.toLowerCase().includes("token"))
       ) {
-        // Chỉ redirect nếu không phải đang ở trang login
+        // Only trigger redirect event if not already on login page
+        const currentPath = window.location.pathname;
         if (
-          window.location.pathname !== "/auth/login" &&
-          window.location.pathname !== "/login"
+          currentPath !== "/auth/login" &&
+          currentPath !== "/login" &&
+          currentPath !== "/auth/signin" &&
+          currentPath !== "/auth/signUp"
         ) {
-          window.location.href = "/auth/login";
+          // Dispatch custom event for navigation handling
+          // Components listening to this event can use React Router navigate
+          window.dispatchEvent(
+            new CustomEvent("auth:unauthorized", {
+              detail: { status, path: currentPath },
+            })
+          );
         }
       }
     }

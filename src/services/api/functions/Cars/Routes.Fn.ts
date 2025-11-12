@@ -120,23 +120,83 @@ export const carRouteFn = {
     return response.data;
   },
   createTechSpec: async (id: number, data: TechSpecDetailUpdateRequest) => {
-    const response = await apiClient.post<CarDetailResponse>(
-      carRoute.techSpecCreate,
-      data,
-      {
-        params: { id },
-      }
+    const token = localStorage.getItem("auth_token");
+    console.log("🔑 Token exists:", !!token);
+    console.log("📤 Creating tech spec for car ID:", id);
+    console.log("📤 Input data:", JSON.stringify(data, null, 2));
+
+    // Ensure carID is set correctly in the data
+    // Preserve all data exactly as provided from the form
+    const requestData: TechSpecDetailUpdateRequest = {
+      ...data,
+      carID: id, // Always override with the id parameter to ensure it's correct
+    };
+
+    console.log(
+      "📤 Request data (before send):",
+      JSON.stringify(requestData, null, 2)
     );
-    return response.data;
+    console.log("📤 Request URL:", carRoute.techSpecCreate);
+
+    try {
+      const response = await apiClient.post<CarDetailResponse>(
+        carRoute.techSpecCreate,
+        requestData
+      );
+      console.log("✅ Tech spec created successfully");
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Error creating tech spec:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data,
+        message: error.message,
+        url: carRoute.techSpecCreate,
+        requestData: JSON.stringify(requestData, null, 2),
+      });
+
+      // Log detailed error if available
+      if (error.response?.data) {
+        console.error("❌ Server error details:", error.response.data);
+      }
+
+      throw error;
+    }
   },
   updateTechSpec: async (id: number, data: TechSpecDetailUpdateRequest) => {
-    const response = await apiClient.put<CarDetailResponse>(
-      carRoute.techSpecEdit,
-      data,
-      {
-        params: { id },
-      }
-    );
-    return response.data;
+    const token = localStorage.getItem("auth_token");
+    console.log("🔑 Token exists:", !!token);
+    console.log("📤 Updating tech spec for car ID:", id);
+
+    // Ensure carID is set correctly in the data
+    const requestData = {
+      ...data,
+      carID: id,
+    };
+
+    console.log("📤 Request data:", requestData);
+    console.log("📤 Request URL:", carRoute.techSpecEdit);
+
+    try {
+      const response = await apiClient.patch<CarDetailResponse>(
+        carRoute.techSpecEdit,
+        requestData,
+        {
+          params: { id },
+        }
+      );
+      console.log("✅ Tech spec updated successfully");
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Error updating tech spec:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        url: carRoute.techSpecEdit,
+        requestData: requestData,
+      });
+      throw error;
+    }
   },
 };

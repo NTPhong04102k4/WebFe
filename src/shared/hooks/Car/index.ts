@@ -52,9 +52,9 @@ export const useCarMutation = () => {
   const createMutation = useMutation<
     CarDetailResponse,
     Error,
-    { id: number; data: CarDetailUpdateRequest }
+    { data: CarDetailUpdateRequest }
   >({
-    mutationFn: async ({ id, data }) => {
+    mutationFn: async ({ data }) => {
       return await carRouteFn.create(data);
     },
     onSuccess: () => {

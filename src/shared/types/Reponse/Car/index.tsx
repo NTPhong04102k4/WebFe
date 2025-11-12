@@ -1,5 +1,6 @@
 export interface BrandCarResponse {
   brandCode: string;
+  id: number;
   brandName: string;
   logoPath: string | null;
   description: string | null;
@@ -27,6 +28,15 @@ export interface CarDetailResponse {
   cylinders: number;
   maxPower_hp: number;
   maxTorque_nm: number;
+  compression_ratio?: number | null;
+  topSpeed_kmh?: number | null;
+  acceleration_0_100_sec?: number | null;
+  fuelConsumption_city_l100km?: number | null;
+  fuelConsumption_highway_l100km?: number | null;
+  fuelConsumption_combined_l100km?: number | null;
+  fuelTankCapacity_l?: number | null;
+  safetyRating?: string | null;
+  airbags?: number | null;
   abs: boolean;
   esp: boolean;
   airConditioning: boolean;

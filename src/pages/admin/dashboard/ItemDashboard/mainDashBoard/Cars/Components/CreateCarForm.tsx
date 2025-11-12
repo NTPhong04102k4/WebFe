@@ -203,7 +203,7 @@ export const CreateCarForm: React.FC<{
     }
 
     create(
-      { id: 0, data: formData as any },
+      { data: formData as any },
       {
         onSuccess: () => {
           onCreated?.();
@@ -257,26 +257,41 @@ export const CreateCarForm: React.FC<{
     );
   };
 
-  const canSubmit =
-    form.carName &&
-    form.modelYear &&
-    form.modelName &&
-    form.brandID &&
-    form.bodyTypeID &&
-    form.statusID &&
-    form.condition &&
-    form.locationID &&
-    form.price &&
-    form.salePrice &&
-    form.engineSize &&
-    form.fuelType &&
-    form.transmission &&
-    form.driveType &&
-    form.doors &&
-    form.seats &&
-    form.color &&
-    form.mileage !== "" &&
-    form.shortDescription;
+  const canSubmit = React.useMemo(() => {
+    const checks = {
+      carName: form.carName.trim() !== "",
+      modelYear: form.modelYear.trim() !== "",
+      modelName: form.modelName.trim() !== "",
+      brandID: form.brandID.trim() !== "",
+      bodyTypeID: form.bodyTypeID.trim() !== "",
+      statusID: form.statusID.trim() !== "",
+      condition: !!form.condition,
+      locationID: form.locationID.trim() !== "",
+      price: form.price.trim() !== "",
+      salePrice: form.salePrice.trim() !== "",
+      engineSize: form.engineSize.trim() !== "",
+      fuelType: !!form.fuelType,
+      transmission: !!form.transmission,
+      driveType: !!form.driveType,
+      doors: !!form.doors,
+      seats: form.seats.trim() !== "",
+      color: form.color.trim() !== "",
+      mileage: form.mileage.trim() !== "",
+      shortDescription: form.shortDescription.trim() !== "",
+    };
+    console.log("checks", form.brandID);
+    const allValid = Object.values(checks).every((v) => v === true);
+
+    // Debug: log which fields are invalid
+    if (!allValid && process.env.NODE_ENV === "development") {
+      const invalidFields = Object.entries(checks)
+        .filter(([_, valid]) => !valid)
+        .map(([field]) => field);
+      console.log("❌ Invalid fields:", invalidFields);
+    }
+
+    return allValid;
+  }, [form]);
 
   return (
     <div className="border rounded-md p-4">
@@ -366,7 +381,7 @@ export const CreateCarForm: React.FC<{
             >
               <option value="">Chọn hãng</option>
               {brandCar.map((b) => (
-                <option key={b.brandCode} value={b.brandCode}>
+                <option key={b.brandCode} value={b.id}>
                   {b.brandName}
                 </option>
               ))}

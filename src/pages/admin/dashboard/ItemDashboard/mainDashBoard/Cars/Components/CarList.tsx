@@ -7,6 +7,7 @@ export const CarList: React.FC<{
   cars: CarResponseItem[];
   isLoading?: boolean;
   onSelectCar: (id: string) => void;
+  onViewDetail: (id: string) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
 }> = ({
@@ -14,6 +15,7 @@ export const CarList: React.FC<{
   cars,
   isLoading = false,
   onSelectCar,
+  onViewDetail,
   onPageChange,
   onPageSizeChange,
 }) => {
@@ -136,12 +138,20 @@ export const CarList: React.FC<{
                     <td className="py-2 pr-3">{c.brandID}</td>
                     <td className="py-2 pr-3">{c.modelYear}</td>
                     <td className="py-2 pr-3">
-                      <button
-                        className="px-3 py-1 border rounded-md hover:bg-gray-100"
-                        onClick={() => onSelectCar(String(c.carID))}
-                      >
-                        Sửa
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          className="px-3 py-1 border rounded-md hover:bg-gray-100"
+                          onClick={() => onSelectCar(String(c.carID))}
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                          onClick={() => onViewDetail(String(c.carID))}
+                        >
+                          Chi tiết
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

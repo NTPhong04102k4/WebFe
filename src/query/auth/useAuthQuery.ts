@@ -73,7 +73,8 @@ export const useAuthQuery = () => {
     onSuccess: () => {
       dispatch(clearCredentials());
       queryClient.clear();
-      window.location.href = "/auth/login";
+      // Don't redirect here - let the component handle navigation
+      // This prevents page reload
     },
   });
 

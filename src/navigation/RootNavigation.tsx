@@ -14,8 +14,12 @@ import { LoadingScreen } from "src/shared/components/loading";
 import { Header } from "src/shared/components/header";
 import { FooterComponent } from "src/shared/components/footer";
 import { Theme } from "src/shared/components/footer/data";
-import { useAppSelector } from "src/redux/hook";
-import { selectIsAuthenticated, selectUser } from "src/redux/Slice/AuthSlice";
+import { useAppDispatch, useAppSelector } from "src/redux/hook";
+import {
+  selectIsAuthenticated,
+  selectUser,
+  clearCredentials,
+} from "src/redux/Slice/AuthSlice";
 
 const About = React.lazy(() => import("src/pages/about"));
 const Accessory = React.lazy(() => import("src/pages/accessory"));
@@ -56,6 +60,7 @@ export function RootNavigation() {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const prevLocation = useRef(location);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const user = useAppSelector(selectUser);
@@ -66,6 +71,36 @@ export function RootNavigation() {
       ((user as any)?.role ? [(user as any)?.role] : []);
     return Array.isArray(r) ? r.map((x) => String(x).toLowerCase()) : [];
   }, [user]);
+
+  // Handle unauthorized errors from API interceptor
+  useEffect(() => {
+    const handleUnauthorized = (event: CustomEvent) => {
+      // Clear credentials
+      dispatch(clearCredentials());
+      // Navigate to login page without reload
+      const currentPath = location.pathname;
+      if (
+        currentPath !== "/auth/login" &&
+        currentPath !== "/login" &&
+        currentPath !== "/auth/signin" &&
+        currentPath !== "/auth/signUp"
+      ) {
+        navigate("/auth/login", { replace: true });
+      }
+    };
+
+    window.addEventListener(
+      "auth:unauthorized",
+      handleUnauthorized as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "auth:unauthorized",
+        handleUnauthorized as EventListener
+      );
+    };
+  }, [dispatch, navigate, location.pathname]);
 
   useEffect(() => {
     const isHome = location.pathname === "/home";
