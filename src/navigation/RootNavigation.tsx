@@ -57,6 +57,12 @@ const AccessoryEditorPage = React.lazy(
       "src/pages/admin/dashboard/ItemDashboard/mainDashBoard/Accessories/EditAccessories/AccessoryEditorPage"
     )
 );
+const ServiceFormPage = React.lazy(
+  () =>
+    import(
+      "src/pages/admin/dashboard/ItemDashboard/mainDashBoard/ServiecsManagement/ServiceForm"
+    )
+);
 export function RootNavigation() {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
@@ -220,6 +226,30 @@ export function RootNavigation() {
                   )
                 }
                 path="/auth/login/admin/accessories/new"
+              />
+              <Route
+                element={
+                  !isAuthenticated ? (
+                    <Navigate to="/auth/login" replace />
+                  ) : !isSuperAdmin ? (
+                    <Navigate to="/home" replace />
+                  ) : (
+                    <ServiceFormPage />
+                  )
+                }
+                path="/auth/login/admin/services/edit/:id"
+              />
+              <Route
+                element={
+                  !isAuthenticated ? (
+                    <Navigate to="/auth/login" replace />
+                  ) : !isSuperAdmin ? (
+                    <Navigate to="/home" replace />
+                  ) : (
+                    <ServiceFormPage />
+                  )
+                }
+                path="/auth/login/admin/services/new"
               />
 
               <Route element={<ListingAll />} path="/listings/all" />

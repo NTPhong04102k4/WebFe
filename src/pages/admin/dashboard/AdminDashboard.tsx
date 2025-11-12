@@ -4,20 +4,36 @@ import { Sidebar } from "./ItemDashboard/SideBar";
 import { HeaderDashBoard } from "./ItemDashboard/HeaderDashBoard";
 import { Accessories } from "./ItemDashboard/mainDashBoard/Accessories";
 import { Cars } from "./ItemDashboard/mainDashBoard/Cars";
+import { Services } from "./ItemDashboard/mainDashBoard/ServiecsManagement";
 
 enum ActiveTab {
-  USERS = 0,
-  STAFF = 1,
-  CARS = 2,
-  INVOICES = 3,
-  SERVICES = 4,
-  ACCESSORIES = 5,
-  REVENUE = 6,
+  // USERS = 0,
+  // STAFF = 1,
+  CARS = 0,
+  INVOICES = 1,
+  SERVICES = 2,
+  ACCESSORIES = 3,
+  REVENUE = 4,
 }
 
 const AdminDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState(ActiveTab.ACCESSORIES);
+
+  // Khôi phục activeTab từ localStorage khi component mount
+  useEffect(() => {
+    const savedTab = localStorage.getItem("admin_activeTab");
+    if (savedTab !== null) {
+      const tabIndex = parseInt(savedTab, 10);
+      // Chỉ set nếu giá trị hợp lệ
+      if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex <= 4) {
+        setActiveTab(tabIndex as ActiveTab);
+      }
+      // Xóa localStorage sau khi đọc để tránh conflict
+      localStorage.removeItem("admin_activeTab");
+    }
+  }, []);
+
   const ActiveTabContent = React.useCallback(
     ({ activeTabIdx }: { activeTabIdx: ActiveTab }) => {
       switch (activeTabIdx) {
@@ -29,8 +45,8 @@ const AdminDashboard: React.FC = () => {
           return <Cars />;
         // case ActiveTab.INVOICES:
         //   return <PurchaseTab />;
-        // case ActiveTab.SERVICES:
-        //   return <Accessories />;
+        case ActiveTab.SERVICES:
+          return <Services />;
         case ActiveTab.ACCESSORIES:
           return <Accessories />;
         // case ActiveTab.REVENUE:
