@@ -1,0 +1,1 @@
+{"version":3,"file":"static/js/4.ae55ac46.chunk.js","mappings":"gJACe,SAASA,IACpB,OACIC,EAAAA,EAAAA,KAAA,SAER,C","sources":["pages/term/index.tsx"],"sourcesContent":["import React from \"react\";\r\nexport default function TermAndConditions(){\r\n    return(\r\n        <div></div>\r\n    );\r\n}"],"names":["TermAndConditions","_jsx"],"sourceRoot":""}
