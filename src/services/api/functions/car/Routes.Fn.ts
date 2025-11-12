@@ -16,6 +16,7 @@ export const carRouteFn = {
           BrandCode: params.brandCode ?? undefined,
           PriceFrom: params.priceFrom ?? undefined,
           PriceTo: params.priceTo ?? undefined,
+          Id: params.carId ?? undefined,
         },
       }
     );

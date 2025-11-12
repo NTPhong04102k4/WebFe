@@ -5,4 +5,5 @@ export type CarListRequest = {
   brandCode?: string | null;
   priceFrom?: number | null;
   priceTo?: number | null;
+  carId?: number | null;
 };

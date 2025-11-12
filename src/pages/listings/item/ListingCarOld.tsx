@@ -72,7 +72,9 @@ const ListingCarOld = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   const handleViewDetails = (item: CarDetail) => {
-    navigate("/listings/details", { state: { subItem: item } });
+    navigate(`/listings/details?carId=${item.id}`, {
+      state: { subItem: item, carId: item.id },
+    });
   };
   return (
     <div className="w-full min-h-screen flex flex-col bg-[#050b2b]">

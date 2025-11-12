@@ -143,7 +143,9 @@ const ListingBody = () => {
   }, []);
 
   const handleViewDetails = (item: CarDetail) => {
-    navigate("/listings/details", { state: { subItem: item } });
+    navigate(`/listings/details?carId=${item.id}`, {
+      state: { subItem: item, carId: item.id },
+    });
   };
 
   return (
