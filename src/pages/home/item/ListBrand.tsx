@@ -4,6 +4,7 @@ import { Brand, CarDetail } from "./typeData";
 import { GoArrowUpRight } from "react-icons/go";
 import { useNavigate } from "react-router";
 
+<<<<<<< HEAD
 export const ListBrand = ({
   data,
   title,
@@ -24,6 +25,13 @@ export const ListBrand = ({
     const dataProps = carsData.filter((c: CarDetail) => c.body === obj.name);
     navigate("/listings/body", { state: { subItem: dataProps } });
   };
+=======
+export const ListBrand = ({ data,title,detail=false }: { data: Brand[],title:string,detail?:boolean }) => {
+  const navigate=useNavigate();  
+  const handleBody=(obj:{name:string,id:string|number,img:string})=>{
+    navigate('/listings/body',{state:{body:obj.name}})
+  }
+>>>>>>> fe/admin
   const DATA = data;
   if (detail === false) {
     return (

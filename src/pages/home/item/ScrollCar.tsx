@@ -171,7 +171,14 @@ export const MostCar: React.FC<MostCarProps> = React.memo(({ data, title }) => {
                   <h2 className="text-[#000] text-base font-sans font-semibold">
                     {car.priceBuy}$
                   </h2>
-                  <button className="inline-flex gap-2 p-2 justify-center items-center text-base text-[#0044ff]" onClick={()=>navigate('/cars/details',{state:{subItem:car }})}>
+                  <button
+                    className="inline-flex gap-2 p-2 justify-center items-center text-base text-[#0044ff]"
+                    onClick={() =>
+                      navigate(`/cars/details?carId=${car.id}`, {
+                        state: { subItem: car, carId: car.id },
+                      })
+                    }
+                  >
                     View Details <GoArrowUpRight size={24} color="#0044ff" />
                   </button>
                 </div>

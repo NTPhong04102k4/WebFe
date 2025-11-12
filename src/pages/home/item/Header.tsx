@@ -117,12 +117,13 @@ export const HeaderHome = ({
 
       case "Enter":
         e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
-          handleSelect(suggestions[selectedIndex]);
-          navigate("/cars/details", {
-            state: { subItem: suggestions[selectedIndex] },
-          });
-        }
+          if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+            const selectedCar = suggestions[selectedIndex];
+            handleSelect(selectedCar);
+            navigate(`/cars/details?carId=${selectedCar.id}`, {
+              state: { subItem: selectedCar, carId: selectedCar.id },
+            });
+          }
         break;
 
       case "Escape":

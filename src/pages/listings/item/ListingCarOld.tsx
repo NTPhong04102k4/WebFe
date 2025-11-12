@@ -243,9 +243,15 @@ const ListingCarOld = () => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+<<<<<<< HEAD
   const handleViewDetails = (carId: number, carDetail: CarDetail) => {
     navigate("/listings/details", {
       state: { subItem: carDetail, carID: carId },
+=======
+  const handleViewDetails = (item: CarDetail) => {
+    navigate(`/listings/details?carId=${item.id}`, {
+      state: { subItem: item, carId: item.id },
+>>>>>>> fe/admin
     });
   };
 

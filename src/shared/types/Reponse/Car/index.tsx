@@ -7,6 +7,7 @@ export interface BrandCarResponse {
   countryOrigin: string;
   website: string | null;
 }
+
 export interface BodyCarReponse {
   bodyCode: string;
   bodyName: string;
@@ -14,69 +15,40 @@ export interface BodyCarReponse {
   description: string | null;
   seatCapacityRange: string;
 }
-export interface CarDetailResponse {
-  carID: number;
-  length_mm: number;
-  width_mm: number;
-  height_mm: number;
-  wheelbase_mm: number;
-  groundClearance_mm: number;
-  curbWeight_kg: number;
-  grossWeight_kg: number | null;
-  payloadCapacity_kg: number | null;
-  engineCode: string;
-  cylinders: number;
-  maxPower_hp: number;
-  maxTorque_nm: number;
-  compression_ratio?: number | null;
-  topSpeed_kmh?: number | null;
-  acceleration_0_100_sec?: number | null;
-  fuelConsumption_city_l100km?: number | null;
-  fuelConsumption_highway_l100km?: number | null;
-  fuelConsumption_combined_l100km?: number | null;
-  fuelTankCapacity_l?: number | null;
-  safetyRating?: string | null;
-  airbags?: number | null;
-  abs: boolean;
-  esp: boolean;
-  airConditioning: boolean;
-  sunRoof: boolean;
-  leatherSeats: boolean;
-  navigationSystem: boolean;
-  bluetoothConnectivity: boolean;
-}
-export interface CarResponseItem {
+
+export interface CarListItem {
   carID: number;
   carCode: string;
-  vin: string;
+  vin: string | null;
   carName: string;
   brandID: number;
-  modelName: string;
-  modelYear: number;
-  bodyTypeID: number;
-  statusID: number;
-  condition: string;
-  locationID: number;
-  price: number;
+  modelName: string | null;
+  modelYear: number | null;
+  bodyTypeID: number | null;
+  statusID: number | null;
+  condition: string | null;
+  locationID: number | null;
+  price: number | null;
   importPrice: number | null;
-  salePrice: number;
-  engineSize: 2.5;
-  fuelType: string;
-  transmission: "Automatic";
-  driveType: string;
-  doors: number;
-  seats: number;
-  color: string;
-  mileage: number;
-  videoPath: any | null;
-  imagePaths: any[];
-  primaryImagePath: any;
+  salePrice: number | null;
+  engineSize: number | null;
+  fuelType: string | null;
+  transmission: string | null;
+  driveType: string | null;
+  doors: number | null;
+  seats: number | null;
+  color: string | null;
+  mileage: number | null;
+  videoPath: string | null;
+  imagePaths: string | null;
+  primaryImagePath: string | null;
   detailedDescription: string | null;
-  shortDescription: string;
+  shortDescription: string | null;
   isFeature: boolean;
   viewCount: number;
 }
-export interface CarResponse {
-  data: CarResponseItem[];
-  total: number;
+
+export interface CarListResponse {
+  data: CarListItem[];
+  totalCount: number;
 }
