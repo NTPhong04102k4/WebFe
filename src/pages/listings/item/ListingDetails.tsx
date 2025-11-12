@@ -11,6 +11,7 @@ import { useLocation } from "react-router";
 import { CarDetail } from "src/pages/home/item/typeData";
 import { carRouteFn } from "src/services/api/functions/car/Routes.Fn";
 import { mapCarsToDetails } from "src/shared/utils/carAdapter";
+import { OverviewText } from "./components/OverviewText";
 
 type ListingDetailState = {
   subItem?: CarDetail;
@@ -185,9 +186,7 @@ const DetailsCar = () => {
                 <h2 className="font-medium font-sans text-lg xl:text-lg 2xl:text-xl md:text-base mt-12">
                   Car Overview
                 </h2>
-                <p className="text-sm md:text-base text-gray-700 mt-4 leading-relaxed">
-                  {carDetail.descriptOverview}
-                </p>
+                <OverviewText description={carDetail.descriptOverview} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                   {[
                     { label: "Brand", value: carDetail.brand },
