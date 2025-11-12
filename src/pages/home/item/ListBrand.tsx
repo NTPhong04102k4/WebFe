@@ -3,13 +3,11 @@ import styled from "styled-components";
 import { Brand } from "./typeData";
 import { GoArrowUpRight } from "react-icons/go";
 import { useNavigate } from "react-router";
-import { DATA_CAR } from "src/pages/listings/item/data";
 
 export const ListBrand = ({ data,title,detail=false }: { data: Brand[],title:string,detail?:boolean }) => {
   const navigate=useNavigate();  
   const handleBody=(obj:{name:string,id:string|number,img:string})=>{
-    const dataProps=DATA_CAR.filter(c=>c.body===obj.name)
-    navigate('/listings/body',{state:{subItem:dataProps}})
+    navigate('/listings/body',{state:{body:obj.name}})
   }
   const DATA = data;
  if(detail===false){
