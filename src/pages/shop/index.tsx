@@ -10,7 +10,7 @@ enum SortPrice {
   LATEST = "Latest",
   ALL = "All",
 }
-const ITEMS_PER_PAGE = 9;
+const ITEMS_PER_PAGE = 100;
 const Shop: React.FC = () => {
   const [cost, setCost] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState(

@@ -18,7 +18,7 @@ export const carRouteFn = {
     // Use POST method as the API requires POST for paging requests
     const response = await apiClient.post<CarResponse>(carRoute.paging, {
       Page: params.page ?? 1,
-      PageSize: params.pageSize ?? 10,
+      PageSize: params.pageSize ?? 20,
       BrandCode: params.brandCode ?? "",
       BodyCode: params.bodyCode ?? "",
       PriceFrom: params.PriceFrom ?? undefined,

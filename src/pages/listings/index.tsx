@@ -283,7 +283,7 @@ const Listings = () => {
     );
   }
 
-  const totalResults = carResponse?.total || 0;
+  const totalResults = carResponse?.data.length || 0;
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-[#050b2b]">

@@ -51,7 +51,7 @@ export const accessoryRouteFn = {
       {
         params: {
           Page: params.page ?? 1,
-          PageSize: params.pageSize ?? 10,
+          PageSize: params.pageSize ?? 20,
           PriceFrom: params.priceFrom ?? undefined,
           PriceTo: params.priceTo ?? undefined,
           CategoryID: params.categoryID ?? undefined,

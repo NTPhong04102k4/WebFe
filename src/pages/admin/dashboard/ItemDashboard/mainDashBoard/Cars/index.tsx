@@ -24,7 +24,7 @@ export const Cars: React.FC = () => {
     brandCode: "",
     bodyCode: "",
     page: 1,
-    pageSize: 10,
+    pageSize: 20,
   });
   const [viewMode, setViewMode] = React.useState<ViewMode>("list");
   const [selectedCarId, setSelectedCarId] = React.useState<number | null>(null);
@@ -34,7 +34,7 @@ export const Cars: React.FC = () => {
   const { bodyTypes } = useBodyType();
   const { data: allCarsData, refetch: refetchCarList } = useCarList({
     page: 1,
-    pageSize: 100,
+    pageSize: 20,
     brandCode: "",
     bodyCode: "",
   });
