@@ -1,4 +1,5 @@
 import React from "react";
+import { storage } from "src/services/storage";
 import { useNavigate } from "react-router-dom";
 import { useCategoryList } from "src/shared/hooks/Category/useCategoryManagement";
 import { ServiceGrid } from "./Component/ServiceGrid";
@@ -9,7 +10,7 @@ export const Services = () => {
 
   const handleNavigateToForm = (path: string) => {
     // Lưu index của sidebar (SERVICES = 2) vào localStorage
-    localStorage.setItem("admin_activeTab", "2");
+    storage.set("admin_activeTab", "2");
     navigate(path);
   };
 

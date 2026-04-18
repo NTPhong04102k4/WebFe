@@ -1,5 +1,6 @@
 /* eslint-disable react/jsx-no-undef */
 import React, { useEffect, useState } from "react";
+import { storage } from "src/services/storage";
 import { Sidebar } from "./ItemDashboard/SideBar";
 import { HeaderDashBoard } from "./ItemDashboard/HeaderDashBoard";
 import { Accessories } from "./ItemDashboard/mainDashBoard/Accessories";
@@ -22,7 +23,7 @@ const AdminDashboard: React.FC = () => {
 
   // Khôi phục activeTab từ localStorage khi component mount
   useEffect(() => {
-    const savedTab = localStorage.getItem("admin_activeTab");
+    const savedTab = storage.get("admin_activeTab");
     if (savedTab !== null) {
       const tabIndex = parseInt(savedTab, 10);
       // Chỉ set nếu giá trị hợp lệ
@@ -30,7 +31,7 @@ const AdminDashboard: React.FC = () => {
         setActiveTab(tabIndex as ActiveTab);
       }
       // Xóa localStorage sau khi đọc để tránh conflict
-      localStorage.removeItem("admin_activeTab");
+      storage.remove("admin_activeTab");
     }
   }, []);
 

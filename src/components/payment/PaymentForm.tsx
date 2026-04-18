@@ -1,8 +1,9 @@
 import React, { useMemo, useEffect, useState } from "react";
+import { logger } from "src/utils/logger";
 import { useLocation, useNavigate } from "react-router-dom";
 import CryptoJS from "crypto-js";
 import { ENV } from "src/config/environment";
-import { useAuth } from "src/shared/hooks/auth/index.ts";
+import { useAuth } from "src/shared/hooks/auth";
 import { getTokenClaims } from "src/services/decode";
 
 interface PaymentFormLocationState {
@@ -24,7 +25,7 @@ const PaymentForm = () => {
 
   // Debug: Log state để kiểm tra
   useEffect(() => {
-    console.log("🔍 PaymentForm Debug:", {
+    logger.log("🔍 PaymentForm Debug:", {
       hasState: !!state,
       state: state,
       locationState: location.state,
@@ -160,7 +161,7 @@ const PaymentForm = () => {
     // Tạo chuỗi ký với dấu phẩy (theo tài liệu SePay)
     const signedString = signedFields.join(",");
 
-    console.log("Signed string:", signedString); // Debug
+    logger.log("Signed string:", signedString); // Debug
 
     // Hash HMAC SHA256
     const hash = CryptoJS.HmacSHA256(signedString, ENV.SEPAY_SECRET_KEY);

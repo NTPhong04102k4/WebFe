@@ -5,7 +5,7 @@ import { useNavigate } from "react-router";
 import styled from "styled-components";
 import { FEATURES, menuItems } from "src/shared/components/header/data";
 import { DropdownMenu } from "./DropDownMenu";
-import { useAuth } from "src/shared/hooks/auth/index.ts";
+import { useAuth } from "src/shared/hooks/auth";
 import { UserMenu } from "src/shared/components/UserMenu";
 
 const HeaderBarComponent = () => {

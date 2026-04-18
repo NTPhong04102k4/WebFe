@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { logger } from "src/utils/logger";
 import { IoMdArrowDropdown } from "react-icons/io";
 import { IoCartOutline } from "react-icons/io5";
 import { useNavigate, useLocation } from "react-router";
 import styled from "styled-components";
 import { DropdownMenuProps, FEATURES, menuItems } from "./data";
-import { useAuth } from "src/shared/hooks/auth/index.ts";
+import { useAuth } from "src/shared/hooks/auth";
 import { UserMenu } from "src/shared/components/UserMenu";
 
 export function Header() {
@@ -13,7 +14,7 @@ export function Header() {
   const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
-    console.log("🔍 Header - Auth state changed:", {
+    logger.log("🔍 Header - Auth state changed:", {
       isAuthenticated,
       user,
       userName: user?.fullName || user?.username || "No user",
@@ -75,20 +76,20 @@ export function Header() {
   };
 
   const getUserName = () => {
-    console.log("🔍 getUserName called with user:", user);
+    logger.log("🔍 getUserName called with user:", user);
     if (!user) {
-      console.log("❌ No user object");
+      logger.log("❌ No user object");
       return "";
     }
     if (user.fullName) {
-      console.log("✅ Using fullName:", user.fullName);
+      logger.log("✅ Using fullName:", user.fullName);
       return user.fullName;
     }
     if (user.username) {
-      console.log("✅ Using username:", user.username);
+      logger.log("✅ Using username:", user.username);
       return user.username;
     }
-    console.log("⚠️ No fullName or username found");
+    logger.log("⚠️ No fullName or username found");
     return "User";
   };
 

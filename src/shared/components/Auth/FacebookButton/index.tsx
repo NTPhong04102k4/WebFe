@@ -1,4 +1,5 @@
 import React from "react";
+import { logger } from "src/utils/logger";
 import { setCredentials } from "src/redux/Slice/AuthSlice";
 import { useAppDispatch } from "src/redux/hook";
 import { useFacebookAuth } from "src/shared/hooks/auth/useFacebookAuth";
@@ -23,13 +24,13 @@ export const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
   const { mapFacebookUser } = useSocialAuthMapper();
 
   const handleFacebookLogin = async () => {
-    console.log("🖱️ Facebook button clicked!");
+    logger.log("🖱️ Facebook button clicked!");
     try {
-      console.log("🔄 Calling loginWithFacebook...");
+      logger.log("🔄 Calling loginWithFacebook...");
 
       // Lấy thông tin user từ Facebook OAuth
       const response = await loginWithFacebook();
-      console.log("✅ Facebook user received:", response);
+      logger.log("✅ Facebook user received:", response);
 
       const token = response.tokens?.access_token || "";
       if (!token) {
@@ -45,11 +46,11 @@ export const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
       if (isBackendUserData) {
         // Use backend user data directly (already in correct format)
         userData = response as unknown as UserResponse;
-        console.log("Using backend user data directly");
+        logger.log("Using backend user data directly");
       } else {
         // Map social auth response to UserResponse format
         userData = mapFacebookUser(response);
-        console.log("Mapped social auth response");
+        logger.log("Mapped social auth response");
       }
 
       dispatch(
@@ -60,13 +61,13 @@ export const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
         })
       );
 
-      console.log("✅ loginWithFacebook completed, calling onSuccess");
+      logger.log("✅ loginWithFacebook completed, calling onSuccess");
       onSuccess?.();
     } catch (error) {
-      console.error("❌ Facebook login error:", error);
+      logger.error("❌ Facebook login error:", error);
       onError?.(error as Error);
     } finally {
-      console.log("🏁 Facebook login handler finished");
+      logger.log("🏁 Facebook login handler finished");
     }
   };
 

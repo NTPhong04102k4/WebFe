@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { ENV } from "src/config/environment";
-import { OAUTH_CONFIG } from "../../../config/oauth";
+import { AUTH_ROUTES } from "src/services/api/functions/auth/auth.routes";
 import { GoogleUserResponse } from "src/shared/types/Reponse/auth/user";
+import { logger } from "src/utils/logger";
 
 export const useGoogleAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,15 +11,14 @@ export const useGoogleAuth = () => {
     return new Promise((resolve, reject) => {
       setIsLoading(true);
 
-      const authUrl =
-        `${OAUTH_CONFIG.google.authUrl}?` +
-        `client_id=${OAUTH_CONFIG.google.clientId}&` +
-        `redirect_uri=${encodeURIComponent(OAUTH_CONFIG.google.redirectUri)}&` +
-        `response_type=code&` +
-        `scope=${encodeURIComponent(OAUTH_CONFIG.google.scope)}&` +
-        `state=google_login&` +
-        `access_type=offline&` +
-        `prompt=consent`;
+      const baseApiUrl = (ENV.API_URL || "").replace(/\/$/, "");
+      const authUrl = `${baseApiUrl}${AUTH_ROUTES.GOOGLE_LOGIN}`;
+
+      if (!baseApiUrl) {
+        setIsLoading(false);
+        reject(new Error("Thiếu cấu hình VITE_API_URL cho social login"));
+        return;
+      }
 
       const popup = window.open(
         authUrl,
@@ -43,7 +43,7 @@ export const useGoogleAuth = () => {
             popup.close();
           }
         } catch (error) {
-          console.error("Error closing popup:", error);
+          logger.error("Error closing popup:", error);
         }
       };
 
@@ -92,7 +92,7 @@ export const useGoogleAuth = () => {
           !ENV.API_URL; // If no API_URL configured, accept all
 
         if (!isAllowedOrigin && ENV.API_URL) {
-          console.warn("Rejected message from origin:", event.origin);
+          logger.warn("Rejected message from origin:", event.origin);
           return;
         }
 

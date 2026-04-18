@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { logger } from "src/utils/logger";
 import { TabNavigation, MessageDisplay } from "../../shared/components/Login";
 import { LoginContent } from "./components/LoginContent";
 import { useAuthQuery } from "src/query/auth/useAuthQuery";
@@ -21,14 +22,12 @@ export default function Login() {
   const [success, setSuccess] = useState("");
   const [isResendingOtp, setIsResendingOtp] = useState(false);
 
-  // Log auth state whenever it changes
   useEffect(() => {
-    console.group("🔐 AUTH STORE STATE");
-    console.log("Auth State:", authState);
-    console.log("Token:", authState.token);
-    console.log("User:", authState.user);
-    console.log("Is Authenticated:", authState.isAuthenticated);
-    console.groupEnd();
+    logger.log("🔐 AUTH STORE STATE", {
+      token: authState.token,
+      user: authState.user,
+      isAuthenticated: authState.isAuthenticated,
+    });
   }, [authState]);
 
   const {
@@ -86,7 +85,7 @@ export default function Login() {
         usernameOrPhoneOrEmail: data.email,
         password: data.password,
       });
-      console.log(res.data.message);
+      logger.log(res.data.message);
       setSuccess("Đăng nhập thành công!");
       setTimeout(() => {
         navigate("/", { replace: true });

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ENV } from "src/config/environment";
+import { AUTH_ROUTES } from "src/services/api/functions/auth/auth.routes";
 import { FacebookUserResponse } from "src/shared/types/Reponse/auth/user";
+import { logger } from "src/utils/logger";
 
 export const useFacebookAuth = () => {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
@@ -8,17 +10,17 @@ export const useFacebookAuth = () => {
   const isSDKInitialized = useRef(false);
 
   const initFacebookSDK = useCallback(() => {
-    if (typeof window !== "undefined" && (window as any).FB) {
-      const FB = (window as any).FB;
+    if (typeof window !== "undefined" && window.FB) {
+      const FB = window.FB;
 
       FB.init({
-        appId: process.env.REACT_APP_FACEBOOK_APP_ID,
+        appId: ENV.FACEBOOK_APP_ID,
         cookie: true,
         xfbml: true,
         version: "v18.0",
       });
 
-      console.log("✅ Facebook SDK initialized");
+      logger.log("✅ Facebook SDK initialized");
     }
   }, []);
 
@@ -33,13 +35,13 @@ export const useFacebookAuth = () => {
     script.crossOrigin = "anonymous";
 
     script.onload = () => {
-      console.log("✅ Facebook SDK loaded successfully");
+      logger.log("✅ Facebook SDK loaded successfully");
       setIsSDKLoaded(true);
       initFacebookSDK();
     };
 
     script.onerror = () => {
-      console.error("❌ Failed to load Facebook SDK");
+      logger.error("❌ Failed to load Facebook SDK");
     };
 
     document.head.appendChild(script);
@@ -54,15 +56,17 @@ export const useFacebookAuth = () => {
     return new Promise((resolve, reject) => {
       setIsLoading(true);
 
+      const baseApiUrl = (ENV.API_URL || "").replace(/\/$/, "");
+      const authUrl = `${baseApiUrl}${AUTH_ROUTES.FACEBOOK_LOGIN}`;
+
+      if (!baseApiUrl) {
+        setIsLoading(false);
+        reject(new Error("Thiếu cấu hình VITE_API_URL cho social login"));
+        return;
+      }
+
       const popup = window.open(
-        `https://www.facebook.com/v18.0/dialog/oauth?` +
-          `client_id=${process.env.REACT_APP_FACEBOOK_APP_ID}&` +
-          `redirect_uri=${encodeURIComponent(
-            `${ENV.API_URL}/auth/callback/facebook`
-          )}&` +
-          `response_type=code&` +
-          `scope=email,public_profile&` +
-          `state=facebook_login`,
+        authUrl,
         "facebook-login",
         "width=500,height=600,scrollbars=yes,resizable=yes,popup=yes"
       );
@@ -84,16 +88,14 @@ export const useFacebookAuth = () => {
             popup.close();
           }
         } catch (error) {
-          console.error("Error closing popup:", error);
+          logger.error("Error closing popup:", error);
         }
       };
 
       const handleSuccess = (userData: any, tokens?: any) => {
         if (resolved) return;
         resolved = true;
-        console.log("🎉 Real Facebook Login Success!");
-        console.log("📋 User Information:", userData);
-        console.log("🔑 Tokens received:", tokens);
+        logger.log("🎉 Real Facebook Login Success!", { userData, tokens });
         cleanup();
         resolve({
           ...userData,
@@ -104,7 +106,7 @@ export const useFacebookAuth = () => {
       const handleError = (error: string) => {
         if (resolved) return;
         resolved = true;
-        console.error("❌ Facebook login error:", error);
+        logger.error("❌ Facebook login error:", error);
         cleanup();
         reject(new Error(error));
       };
@@ -130,11 +132,15 @@ export const useFacebookAuth = () => {
       }, 500);
 
       const messageListener = (event: MessageEvent) => {
-        if (
-          event.origin !== `${ENV.API_URL}` &&
-          event.origin !== window.location.origin &&
-          !event.origin.includes(ENV.API_URL || "")
-        ) {
+        const allowedOrigins = [
+          window.location.origin,
+          ...(ENV.API_URL ? [ENV.API_URL.replace(/\/$/, "")] : []),
+        ];
+        const isAllowedOrigin =
+          allowedOrigins.some((origin) => event.origin === origin) ||
+          !ENV.API_URL;
+
+        if (!isAllowedOrigin) {
           return;
         }
 

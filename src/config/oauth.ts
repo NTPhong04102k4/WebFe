@@ -3,13 +3,13 @@ import { ENV } from "./environment";
 // OAuth Configuration
 export const OAUTH_CONFIG = {
   google: {
-    clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+    clientId: ENV.GOOGLE_CLIENT_ID,
     redirectUri: `${ENV.API_URL}/auth/callback/google`, // Backend API endpoint
     scope: "openid email profile",
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
   },
   facebook: {
-    clientId: process.env.REACT_APP_FACEBOOK_APP_ID,
+    clientId: ENV.FACEBOOK_APP_ID,
     redirectUri: `${ENV.API_URL}/auth/callback/facebook`,
     scope:
       "email,public_profile,user_birthday,user_gender,user_location,user_hometown",

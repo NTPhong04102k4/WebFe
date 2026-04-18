@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { storage } from "src/services/storage";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
@@ -29,7 +30,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, isLoading }) => {
 
   // Load remembered email when component mounts
   useEffect(() => {
-    const rememberedEmail = localStorage.getItem(REMEMBER_ME_KEY);
+    const rememberedEmail = storage.get(REMEMBER_ME_KEY);
     if (rememberedEmail) {
       setValue("email", rememberedEmail);
       setRememberMe(true);
@@ -39,17 +40,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, isLoading }) => {
   // Save or remove email from localStorage based on rememberMe checkbox
   useEffect(() => {
     if (rememberMe && emailValue) {
-      localStorage.setItem(REMEMBER_ME_KEY, emailValue);
+      storage.set(REMEMBER_ME_KEY,emailValue);
     } else if (!rememberMe) {
-      localStorage.removeItem(REMEMBER_ME_KEY);
+      storage.remove(REMEMBER_ME_KEY);
     }
   }, [rememberMe, emailValue]);
 
   const onSubmit = (data: LoginFormData) => {
     if (rememberMe) {
-      localStorage.setItem(REMEMBER_ME_KEY, data.email);
+      storage.set(REMEMBER_ME_KEY,data.email);
     } else {
-      localStorage.removeItem(REMEMBER_ME_KEY);
+      storage.remove(REMEMBER_ME_KEY);
     }
     onLogin(data);
   };

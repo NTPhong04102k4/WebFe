@@ -1,4 +1,5 @@
 import React from "react";
+import { logger } from "src/utils/logger";
 import { useCarTechSpec } from "src/shared/hooks/Car";
 import { CarDetailResponse } from "src/shared/types/Reponse/Car";
 import { TechSpecDetailUpdateRequest } from "src/shared/types/Request/Car";
@@ -147,7 +148,7 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
       if (isNaN(num)) return null;
       // Ensure value is within safe range (prevent overflow)
       if (num > 999999999 || num < -999999999) {
-        console.warn("Value out of safe range:", num);
+        logger.warn("Value out of safe range:", num);
         return null;
       }
       return num;
@@ -159,7 +160,7 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
       if (isNaN(num)) return 0;
       // Ensure value is within safe range (prevent overflow)
       if (num > 999999999 || num < -999999999) {
-        console.warn("Value out of safe range:", num);
+        logger.warn("Value out of safe range:", num);
         return 0;
       }
       return num;
@@ -203,7 +204,7 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
       bluetoothConnectivity: form.bluetoothConnectivity,
     };
 
-    console.log("📤 Submitting tech spec:", {
+    logger.log("📤 Submitting tech spec:", {
       carId,
       isEditMode,
       submitData,
@@ -223,8 +224,8 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
         }
       );
     } else {
-      console.log(form);
-      console.log(submitData);
+      logger.log(form);
+      logger.log(submitData);
       createTechSpec(
         { id: carId, data: submitData },
         {

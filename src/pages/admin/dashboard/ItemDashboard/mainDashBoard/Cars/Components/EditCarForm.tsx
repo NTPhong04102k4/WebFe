@@ -4,7 +4,7 @@ import { useLocation } from "src/shared/hooks/location";
 import { useCarMutation } from "src/shared/hooks/Car";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
 import { CarDetailUpdateRequest } from "src/shared/types/Request/Car";
-import { useAuth } from "src/shared/hooks/auth/index.ts";
+import { useAuth } from "src/shared/hooks/auth";
 
 type Condition = "New" | "Used" | "Certified";
 

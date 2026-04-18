@@ -9,7 +9,7 @@ import { SlLocationPin } from "react-icons/sl";
 import { TbManualGearbox } from "react-icons/tb";
 import { useLocation, useNavigate } from "react-router";
 import { CarDetail } from "src/pages/home/item/typeData";
-import { useAuth } from "src/shared/hooks/auth/index.ts";
+import { useAuth } from "src/shared/hooks/auth";
 import { useCarDetail } from "src/shared/hooks/Car";
 
 const DetailsCar = () => {

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useGoogleAuth } from "src/shared/hooks/auth/useGoogleAuth";
+import { logger } from "src/utils/logger";
 interface GoogleLoginButtonProps {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
@@ -16,7 +17,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   const { loginWithGoogle, isLoading: isLoggingIn } = useGoogleAuth();
 
   const handleGoogleLogin = async () => {
-    console.log("🖱️ Google button clicked!");
+    logger.log("🖱️ Google button clicked!");
     try {
       await loginWithGoogle();
       onSuccess?.();

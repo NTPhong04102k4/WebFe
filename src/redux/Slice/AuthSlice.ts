@@ -4,33 +4,22 @@ import {
   RegisterVerifyResponse,
   UserResponse,
 } from "src/shared/types/Reponse/auth/user";
+import { storage } from "src/services/storage";
+
+type AuthUser =
+  | UserResponse
+  | RegisterVerifyResponse["data"]["user"]
+  | null;
 
 interface AuthState {
   token: string | null;
-  user: any | null;
+  user: AuthUser;
   isAuthenticated: boolean;
 }
 
-const getStoredUser = (): any | null => {
-  try {
-    const storedUser = localStorage.getItem("auth_user");
-    if (!storedUser || storedUser === "undefined" || storedUser === "null") {
-      return null;
-    }
-    const parsedUser = JSON.parse(storedUser);
-    return parsedUser;
-  } catch (error) {
-    return null;
-  }
-};
+const getStoredUser = (): AuthUser => storage.getUser<AuthUser>();
 
-const getStoredToken = (): string | null => {
-  const token = localStorage.getItem("auth_token");
-  if (!token || token === "undefined" || token === "null") {
-    return null;
-  }
-  return token;
-};
+const getStoredToken = (): string | null => storage.getToken();
 
 const initialState: AuthState = {
   token: getStoredToken(),
@@ -58,15 +47,15 @@ export const authSlice = createSlice({
           : !!action.payload.token;
 
       if (action.payload.token) {
-        localStorage.setItem("auth_token", action.payload.token);
+        storage.setToken(action.payload.token);
       } else {
-        localStorage.removeItem("auth_token");
+        storage.removeToken();
       }
 
       if (action.payload.user) {
-        localStorage.setItem("auth_user", JSON.stringify(action.payload.user));
+        storage.setUser(action.payload.user);
       } else {
-        localStorage.removeItem("auth_user");
+        storage.removeUser();
       }
     },
     clearCredentials: (state) => {
@@ -74,12 +63,13 @@ export const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
 
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_user");
+      storage.removeToken();
+      storage.removeUser();
     },
   },
 });
 
+export type { AuthUser };
 export const { setCredentials, clearCredentials } = authSlice.actions;
 export const selectAuth = (state: RootState) => state.auth;
 export const selectIsAuthenticated = (state: RootState) =>

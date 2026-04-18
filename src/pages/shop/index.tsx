@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { logger } from "src/utils/logger";
 import { DATA_CATEGORIES, DetailItem } from "./data";
 import { CustomPriceSlider } from "./item/SliderPrice";
 import { ProductCard } from "./item/ProductCard";
@@ -62,7 +63,7 @@ const Shop: React.FC = () => {
   }, []);
 
   const handleAddToCart = useCallback((item: DetailItem) => {
-    console.log("Adding to cart:", item);
+    logger.log("Adding to cart:", item);
   }, []);
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "src/redux/hook";
+import { logger } from "src/utils/logger";
 import { setCredentials } from "src/redux/Slice/AuthSlice";
 import { useGoogleAuth } from "./useGoogleAuth";
 import { useFacebookAuth } from "./useFacebookAuth";
@@ -40,8 +41,7 @@ export const useSocialLogin = ({
       roles: normalizedRoles,
     };
 
-    console.log("🔍 [Social Login] Token roles:", normalizedRoles);
-    console.log("🔍 [Social Login] User with roles:", userWithRoles);
+    logger.log("🔍 [Social Login] Token roles:", normalizedRoles, "User:", userWithRoles);
 
     dispatch(
       setCredentials({
@@ -58,13 +58,13 @@ export const useSocialLogin = ({
     onSuccess?.(message);
 
     const isSuperAdmin = normalizedRoles?.includes("superadmin");
-    console.log("🔍 [Social Login] Is SuperAdmin:", isSuperAdmin);
+    logger.log("🔍 [Social Login] Is SuperAdmin:", isSuperAdmin);
 
     setTimeout(() => {
       if (isSuperAdmin) {
         navigate("/auth/login/admin/page_manage", { replace: true });
       } else {
-        console.log("Regular user, navigating to home");
+        logger.log("Regular user, navigating to home");
         navigate("/", { replace: true });
       }
     }, 3000);
@@ -129,7 +129,7 @@ export const useSocialLogin = ({
             ? (apiUser as FacebookUserResponse)
             : (facebookUser as any)
         );
-        console.log("Mapped social auth response");
+        logger.log("Mapped social auth response");
       }
 
       saveCredentialsAndLog(token, userData, "FACEBOOK");

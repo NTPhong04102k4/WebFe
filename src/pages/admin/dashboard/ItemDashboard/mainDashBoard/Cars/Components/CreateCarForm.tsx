@@ -1,10 +1,12 @@
 import React from "react";
+import { ENV } from "src/config/environment";
+import { logger } from "src/utils/logger";
 import { useBrandCar } from "src/shared/hooks/BrandCar";
 import { useBodyType } from "src/shared/hooks/BodyType";
 import { useLocation } from "src/shared/hooks/location";
 import { useCarMutation } from "src/shared/hooks/Car";
 import { CarDetailUpdateRequest } from "src/shared/types/Request/Car";
-import { useAuth } from "src/shared/hooks/auth/index.ts";
+import { useAuth } from "src/shared/hooks/auth";
 
 type Condition = "New" | "Used" | "Certified";
 
@@ -271,15 +273,15 @@ export const CreateCarForm: React.FC<{
       mileage: form.mileage.trim() !== "",
       shortDescription: form.shortDescription.trim() !== "",
     };
-    console.log("checks", form.brandID);
+    logger.log("checks", form.brandID);
     const allValid = Object.values(checks).every((v) => v === true);
 
     // Debug: log which fields are invalid
-    if (!allValid && process.env.NODE_ENV === "development") {
+    if (!allValid && ENV.IS_DEVELOPMENT) {
       const invalidFields = Object.entries(checks)
         .filter(([_, valid]) => !valid)
         .map(([field]) => field);
-      console.log("❌ Invalid fields:", invalidFields);
+      logger.log("❌ Invalid fields:", invalidFields);
     }
 
     return allValid;

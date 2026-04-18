@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { logger } from "src/utils/logger";
 import { IoMdCheckmark } from "react-icons/io";
 import { DATA_PREMIUM } from "./data";
 
@@ -120,7 +121,7 @@ const MembershipPlans: React.FC = () => {
                 <button
                   className="w-full py-2 px-4 bg-white text-blue-600 border rounded-lg active:scale-90 transition duration-200 font-medium hover:bg-blue-50"
                   onClick={() =>
-                    console.log(`Selected plan: ${plan.namePackage}`)
+                    logger.log(`Selected plan: ${plan.namePackage}`)
                   }
                 >
                   Add to Cart

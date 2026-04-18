@@ -3,3 +3,8 @@ node_modules
 firebase.json
 build
 .firebase
+
+# Build / cache (Vite, Next.js)
+dist
+.next
+out

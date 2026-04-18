@@ -1,6 +1,8 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 import { ENV } from "../../config/environment";
+import { logger } from "../../utils/logger";
+import { storage } from "../storage";
 
 const API_BASE_URL = ENV.API_URL;
 
@@ -14,15 +16,13 @@ const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("auth_token");
+    const token = storage.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       // Log for debugging (only in development)
-      if (process.env.NODE_ENV === "development") {
-        console.log("🔐 Adding Authorization header to request:", config.url);
-      }
+      logger.log("🔐 Adding Authorization header to request:", config.url);
     } else {
-      console.warn(
+      logger.warn(
         "⚠️ No auth token found in localStorage for request:",
         config.url
       );

@@ -95,7 +95,7 @@ const AuthCallback: React.FC = () => {
               ? { access_token: response.token }
               : undefined,
           },
-          "*"
+          window.location.origin
         );
 
         // Close popup
@@ -117,7 +117,7 @@ const AuthCallback: React.FC = () => {
             error:
               response.message || response.error || "Authentication failed",
           },
-          "*"
+          window.location.origin
         );
 
         setTimeout(() => {
@@ -144,7 +144,7 @@ const AuthCallback: React.FC = () => {
           type: "OAUTH_ERROR",
           error: errorMsg,
         },
-        "*"
+        window.location.origin
       );
 
       setTimeout(() => {
@@ -176,7 +176,7 @@ const AuthCallback: React.FC = () => {
                 code: code,
                 state: state,
               },
-              "*"
+              window.location.origin
             );
           }
           setStatus("success");
@@ -223,7 +223,7 @@ const AuthCallback: React.FC = () => {
                 type: "OAUTH_ERROR",
                 error: "Authentication timeout",
               },
-              "*"
+              window.location.origin
             );
           }
           setTimeout(() => {

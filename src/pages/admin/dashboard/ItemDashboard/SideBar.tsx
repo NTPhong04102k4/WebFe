@@ -1,4 +1,5 @@
 import React from "react";
+import { logger } from "src/utils/logger";
 import {
   BuyCarIcon,
   MenuIcon,
@@ -61,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(
         </div>
         <div className="w-full flex flex-col gap-1">
           {DATA_FEATS.map((item) => {
-            console.log("id:", item.id);
+            logger.log("id:", item.id);
             return (
               <FeaturesSideBar
                 activeTab={item.id === isActiveTab}

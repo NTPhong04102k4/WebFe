@@ -1,6 +1,8 @@
 import { CarDetailResponse, CarResponse } from "src/shared/types/Reponse/Car";
 import apiClient from "../..";
 import { carRoute } from "./Routes";
+import { logger } from "src/utils/logger";
+import { storage } from "src/services/storage";
 import {
   CarDetailUpdateRequest,
   CarPagingRequest,
@@ -32,8 +34,8 @@ export const carRouteFn = {
       // Log FormData info for debugging
       if (data instanceof FormData) {
         const formDataKeys = Array.from(data.keys());
-        console.log("📤 Sending FormData with fields:", formDataKeys);
-        console.log("📤 FormData entries count:", formDataKeys.length);
+        logger.log("📤 Sending FormData with fields:", formDataKeys);
+        logger.log("📤 FormData entries count:", formDataKeys.length);
 
         // Log file info
         const fileEntries: string[] = [];
@@ -46,11 +48,11 @@ export const carRouteFn = {
           }
         });
         if (fileEntries.length > 0) {
-          console.log("📤 Files in FormData:", fileEntries);
+          logger.log("📤 Files in FormData:", fileEntries);
         }
       }
 
-      console.log("📤 Making POST request to:", carRoute.create);
+      logger.log("📤 Making POST request to:", carRoute.create);
       const startTime = Date.now();
 
       const response = await apiClient.post<CarDetailResponse>(
@@ -59,7 +61,7 @@ export const carRouteFn = {
       );
 
       const duration = Date.now() - startTime;
-      console.log("✅ Request successful in", duration, "ms");
+      logger.log("✅ Request successful in", duration, "ms");
       return response.data;
     } catch (error: any) {
       // Enhanced error logging
@@ -120,10 +122,10 @@ export const carRouteFn = {
     return response.data;
   },
   createTechSpec: async (id: number, data: TechSpecDetailUpdateRequest) => {
-    const token = localStorage.getItem("auth_token");
-    console.log("🔑 Token exists:", !!token);
-    console.log("📤 Creating tech spec for car ID:", id);
-    console.log("📤 Input data:", JSON.stringify(data, null, 2));
+    const token = storage.getToken();
+    logger.log("🔑 Token exists:", !!token);
+    logger.log("📤 Creating tech spec for car ID:", id);
+    logger.log("📤 Input data:", JSON.stringify(data, null, 2));
 
     // Ensure carID is set correctly in the data
     // Preserve all data exactly as provided from the form
@@ -132,18 +134,18 @@ export const carRouteFn = {
       carID: id, // Always override with the id parameter to ensure it's correct
     };
 
-    console.log(
+    logger.log(
       "📤 Request data (before send):",
       JSON.stringify(requestData, null, 2)
     );
-    console.log("📤 Request URL:", carRoute.techSpecCreate);
+    logger.log("📤 Request URL:", carRoute.techSpecCreate);
 
     try {
       const response = await apiClient.post<CarDetailResponse>(
         carRoute.techSpecCreate,
         requestData
       );
-      console.log("✅ Tech spec created successfully");
+      logger.log("✅ Tech spec created successfully");
       return response.data;
     } catch (error: any) {
       console.error("❌ Error creating tech spec:", {
@@ -164,9 +166,9 @@ export const carRouteFn = {
     }
   },
   updateTechSpec: async (id: number, data: TechSpecDetailUpdateRequest) => {
-    const token = localStorage.getItem("auth_token");
-    console.log("🔑 Token exists:", !!token);
-    console.log("📤 Updating tech spec for car ID:", id);
+    const token = storage.getToken();
+    logger.log("🔑 Token exists:", !!token);
+    logger.log("📤 Updating tech spec for car ID:", id);
 
     // Ensure carID is set correctly in the data
     const requestData = {
@@ -174,8 +176,8 @@ export const carRouteFn = {
       carID: id,
     };
 
-    console.log("📤 Request data:", requestData);
-    console.log("📤 Request URL:", carRoute.techSpecEdit);
+    logger.log("📤 Request data:", requestData);
+    logger.log("📤 Request URL:", carRoute.techSpecEdit);
 
     try {
       const response = await apiClient.patch<CarDetailResponse>(
@@ -185,7 +187,7 @@ export const carRouteFn = {
           params: { id },
         }
       );
-      console.log("✅ Tech spec updated successfully");
+      logger.log("✅ Tech spec updated successfully");
       return response.data;
     } catch (error: any) {
       console.error("❌ Error updating tech spec:", {

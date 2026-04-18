@@ -1,4 +1,5 @@
 ﻿import React, { useState } from "react";
+import { storage } from "src/services/storage";
 import { GoArrowRight } from "react-icons/go";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -70,7 +71,7 @@ const Admin = React.memo(() => {
         })
       );
 
-      localStorage.setItem("auth_token", token);
+      storage.setToken(token);
       if (claims?.sub?.toLowerCase().includes("superadmin")) {
         navigate("/auth/login/admin/page_manage", { replace: true });
       } else {

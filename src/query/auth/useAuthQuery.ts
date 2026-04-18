@@ -7,14 +7,18 @@ import {
 } from "src/redux/Slice/AuthSlice";
 import { authAPI } from "src/services/api/functions/auth/authFn";
 import { getTokenClaims } from "src/services/decode";
-import { RegisterVerifyResponse } from "src/shared/types/Reponse/auth/user";
+import {
+  RegisterVerifyResponse,
+  UserResponse,
+} from "src/shared/types/Reponse/auth/user";
+import { logger } from "src/utils/logger";
 
 export const useAuthQuery = () => {
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const authState = useAppSelector(selectAuth);
   const userName = getTokenClaims(authState.token);
-  console.log("🔍 userName:", userName);
+  logger.log("🔍 userName:", userName);
 
   const loginMutation = useMutation({
     mutationFn: authAPI.login,
@@ -39,7 +43,7 @@ export const useAuthQuery = () => {
           queryClient.setQueryData(["profile"], profileResponse);
         }
       } catch (error) {
-        console.error("Failed to fetch profile after login:", error);
+        logger.error("Failed to fetch profile after login:", error);
       }
     },
   });
@@ -80,17 +84,20 @@ export const useAuthQuery = () => {
 
   const profileQuery = useQuery({
     queryKey: ["profile"],
-    queryFn: () => authAPI.getProfile(authState.user?.userUUID ?? ""),
-    enabled: authState.isAuthenticated && !!authState.user?.userUUID,
+    queryFn: () =>
+      authAPI.getProfile((authState.user as UserResponse)?.userUUID ?? ""),
+    enabled:
+      authState.isAuthenticated &&
+      !!(authState.user as UserResponse)?.userUUID,
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error: any) => {
       if (error?.response?.status === 401) {
-        console.warn("⚠️ Profile query returned 401 - clearing credentials");
+        logger.warn("⚠️ Profile query returned 401 - clearing credentials");
         dispatch(clearCredentials());
         return false;
       }
       if (error?.response?.status === 400) {
-        console.warn(
+        logger.warn(
           "⚠️ Profile query returned 400 - skipping retry but keeping auth state:",
           error?.response?.data
         );
