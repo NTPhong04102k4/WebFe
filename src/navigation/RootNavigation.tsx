@@ -18,6 +18,8 @@ import { FooterComponent } from "src/shared/components/footer";
 import { Theme } from "src/shared/components/footer/data";
 import { useAppSelector } from "src/redux/hook";
 import { selectIsAuthenticated } from "src/redux/Slice/AuthSlice";
+import { RequireAuth } from "src/components/routing/RequireAuth";
+import { StaffRoute } from "src/components/routing/StaffRoute";
 import { getTokenClaims } from "src/services/decode";
 
 const About = React.lazy(() => import("src/pages/about"));
@@ -48,6 +50,20 @@ const ListingBody = React.lazy(
 const PaymentForm = React.lazy(
   () => import("src/components/payment/PaymentForm"),
 );
+const AccountLayout = React.lazy(() => import("src/pages/account/AccountLayout"));
+const GaragePage = React.lazy(
+  () => import("src/pages/account/garage/GaragePage"),
+);
+const AppointmentsPage = React.lazy(
+  () => import("src/pages/account/appointments/AppointmentsPage"),
+);
+const WorkOrdersPage = React.lazy(
+  () => import("src/pages/account/work-orders/WorkOrdersPage"),
+);
+const MyInsurancePage = React.lazy(
+  () => import("src/pages/account/insurance/MyInsurancePage"),
+);
+const StaffDashboard = React.lazy(() => import("src/pages/staff/StaffDashboard"));
 const Profile = React.lazy(() => import("src/pages/profile/UserProfileForm"));
 const AccessoryEditorPage = React.lazy(
   () =>
@@ -106,13 +122,17 @@ export function RootNavigation() {
   const shouldHideHeader = useMemo(() => {
     return (
       location.pathname.startsWith("/auth/login/admin") ||
+      location.pathname.startsWith("/staff") ||
       location.pathname === "/home" ||
       location.pathname === "/"
     );
   }, [location.pathname]);
 
   const shouldHideFooter = useMemo(() => {
-    return location.pathname.startsWith("/auth/login/admin");
+    return (
+      location.pathname.startsWith("/auth/login/admin") ||
+      location.pathname.startsWith("/staff")
+    );
   }, [location.pathname]);
 
   const footerTheme = useMemo(() => {
@@ -257,6 +277,30 @@ export function RootNavigation() {
                 <Route element={<ListingCarOld />} path="/listings/car_old" />
                 <Route element={<ListingBody />} path="/listings/body" />
                 <Route path="/payment" element={<PaymentForm />} />
+
+                <Route
+                  path="/account"
+                  element={
+                    <RequireAuth>
+                      <AccountLayout />
+                    </RequireAuth>
+                  }
+                >
+                  <Route index element={<Navigate to="/account/garage" replace />} />
+                  <Route path="garage" element={<GaragePage />} />
+                  <Route path="appointments" element={<AppointmentsPage />} />
+                  <Route path="work-orders" element={<WorkOrdersPage />} />
+                  <Route path="insurance" element={<MyInsurancePage />} />
+                </Route>
+
+                <Route
+                  path="/staff"
+                  element={
+                    <StaffRoute>
+                      <StaffDashboard />
+                    </StaffRoute>
+                  }
+                />
                 {/* <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/error" element={<PaymentError />} />
         <Route path="/payment/cancel" element={<PaymentCancel />} /> */}

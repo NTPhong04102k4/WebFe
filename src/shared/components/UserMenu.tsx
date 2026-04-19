@@ -3,9 +3,10 @@ import styled from "styled-components";
 import { FaRegUser } from "react-icons/fa";
 import { IoMdArrowDropdown } from "react-icons/io";
 import { useNavigate } from "react-router";
-import { useAppDispatch } from "src/redux/hook";
-import { clearCredentials } from "src/redux/Slice/AuthSlice";
+import { useAppDispatch, useAppSelector } from "src/redux/hook";
+import { clearCredentials, selectToken } from "src/redux/Slice/AuthSlice";
 import { authAPI } from "src/services/api/functions/auth/authFn";
+import { hasStaffBackendAccessFromToken } from "src/utils/roles";
 
 type UserMenuProps = {
   name: string;
@@ -22,6 +23,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   const ref = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const token = useAppSelector(selectToken);
+  const showStaff = hasStaffBackendAccessFromToken(token);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -66,6 +69,18 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     closeAll();
   };
 
+  const handleNavigateToAccount = () => {
+    navigate("/account/garage");
+    setIsOpen(false);
+    closeAll();
+  };
+
+  const handleNavigateToStaff = () => {
+    navigate("/staff");
+    setIsOpen(false);
+    closeAll();
+  };
+
   const handleNavigateToContact = () => {
     navigate("/contact");
     setIsOpen(false);
@@ -96,6 +111,22 @@ export const UserMenu: React.FC<UserMenuProps> = ({
           >
             Hồ sơ cá nhân
           </Item>
+          <Item
+            role="menuitem"
+            onClick={handleNavigateToAccount}
+            $theme={theme}
+          >
+            Dịch vụ &amp; xe (garage)
+          </Item>
+          {showStaff && (
+            <Item
+              role="menuitem"
+              onClick={handleNavigateToStaff}
+              $theme={theme}
+            >
+              Khu vực Staff
+            </Item>
+          )}
           <Item
             role="menuitem"
             onClick={handleNavigateToContact}

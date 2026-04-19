@@ -1,7 +1,9 @@
 import React, { PropsWithChildren } from "react";
 import { render } from "@testing-library/react";
 import { Provider as ReduxProvider } from "react-redux";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+
+import { createAppQueryClient } from "src/query/queryClient";
 import { MemoryRouter } from "react-router-dom";
 
 import { store } from "../redux/store";
@@ -10,10 +12,9 @@ export function renderWithProviders(
   ui: React.ReactElement,
   options?: { route?: string }
 ) {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-    },
+  const queryClient = createAppQueryClient();
+  queryClient.setDefaultOptions({
+    queries: { retry: false },
   });
 
   const Wrapper = ({ children }: PropsWithChildren) => (
