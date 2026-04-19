@@ -1,0 +1,242 @@
+import type { PagedResult } from "../hr/hr.types";
+
+export type {
+  PagedResult,
+} from "../hr/hr.types";
+
+export interface CustomerVehicleRequest {
+  userID: number;
+  carID?: number | null;
+  vin: string;
+  licensePlate?: string | null;
+  brandID: number;
+  modelName: string;
+  modelYear: number;
+  color?: string | null;
+  currentMileage: number;
+  lastServiceDate?: string | null;
+  nextServiceDate?: string | null;
+  nextServiceMileage?: number | null;
+  isActive: boolean;
+}
+
+export interface CustomerVehicleUpdateMileageRequest {
+  currentMileage: number;
+}
+
+export interface CustomerVehicleViewModel {
+  customerVehicleID: number;
+  userID: number;
+  ownerFullName?: string | null;
+  carID?: number | null;
+  vin: string;
+  licensePlate?: string | null;
+  brandID: number;
+  brandName?: string | null;
+  modelName: string;
+  modelYear: number;
+  color?: string | null;
+  currentMileage: number;
+  lastServiceDate?: string | null;
+  nextServiceDate?: string | null;
+  nextServiceMileage?: number | null;
+  isActive: boolean;
+  createdDate: string;
+}
+
+export interface MaintenanceHistoryViewModel {
+  historyID: number;
+  customerVehicleID: number;
+  workOrderID: number;
+  workOrderNumber?: string | null;
+  serviceDate: string;
+  mileage: number;
+  servicesSummary?: string | null;
+  totalCost: number;
+  nextRecommendedServiceDate?: string | null;
+  nextRecommendedMileage?: number | null;
+}
+
+export interface AppointmentServiceItem {
+  serviceID: number;
+  estimatedPrice: number;
+  notes?: string | null;
+}
+
+export interface AppointmentRequest {
+  customerVehicleID: number;
+  locationID: number;
+  scheduledDateTime: string;
+  estimatedDuration_minutes: number;
+  assignedTechnicianID?: number | null;
+  appointmentType: string;
+  customerNote?: string | null;
+  staffNote?: string | null;
+  services?: AppointmentServiceItem[];
+}
+
+export interface AppointmentQueryRequest {
+  page?: number;
+  pageSize?: number;
+  status?: string | null;
+  locationID?: number | null;
+  technicianID?: number | null;
+  fromDate?: string | null;
+  toDate?: string | null;
+}
+
+export interface AppointmentStatusRequest {
+  status: string;
+  cancelReason?: string | null;
+}
+
+export interface AppointmentServiceViewModel {
+  serviceID: number;
+  serviceName?: string | null;
+  estimatedPrice?: number;
+  notes?: string | null;
+}
+
+export interface AppointmentViewModel {
+  appointmentID: number;
+  appointmentNumber: string;
+  customerVehicleID: number;
+  vehicleInfo?: string | null;
+  locationID: number;
+  locationName?: string | null;
+  scheduledDateTime: string;
+  estimatedDuration_minutes: number;
+  assignedTechnicianID?: number | null;
+  assignedTechnicianName?: string | null;
+  appointmentType: string;
+  status: string;
+  reminderSent: boolean;
+  reminderSentDate?: string | null;
+  customerNote?: string | null;
+  staffNote?: string | null;
+  cancelReason?: string | null;
+  createdDate: string;
+  services?: AppointmentServiceViewModel[];
+}
+
+export interface WorkOrderRequest {
+  appointmentID?: number | null;
+  customerVehicleID: number;
+  locationID: number;
+  primaryTechnicianID: number;
+  serviceAdvisorID?: number | null;
+  priority?: string;
+  mileageIn: number;
+  customerComplaint?: string | null;
+}
+
+export interface WorkOrderStatusRequest {
+  status: string;
+  mileageOut?: number | null;
+  diagnosis?: string | null;
+  workPerformed?: string | null;
+}
+
+export interface AssignTechnicianRequest {
+  technicianID: number;
+}
+
+export interface WorkOrderServiceItemRequest {
+  serviceID: number;
+  technicianID: number;
+  laborHours: number;
+  unitPrice: number;
+  notes?: string | null;
+}
+
+export interface WorkOrderPartItemRequest {
+  accessoryID: number;
+  quantity: number;
+  unitPrice: number;
+  installedByTechnicianID?: number | null;
+  notes?: string | null;
+}
+
+export interface WorkOrderPaymentRequest {
+  paymentMethod: string;
+  amountPaid: number;
+  discountAmount?: number | null;
+}
+
+export interface WorkOrderFeedbackRequest {
+  rating: number;
+  feedback?: string | null;
+}
+
+export interface WorkOrderQueryRequest {
+  page?: number;
+  pageSize?: number;
+  status?: string | null;
+  technicianID?: number | null;
+  customerVehicleID?: number | null;
+  fromDate?: string | null;
+  toDate?: string | null;
+}
+
+export interface WorkOrderServiceViewModel {
+  workOrderServiceID: number;
+  serviceID: number;
+  serviceName?: string | null;
+  technicianID?: number | null;
+  laborHours: number;
+  unitPrice: number;
+  lineTotal?: number;
+  notes?: string | null;
+}
+
+export interface WorkOrderPartViewModel {
+  workOrderPartID: number;
+  accessoryID: number;
+  accessoryName?: string | null;
+  quantity: number;
+  unitPrice: number;
+  lineTotal?: number;
+  notes?: string | null;
+}
+
+export interface WorkOrderViewModel {
+  workOrderID: number;
+  workOrderNumber: string;
+  appointmentID?: number | null;
+  customerVehicleID: number;
+  vehicleInfo?: string | null;
+  locationID: number;
+  locationName?: string | null;
+  primaryTechnicianID?: number | null;
+  primaryTechnicianName?: string | null;
+  serviceAdvisorID?: number | null;
+  serviceAdvisorName?: string | null;
+  status: string;
+  priority: string;
+  startDateTime?: string | null;
+  endDateTime?: string | null;
+  mileageIn: number;
+  mileageOut: number;
+  customerComplaint?: string | null;
+  diagnosis?: string | null;
+  workPerformed?: string | null;
+  laborCost: number;
+  partsCost: number;
+  serviceCost: number;
+  discountAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+  paymentStatus: string;
+  paymentMethod?: string | null;
+  paidDate?: string | null;
+  customerRating?: number | null;
+  customerFeedback?: string | null;
+  warrantyMonths?: number | null;
+  createdDate: string;
+  services?: WorkOrderServiceViewModel[];
+  parts?: WorkOrderPartViewModel[];
+}
+
+export type CustomerVehicleListResult = PagedResult<CustomerVehicleViewModel>;
+export type AppointmentListResult = PagedResult<AppointmentViewModel>;
+export type WorkOrderListResult = PagedResult<WorkOrderViewModel>;
