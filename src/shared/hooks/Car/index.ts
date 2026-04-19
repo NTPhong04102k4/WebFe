@@ -1,5 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { carRouteFn } from "src/services/api/functions/Cars/Routes.Fn";
+import { SEARCH_STALE_MS } from "src/query/queryClient";
 import { CarDetailResponse, CarResponse } from "src/shared/types/Reponse/Car";
 import {
   CarDetailUpdateRequest,
@@ -23,9 +29,9 @@ export const carQueryKeys = {
 export const useCarDetail = (id: number | null) => {
   return useQuery<CarDetailResponse, Error>({
     queryKey: carQueryKeys.detail(id!),
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!id) throw new Error("Car ID is required");
-      return await carRouteFn.getDetail(id);
+      return await carRouteFn.getDetail(id, { signal });
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
@@ -37,10 +43,10 @@ export const useCarDetail = (id: number | null) => {
 export const useCarList = (params: CarPagingRequest) => {
   return useQuery<CarResponse, Error>({
     queryKey: carQueryKeys.list(params),
-    queryFn: async () => {
-      return await carRouteFn.getPaging(params);
-    },
-    staleTime: 2 * 60 * 1000,
+    queryFn: async ({ signal }) => carRouteFn.getPaging(params, { signal }),
+    staleTime: SEARCH_STALE_MS,
+    gcTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
     retry: 1,
   });
 };
@@ -54,8 +60,8 @@ export const useCarMutation = () => {
     Error,
     { data: CarDetailUpdateRequest }
   >({
-    mutationFn: async ({ data }) => {
-      return await carRouteFn.create(data);
+    mutationFn: async ({ data }, { signal }) => {
+      return await carRouteFn.create(data, { signal });
     },
     onSuccess: () => {
       // Invalidate car lists to refetch
@@ -68,8 +74,8 @@ export const useCarMutation = () => {
     Error,
     { id: number; data: CarDetailUpdateRequest }
   >({
-    mutationFn: async ({ id, data }) => {
-      return await carRouteFn.update(id, data);
+    mutationFn: async ({ id, data }, { signal }) => {
+      return await carRouteFn.update(id, data, { signal });
     },
     onSuccess: (data, variables) => {
       // Invalidate specific car detail
@@ -99,9 +105,9 @@ export const useCarTechSpec = (carId: number | null) => {
 
   const techSpecQuery = useQuery<CarDetailResponse, Error>({
     queryKey: carQueryKeys.techSpec(carId!),
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!carId) throw new Error("Car ID is required");
-      return await carRouteFn.getDetail(carId);
+      return await carRouteFn.getDetail(carId, { signal });
     },
     enabled: !!carId,
     staleTime: 5 * 60 * 1000,
@@ -113,8 +119,8 @@ export const useCarTechSpec = (carId: number | null) => {
     Error,
     { id: number; data: TechSpecDetailUpdateRequest }
   >({
-    mutationFn: async ({ id, data }) => {
-      return await carRouteFn.createTechSpec(id, data);
+    mutationFn: async ({ id, data }, { signal }) => {
+      return await carRouteFn.createTechSpec(id, data, { signal });
     },
     onSuccess: (data, variables) => {
       // Invalidate tech spec query
@@ -133,8 +139,8 @@ export const useCarTechSpec = (carId: number | null) => {
     Error,
     { id: number; data: TechSpecDetailUpdateRequest }
   >({
-    mutationFn: async ({ id, data }) => {
-      return await carRouteFn.updateTechSpec(id, data);
+    mutationFn: async ({ id, data }, { signal }) => {
+      return await carRouteFn.updateTechSpec(id, data, { signal });
     },
     onSuccess: (data, variables) => {
       // Invalidate tech spec query
