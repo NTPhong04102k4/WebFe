@@ -140,6 +140,33 @@ export const getTokenClaims = (token: string | null): DecodedToken | null => {
   return decodeToken(token);
 };
 
+const ROLE_CLAIM_KEYS = [
+  "role",
+  "roles",
+  "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
+] as const;
+
+/** Roles from JWT (ASP.NET thường dùng claim `role` hoặc URL claim). */
+export const getRolesFromToken = (token: string | null): string[] => {
+  const d = decodeToken(token);
+  if (!d) {
+    return [];
+  }
+  for (const key of ROLE_CLAIM_KEYS) {
+    const raw = d[key];
+    if (raw === undefined || raw === null) {
+      continue;
+    }
+    if (Array.isArray(raw)) {
+      return raw.map(String);
+    }
+    if (typeof raw === "string") {
+      return [raw];
+    }
+  }
+  return [];
+};
+
 /**
  * Validate JWT token (check if it exists and is not expired)
  * @param token - JWT token string
