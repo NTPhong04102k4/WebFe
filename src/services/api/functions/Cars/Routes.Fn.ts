@@ -1,5 +1,7 @@
 import { CarDetailResponse, CarResponse } from "src/shared/types/Reponse/Car";
 import apiClient from "../..";
+import type { ApiRequestOptions } from "../../requestOptions";
+import { withSignal } from "../../requestOptions";
 import { carRoute } from "./Routes";
 import { logger } from "src/utils/logger";
 import { storage } from "src/services/storage";
@@ -10,34 +12,35 @@ import {
 } from "src/shared/types/Request/Car";
 
 export const carRouteFn = {
-  getDetail: async (id: number) => {
-    const response = await apiClient.get<CarDetailResponse>(carRoute.detail, {
-      params: { id },
-    });
+  getDetail: async (id: number, options?: ApiRequestOptions) => {
+    const response = await apiClient.get<CarDetailResponse>(
+      carRoute.detail,
+      withSignal({ params: { id } }, options)
+    );
     return response.data;
   },
-  getPaging: async (params: CarPagingRequest) => {
-    // Use POST method as the API requires POST for paging requests
-    const response = await apiClient.post<CarResponse>(carRoute.paging, {
-      Page: params.page ?? 1,
-      PageSize: params.pageSize ?? 20,
-      BrandCode: params.brandCode ?? "",
-      BodyCode: params.bodyCode ?? "",
-      PriceFrom: params.PriceFrom ?? undefined,
-      PriceTo: params.PriceTo ?? undefined,
-    });
+  getPaging: async (params: CarPagingRequest, options?: ApiRequestOptions) => {
+    const response = await apiClient.post<CarResponse>(
+      carRoute.paging,
+      {
+        Page: params.page ?? 1,
+        PageSize: params.pageSize ?? 20,
+        BrandCode: params.brandCode ?? "",
+        BodyCode: params.bodyCode ?? "",
+        PriceFrom: params.PriceFrom ?? undefined,
+        PriceTo: params.PriceTo ?? undefined,
+      },
+      withSignal({}, options)
+    );
     return response.data;
   },
-  create: async (data: CarDetailUpdateRequest) => {
-    // For FormData with files, we need to increase timeout and allow larger payloads
+  create: async (data: CarDetailUpdateRequest, options?: ApiRequestOptions) => {
     try {
-      // Log FormData info for debugging
       if (data instanceof FormData) {
         const formDataKeys = Array.from(data.keys());
         logger.log("📤 Sending FormData with fields:", formDataKeys);
         logger.log("📤 FormData entries count:", formDataKeys.length);
 
-        // Log file info
         const fileEntries: string[] = [];
         formDataKeys.forEach((key) => {
           const value = data.get(key);
@@ -57,14 +60,17 @@ export const carRouteFn = {
 
       const response = await apiClient.post<CarDetailResponse>(
         carRoute.create,
-        data
+        data,
+        withSignal(
+          data instanceof FormData ? { timeout: 120000 } : {},
+          options
+        )
       );
 
       const duration = Date.now() - startTime;
       logger.log("✅ Request successful in", duration, "ms");
       return response.data;
     } catch (error: any) {
-      // Enhanced error logging
       console.error("❌ Request failed:", {
         message: error.message,
         code: error.code,
@@ -77,7 +83,6 @@ export const carRouteFn = {
       });
 
       if (error.code === "ERR_NETWORK" || !error.response) {
-        // Network error - request didn't reach server
         if (
           error.code === "ECONNABORTED" ||
           error.message?.includes("timeout")
@@ -97,7 +102,6 @@ export const carRouteFn = {
         );
       }
 
-      // Log server error details
       if (error.response) {
         console.error("Server Error:", {
           status: error.response.status,
@@ -110,28 +114,37 @@ export const carRouteFn = {
       throw error;
     }
   },
-  update: async (id: number, data: CarDetailUpdateRequest) => {
+  update: async (
+    id: number,
+    data: CarDetailUpdateRequest,
+    options?: ApiRequestOptions
+  ) => {
     const response = await apiClient.put<CarDetailResponse>(
       carRoute.edit,
       data,
-      {
-        params: { id },
-        headers: { "Content-Type": "multipart/form-data" },
-      }
+      withSignal(
+        {
+          params: { id },
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+        options
+      )
     );
     return response.data;
   },
-  createTechSpec: async (id: number, data: TechSpecDetailUpdateRequest) => {
+  createTechSpec: async (
+    id: number,
+    data: TechSpecDetailUpdateRequest,
+    options?: ApiRequestOptions
+  ) => {
     const token = storage.getToken();
     logger.log("🔑 Token exists:", !!token);
     logger.log("📤 Creating tech spec for car ID:", id);
     logger.log("📤 Input data:", JSON.stringify(data, null, 2));
 
-    // Ensure carID is set correctly in the data
-    // Preserve all data exactly as provided from the form
     const requestData: TechSpecDetailUpdateRequest = {
       ...data,
-      carID: id, // Always override with the id parameter to ensure it's correct
+      carID: id,
     };
 
     logger.log(
@@ -143,7 +156,8 @@ export const carRouteFn = {
     try {
       const response = await apiClient.post<CarDetailResponse>(
         carRoute.techSpecCreate,
-        requestData
+        requestData,
+        withSignal({}, options)
       );
       logger.log("✅ Tech spec created successfully");
       return response.data;
@@ -157,7 +171,6 @@ export const carRouteFn = {
         requestData: JSON.stringify(requestData, null, 2),
       });
 
-      // Log detailed error if available
       if (error.response?.data) {
         console.error("❌ Server error details:", error.response.data);
       }
@@ -165,12 +178,15 @@ export const carRouteFn = {
       throw error;
     }
   },
-  updateTechSpec: async (id: number, data: TechSpecDetailUpdateRequest) => {
+  updateTechSpec: async (
+    id: number,
+    data: TechSpecDetailUpdateRequest,
+    options?: ApiRequestOptions
+  ) => {
     const token = storage.getToken();
     logger.log("🔑 Token exists:", !!token);
     logger.log("📤 Updating tech spec for car ID:", id);
 
-    // Ensure carID is set correctly in the data
     const requestData = {
       ...data,
       carID: id,
@@ -183,9 +199,7 @@ export const carRouteFn = {
       const response = await apiClient.patch<CarDetailResponse>(
         carRoute.techSpecEdit,
         requestData,
-        {
-          params: { id },
-        }
+        withSignal({ params: { id } }, options)
       );
       logger.log("✅ Tech spec updated successfully");
       return response.data;
