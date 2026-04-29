@@ -1,16 +1,18 @@
-import styled from "styled-components";
+import { Toaster } from 'react-hot-toast'
+import AppRouter from '@/router'
 
-import { RootNavigation } from "./navigation/RootNavigation";
-
-function App() {
+export default function App() {
   return (
-    <Container>
-      <RootNavigation />
-    </Container>
-  );
+    <>
+      <AppRouter />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: { fontSize: '14px', maxWidth: '380px' },
+          success: { iconTheme: { primary: '#2563eb', secondary: '#fff' } },
+        }}
+      />
+    </>
+  )
 }
-
-export default App;
-const Container = styled.div`
-  display: flex;
-`;
