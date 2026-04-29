@@ -1,6 +1,6 @@
 import React from "react";
 import { ENV } from "src/config/environment";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 import { useBrandCar } from "src/shared/hooks/BrandCar";
 import { useBodyType } from "src/shared/hooks/BodyType";
 import { useLocation } from "src/shared/hooks/location";

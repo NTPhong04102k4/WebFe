@@ -1,5 +1,5 @@
 import React from "react";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 import { useCarTechSpec } from "src/shared/hooks/Car";
 import { CarDetailResponse } from "src/shared/types/Reponse/Car";
 import { TechSpecDetailUpdateRequest } from "src/shared/types/Request/Car";

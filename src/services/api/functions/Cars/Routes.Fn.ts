@@ -3,7 +3,7 @@ import apiClient from "../..";
 import type { ApiRequestOptions } from "../../requestOptions";
 import { withSignal } from "../../requestOptions";
 import { carRoute } from "./Routes";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 import { storage } from "src/services/storage";
 import {
   CarDetailUpdateRequest,
