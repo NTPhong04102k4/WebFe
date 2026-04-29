@@ -1,13 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { AuthRole, AuthUser } from '@/services/types/auth.types'
 
-interface AuthUser {
-  id: number
-  username: string
-  email: string
-  fullName: string
-  role: string
-}
+export type { AuthUser, AuthRole }
 
 interface AuthState {
   accessToken: string | null
@@ -15,6 +10,7 @@ interface AuthState {
   user: AuthUser | null
   setTokens: (access: string, refresh: string) => void
   setUser: (user: AuthUser) => void
+  clearUser: () => void
   logout: () => void
   isAdmin: () => boolean
   isSuperAdmin: () => boolean
@@ -29,6 +25,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       setTokens: (access, refresh) => set({ accessToken: access, refreshToken: refresh }),
       setUser: (user) => set({ user }),
+      clearUser: () => set({ user: null }),
       logout: () => set({ accessToken: null, refreshToken: null, user: null }),
       isAdmin: () => ['Admin', 'SuperAdmin'].includes(get().user?.role ?? ''),
       isSuperAdmin: () => get().user?.role === 'SuperAdmin',

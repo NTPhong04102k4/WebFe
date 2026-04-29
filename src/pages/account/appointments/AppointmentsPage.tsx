@@ -6,10 +6,9 @@ import {
   useCustomerVehicles,
   useWorkshopMutations,
 } from "src/query/workshop/useWorkshopQueries";
-import { useAppSelector } from "src/redux/hook";
-import { selectUser } from "src/redux/Slice/AuthSlice";
 import { useLocation } from "src/shared/hooks/location";
 import type { LocationResponse } from "src/shared/types/Reponse/Location";
+import { useAuthStore } from "@/stores/authStore";
 
 import shell from "../account-shell.module.scss";
 
@@ -27,8 +26,8 @@ type ApptForm = {
 };
 
 export default function AppointmentsPage() {
-  const user = useAppSelector(selectUser);
-  const userID = user && "userID" in user ? user.userID : undefined;
+  const user = useAuthStore((s) => s.user);
+  const userID = user?.userID ?? user?.id;
 
   const { locations, loading: locLoading } = useLocation();
   const { data: vehiclesRes } = useCustomerVehicles({

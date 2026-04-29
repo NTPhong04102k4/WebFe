@@ -3,7 +3,7 @@ import { logger } from "@/common/utils/logger";
 
 export const useAuth = () => {
   const accessToken = useAuthStore((s) => s.accessToken);
-  const user = useAuthStore((s) => s.user) as any;
+  const user = useAuthStore((s) => s.user);
 
   const isAuthenticated = !!accessToken;
 

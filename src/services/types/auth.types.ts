@@ -1,3 +1,5 @@
+export type AuthRole = "Customer" | "Admin" | "SuperAdmin" | "Staff" | string
+
 export interface TokenResponse {
   access_token: string
   refresh_token: string
@@ -41,7 +43,17 @@ export interface AuthUser {
   username: string
   email: string
   fullName: string
-  role: string
+  role: AuthRole
+  userID?: number
+  userUUID?: string
+  userCode?: string
+  firstName?: string
+  lastName?: string
+  dateOfBirth?: string | null
+  identityNumber?: string
+  phone?: string
+  address?: string
+  image?: string
 }
 
 export interface LoginRequest {

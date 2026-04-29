@@ -7,8 +7,7 @@ import { useBrandAccessory } from "src/shared/hooks/BrandAccessory";
 import { useCategory } from "src/shared/hooks/Category";
 import { AccessoryFormFields } from ".";
 import { useBodyType } from "src/shared/hooks/BodyType";
-import { useAppSelector } from "src/redux/hook";
-import { selectUser } from "src/redux/Slice/AuthSlice";
+import { useAuthStore } from "@/stores/authStore";
 
 type Props = {
   open: boolean;
@@ -23,7 +22,7 @@ export const CreateAccessoryEditor: React.FC<Props> = ({
   onSaved,
   variant = "modal",
 }) => {
-  const user = useAppSelector(selectUser);
+  const user = useAuthStore((s) => s.user);
   const roles = useMemo(() => {
     const r =
       (user as any)?.roles ||

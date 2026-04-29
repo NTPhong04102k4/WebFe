@@ -8,13 +8,16 @@ import {
   LoginFormData,
   RegisterFormData,
 } from "src/shared/validation/authSchemas";
-import { useAppSelector } from "src/redux/hook";
-import { selectAuth } from "src/redux/Slice/AuthSlice";
 import { useSocialLogin } from "src/shared/hooks/auth/useSocialLogin";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function Login() {
   const navigate = useNavigate();
-  const authState = useAppSelector(selectAuth);
+  const authState = useAuthStore((s) => ({
+    token: s.accessToken,
+    user: s.user,
+    isAuthenticated: !!s.accessToken,
+  }));
   const [isLogin, setIsLogin] = useState(true);
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [email, setEmail] = useState("");

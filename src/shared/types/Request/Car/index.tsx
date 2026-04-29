@@ -40,6 +40,7 @@ export interface CarDetailUpdateRequest {
   createdBy: number;
   isActive: boolean;
 }
+export type CarMutationPayload = CarDetailUpdateRequest | FormData;
 export interface TechSpecDetailUpdateRequest {
   carID: number;
   length_mm: number;

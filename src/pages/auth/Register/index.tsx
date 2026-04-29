@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi } from '@/services/api/auth.api'
+import { useAuthQuery } from '@/query/auth/useAuthQuery'
 import { extractError } from '@/common/utils/errorMessage'
 
 const schema = z
@@ -30,7 +30,7 @@ type FormData = z.infer<typeof schema>
 
 export default function RegisterPage() {
   const [showPwd, setShowPwd] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const { registerAsync, isRegisterLoading } = useAuthQuery()
   const navigate = useNavigate()
 
   const {
@@ -40,9 +40,8 @@ export default function RegisterPage() {
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   const onSubmit = async (values: FormData) => {
-    setLoading(true)
     try {
-      await authApi.register({
+      await registerAsync({
         username: values.username,
         email: values.email,
         password: values.password,
@@ -51,8 +50,6 @@ export default function RegisterPage() {
       navigate(`/auth/verify-otp?email=${encodeURIComponent(values.email)}`)
     } catch (err) {
       toast.error(extractError(err))
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -133,10 +130,10 @@ export default function RegisterPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isRegisterLoading}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
         >
-          {loading ? (
+          {isRegisterLoading ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
             <UserPlus className="h-4 w-4" />

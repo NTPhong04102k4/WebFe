@@ -3,10 +3,9 @@ import styled from "styled-components";
 import { FaRegUser } from "react-icons/fa";
 import { IoMdArrowDropdown } from "react-icons/io";
 import { useNavigate } from "react-router";
-import { useAppDispatch, useAppSelector } from "src/redux/hook";
-import { clearCredentials, selectToken } from "src/redux/Slice/AuthSlice";
 import { authAPI } from "src/services/api/functions/auth/authFn";
 import { hasStaffBackendAccessFromToken } from "@/common/utils/roles";
+import { useAuthStore } from "@/stores/authStore";
 
 type UserMenuProps = {
   name: string;
@@ -22,8 +21,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const token = useAppSelector(selectToken);
+  const token = useAuthStore((s) => s.accessToken);
+  const logoutStore = useAuthStore((s) => s.logout);
   const showStaff = hasStaffBackendAccessFromToken(token);
 
   useEffect(() => {
@@ -50,13 +49,13 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   async function handleLogout() {
     try {
       await authAPI.userLogout();
-      dispatch(clearCredentials());
+      logoutStore();
       setIsOpen(false);
       closeAll();
       navigate("/home");
     } catch (error) {
       console.error("Logout failed:", error);
-      dispatch(clearCredentials());
+      logoutStore();
       setIsOpen(false);
       closeAll();
       navigate("/home");

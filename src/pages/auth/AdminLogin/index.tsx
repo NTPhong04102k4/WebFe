@@ -5,9 +5,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi } from '@/services/api/auth.api'
-import { useAuthStore } from '@/stores/authStore'
-import { decodeToken } from '@/common/utils/jwtDecode'
+import { useAuthQuery } from '@/query/auth/useAuthQuery'
 import { extractError } from '@/common/utils/errorMessage'
 
 const schema = z.object({
@@ -19,8 +17,7 @@ type FormData = z.infer<typeof schema>
 
 export default function AdminLoginPage() {
   const [showPwd, setShowPwd] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const { setTokens, setUser } = useAuthStore()
+  const { adminLoginAsync, isAdminLoginLoading } = useAuthQuery()
   const navigate = useNavigate()
 
   const {
@@ -30,19 +27,12 @@ export default function AdminLoginPage() {
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   const onSubmit = async (values: FormData) => {
-    setLoading(true)
     try {
-      const { data } = await authApi.adminLogin(values)
-      const decoded = decodeToken(data.token)
-      if (!decoded) throw new Error('Token không hợp lệ')
-      setTokens(data.token, '')
-      setUser({ ...decoded, fullName: data.fullName ?? decoded.fullName })
+      const { data } = await adminLoginAsync(values)
       toast.success(`Chào mừng, ${data.fullName}!`)
       navigate('/admin/dashboard', { replace: true })
     } catch (err) {
       toast.error(extractError(err))
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -96,10 +86,10 @@ export default function AdminLoginPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isAdminLoginLoading}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
         >
-          {loading ? (
+          {isAdminLoginLoading ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
             <ShieldCheck className="h-4 w-4" />

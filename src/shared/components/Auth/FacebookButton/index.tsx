@@ -1,10 +1,14 @@
 import React from "react";
 import { logger } from "@/common/utils/logger";
-import { setCredentials } from "src/redux/Slice/AuthSlice";
-import { useAppDispatch } from "src/redux/hook";
+import { useAuthStore } from "@/stores/authStore";
 import { useFacebookAuth } from "src/shared/hooks/auth/useFacebookAuth";
 import { useSocialAuthMapper } from "src/shared/hooks/auth/useSocialAuthMapper";
-import { UserResponse } from "src/shared/types/Reponse/auth/user";
+import {
+  isBackendUserResponse,
+  isFacebookUserResponse,
+  toAuthUserFromBackend,
+  toAuthUserFromFacebook,
+} from "src/shared/hooks/auth/socialGuards";
 
 interface FacebookLoginButtonProps {
   onSuccess?: () => void;
@@ -19,7 +23,8 @@ export const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
   className = "",
   children,
 }) => {
-  const dispatch = useAppDispatch();
+  const setTokens = useAuthStore((s) => s.setTokens);
+  const setUser = useAuthStore((s) => s.setUser);
   const { loginWithFacebook, isLoading: isLoggingIn } = useFacebookAuth();
   const { mapFacebookUser } = useSocialAuthMapper();
 
@@ -37,29 +42,15 @@ export const FacebookLoginButton: React.FC<FacebookLoginButtonProps> = ({
         throw new Error("Không nhận được token từ Facebook");
       }
 
-      // Check if user data is already in UserResponse format (from backend)
-      const isBackendUserData =
-        (response as any).userID !== undefined ||
-        (response as any).userUUID !== undefined;
+      setTokens(token, "");
 
-      let userData: any;
-      if (isBackendUserData) {
-        // Use backend user data directly (already in correct format)
-        userData = response as unknown as UserResponse;
-        logger.log("Using backend user data directly");
-      } else {
-        // Map social auth response to UserResponse format
-        userData = mapFacebookUser(response);
-        logger.log("Mapped social auth response");
-      }
+      const user = isBackendUserResponse(response)
+        ? toAuthUserFromBackend(response, token)
+        : isFacebookUserResponse(response)
+          ? toAuthUserFromFacebook(response, token)
+          : mapFacebookUser(response, token);
 
-      dispatch(
-        setCredentials({
-          token: token,
-          user: userData,
-          isAuthenticated: true,
-        })
-      );
+      setUser(user);
 
       logger.log("✅ loginWithFacebook completed, calling onSuccess");
       onSuccess?.();

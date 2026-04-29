@@ -4,12 +4,16 @@ import { logger } from "@/common/utils/logger";
 import { useGoogleAuth } from "./useGoogleAuth";
 import { useFacebookAuth } from "./useFacebookAuth";
 import { useSocialAuthMapper } from "./useSocialAuthMapper";
-import {
-  FacebookUserResponse,
-  UserResponse,
-} from "src/shared/types/Reponse/auth/user";
-import { getTokenClaims } from "src/services/decode";
 import { useAuthStore } from "@/stores/authStore";
+import {
+  isBackendUserResponse,
+  isFacebookUserResponse,
+  isGoogleUserResponse,
+  toAuthUserFromBackend,
+  toAuthUserFromFacebook,
+  toAuthUserFromGoogle,
+} from "./socialGuards";
+import { getRolesFromToken } from "src/services/decode";
 
 interface UseSocialLoginOptions {
   isLogin: boolean;
@@ -30,21 +34,18 @@ export const useSocialLogin = ({
 
   const saveCredentialsAndLog = (
     token: string,
-    userData: any,
+    user: ReturnType<typeof useAuthStore.getState>["user"],
     type: "GOOGLE" | "FACEBOOK"
   ) => {
-    const normalizedRoles = getTokenClaims(token)?.sub;
-    const userWithRoles = {
-      ...userData,
-      roles: normalizedRoles,
-    };
-
-    logger.log("🔍 [Social Login] Token roles:", normalizedRoles, "User:", userWithRoles);
+    const roles = getRolesFromToken(token);
+    logger.log("🔍 [Social Login] Token roles:", roles, "User:", user);
 
     // Zustand migration: lưu access/refresh + user vào store
     const refreshToken = useAuthStore.getState().refreshToken ?? "";
     useAuthStore.getState().setTokens(token, refreshToken);
-    useAuthStore.getState().setUser(userWithRoles as any);
+    if (user) {
+      useAuthStore.getState().setUser(user);
+    }
 
     const message = isLogin
       ? `Đăng nhập ${type === "GOOGLE" ? "Google" : "Facebook"} thành công!`
@@ -52,7 +53,7 @@ export const useSocialLogin = ({
 
     onSuccess?.(message);
 
-    const isSuperAdmin = normalizedRoles?.includes("superadmin");
+    const isSuperAdmin = roles.some((r) => r.toLowerCase() === "superadmin");
     logger.log("🔍 [Social Login] Is SuperAdmin:", isSuperAdmin);
 
     setTimeout(() => {
@@ -75,18 +76,13 @@ export const useSocialLogin = ({
         throw new Error("Không nhận được token từ Google");
       }
 
-      const isBackendUserData =
-        (googleUser as any).userID !== undefined ||
-        (googleUser as any).userUUID !== undefined;
+      const user = isBackendUserResponse(googleUser)
+        ? toAuthUserFromBackend(googleUser, token)
+        : isGoogleUserResponse(googleUser)
+          ? toAuthUserFromGoogle(googleUser, token)
+          : mapGoogleUser(googleUser, token);
 
-      let userData: any;
-      if (isBackendUserData) {
-        userData = googleUser as unknown as UserResponse;
-      } else {
-        userData = mapGoogleUser(googleUser);
-      }
-
-      saveCredentialsAndLog(token, userData, "GOOGLE");
+      saveCredentialsAndLog(token, user, "GOOGLE");
     } catch (error: any) {
       const errorMessage =
         error?.message ||
@@ -105,29 +101,18 @@ export const useSocialLogin = ({
       const facebookUser = await facebookLogin();
 
       const token = facebookUser.tokens?.access_token || "";
-      const apiUser = (facebookUser as any).user || facebookUser;
 
       if (!token) {
         throw new Error("Không nhận được token từ Facebook");
       }
 
-      const isBackendUserData =
-        (apiUser as any).userID !== undefined ||
-        (apiUser as any).userUUID !== undefined;
+      const user = isBackendUserResponse(facebookUser)
+        ? toAuthUserFromBackend(facebookUser, token)
+        : isFacebookUserResponse(facebookUser)
+          ? toAuthUserFromFacebook(facebookUser, token)
+          : mapFacebookUser(facebookUser, token);
 
-      let userData: any;
-      if (isBackendUserData) {
-        userData = apiUser as unknown as UserResponse;
-      } else {
-        userData = mapFacebookUser(
-          (apiUser as any).userID
-            ? (apiUser as FacebookUserResponse)
-            : (facebookUser as any)
-        );
-        logger.log("Mapped social auth response");
-      }
-
-      saveCredentialsAndLog(token, userData, "FACEBOOK");
+      saveCredentialsAndLog(token, user, "FACEBOOK");
     } catch (error: any) {
       const errorMessage =
         error?.message ||

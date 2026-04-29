@@ -1,45 +1,72 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAppDispatch, useAppSelector } from "src/redux/hook";
-import {
-  clearCredentials,
-  selectAuth,
-  setCredentials,
-} from "src/redux/Slice/AuthSlice";
+
+import { getRolesFromToken, getTokenClaims } from "src/services/decode";
 import { authAPI } from "src/services/api/functions/auth/authFn";
-import { getTokenClaims } from "src/services/decode";
 import {
   RegisterVerifyResponse,
   UserResponse,
 } from "src/shared/types/Reponse/auth/user";
+
 import { logger } from "@/common/utils/logger";
+import { useAuthStore, type AuthUser } from "@/stores/authStore";
+
+function mapProfileToAuthUser(profile: UserResponse, token: string): AuthUser {
+  const roles = getRolesFromToken(token);
+  return {
+    id: profile.userID,
+    userID: profile.userID,
+    userUUID: profile.userUUID,
+    userCode: profile.userCode,
+    username: profile.username,
+    email: profile.email,
+    fullName: profile.fullName,
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    phone: profile.phone,
+    address: profile.address,
+    image: profile.image,
+    role: roles[0] ?? "Customer",
+  };
+}
+
+function mapVerifyOtpUser(
+  user: RegisterVerifyResponse["data"]["user"],
+  token: string
+): AuthUser {
+  const roles = getRolesFromToken(token);
+  return {
+    id: user.id,
+    userID: user.id,
+    username: user.username,
+    email: user.email,
+    fullName: user.fullName,
+    role: roles[0] ?? "Customer",
+  };
+}
 
 export const useAuthQuery = () => {
-  const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
-  const authState = useAppSelector(selectAuth);
-  const userName = getTokenClaims(authState.token);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const currentUser = useAuthStore((s) => s.user);
+  const setTokens = useAuthStore((s) => s.setTokens);
+  const setUser = useAuthStore((s) => s.setUser);
+  const clearUser = useAuthStore((s) => s.clearUser);
+  const logoutStore = useAuthStore((s) => s.logout);
+  const userName = getTokenClaims(accessToken);
   logger.log("🔍 userName:", userName);
 
   const loginMutation = useMutation({
     mutationFn: authAPI.login,
     onSuccess: async (response) => {
-      dispatch(
-        setCredentials({
-          token: response.data.token ?? null,
-          user: null,
-          isAuthenticated: response.data.token ? true : false,
-        })
-      );
+      const token = response.data.token ?? "";
+      setTokens(token, "");
+      clearUser();
+
       try {
-        const profileResponse = await authAPI.getProfile(userName?.sub ?? "");
+        const claims = getTokenClaims(token);
+        const profileResponse = await authAPI.getProfile(claims?.sub ?? "");
         if (profileResponse?.data) {
-          dispatch(
-            setCredentials({
-              token: response.data.token ?? null,
-              user: profileResponse.data,
-              isAuthenticated: response.data.token ? true : false,
-            })
-          );
+          setUser(mapProfileToAuthUser(profileResponse.data, token));
           queryClient.setQueryData(["profile"], profileResponse);
         }
       } catch (error) {
@@ -53,17 +80,34 @@ export const useAuthQuery = () => {
     onSuccess: () => {},
   });
 
+  const adminLoginMutation = useMutation({
+    mutationFn: authAPI.adminLogin,
+    onSuccess: (response) => {
+      const token = response.data.token ?? "";
+      const claims = getTokenClaims(token);
+      const roles = getRolesFromToken(token);
+
+      setTokens(token, "");
+      setUser({
+        id: Number(claims?.sub ?? 0) || 0,
+        userID: Number(claims?.sub ?? 0) || 0,
+        userUUID: typeof claims?.sub === "string" ? claims.sub : undefined,
+        username: String(claims?.unique_name ?? claims?.name ?? ""),
+        email: String(claims?.email ?? ""),
+        fullName:
+          response.data.fullName ??
+          String(claims?.name ?? claims?.unique_name ?? ""),
+        role: roles[0] ?? "Admin",
+      });
+    },
+  });
+
   const verifyOtpMutation = useMutation({
     mutationFn: authAPI.verifyOtp,
     onSuccess: (response) => {
-      dispatch(
-        setCredentials({
-          token: response.data.data.token ?? null,
-          user: response.data.data
-            .user as RegisterVerifyResponse["data"]["user"],
-          isAuthenticated: response.data.data.token ? true : false,
-        })
-      );
+      const token = response.data.data.token ?? "";
+      setTokens(token, "");
+      setUser(mapVerifyOtpUser(response.data.data.user, token));
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
   });
@@ -75,7 +119,7 @@ export const useAuthQuery = () => {
   const logoutMutation = useMutation({
     mutationFn: authAPI.logout,
     onSuccess: () => {
-      dispatch(clearCredentials());
+      logoutStore();
       queryClient.clear();
       // Don't redirect here - let the component handle navigation
       // This prevents page reload
@@ -85,15 +129,14 @@ export const useAuthQuery = () => {
   const profileQuery = useQuery({
     queryKey: ["profile"],
     queryFn: () =>
-      authAPI.getProfile((authState.user as UserResponse)?.userUUID ?? ""),
+      authAPI.getProfile(String(currentUser?.userUUID ?? currentUser?.id ?? "")),
     enabled:
-      authState.isAuthenticated &&
-      !!(authState.user as UserResponse)?.userUUID,
+      !!accessToken && !!(currentUser?.userUUID ?? currentUser?.id),
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error: any) => {
       if (error?.response?.status === 401) {
         logger.warn("⚠️ Profile query returned 401 - clearing credentials");
-        dispatch(clearCredentials());
+        logoutStore();
         return false;
       }
       if (error?.response?.status === 400) {
@@ -112,6 +155,10 @@ export const useAuthQuery = () => {
     loginAsync: loginMutation.mutateAsync,
     isLoginLoading: loginMutation.isPending,
     loginError: loginMutation.error,
+    adminLogin: adminLoginMutation.mutate,
+    adminLoginAsync: adminLoginMutation.mutateAsync,
+    isAdminLoginLoading: adminLoginMutation.isPending,
+    adminLoginError: adminLoginMutation.error,
     register: registerMutation.mutate,
     registerAsync: registerMutation.mutateAsync,
     isRegisterLoading: registerMutation.isPending,
@@ -132,12 +179,14 @@ export const useAuthQuery = () => {
     refetchProfile: profileQuery.refetch,
     isLoading:
       loginMutation.isPending ||
+      adminLoginMutation.isPending ||
       registerMutation.isPending ||
       verifyOtpMutation.isPending ||
       resendOtpMutation.isPending ||
       logoutMutation.isPending,
     error:
       loginMutation.error ||
+      adminLoginMutation.error ||
       registerMutation.error ||
       verifyOtpMutation.error ||
       resendOtpMutation.error ||

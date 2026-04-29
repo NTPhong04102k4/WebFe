@@ -8,8 +8,7 @@ import {
   useMyPolicies,
 } from "src/query/insurance/useInsuranceQueries";
 import { useCustomerVehicles } from "src/query/workshop/useWorkshopQueries";
-import { useAppSelector } from "src/redux/hook";
-import { selectUser } from "src/redux/Slice/AuthSlice";
+import { useAuthStore } from "@/stores/authStore";
 
 import shell from "../account-shell.module.scss";
 
@@ -31,8 +30,8 @@ type ClaimForm = {
 };
 
 export default function MyInsurancePage() {
-  const user = useAppSelector(selectUser);
-  const userID = user && "userID" in user ? user.userID : undefined;
+  const user = useAuthStore((s) => s.user);
+  const userID = user?.userID ?? user?.id;
 
   const { data: polRes, isLoading: polLoading } = useMyPolicies(userID);
   const policies = polRes?.data ?? [];

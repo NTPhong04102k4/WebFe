@@ -3,6 +3,19 @@ import { ENV } from "src/config/environment";
 import { AUTH_ROUTES } from "src/services/api/functions/auth/auth.routes";
 import { FacebookUserResponse } from "src/shared/types/Reponse/auth/user";
 import { logger } from "@/common/utils/logger";
+import type {
+  OAuthErrorMessage,
+  OAuthSuccessMessage,
+  FacebookLoginErrorMessage,
+  FacebookLoginSuccessMessage,
+  SocialAuthMessage,
+  SocialAuthResult,
+  SocialTokens,
+} from "./socialPopup.types";
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
 
 export const useFacebookAuth = () => {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
@@ -92,14 +105,17 @@ export const useFacebookAuth = () => {
         }
       };
 
-      const handleSuccess = (userData: any, tokens?: any) => {
+      const handleSuccess = (result: SocialAuthResult) => {
         if (resolved) return;
         resolved = true;
-        logger.log("🎉 Real Facebook Login Success!", { userData, tokens });
+        logger.log("🎉 Real Facebook Login Success!", {
+          userData: result.user,
+          tokens: result.tokens,
+        });
         cleanup();
         resolve({
-          ...userData,
-          tokens,
+          ...(isRecord(result.user) ? result.user : {}),
+          tokens: result.tokens,
         });
       };
 
@@ -132,6 +148,11 @@ export const useFacebookAuth = () => {
       }, 500);
 
       const messageListener = (event: MessageEvent) => {
+        const data: SocialAuthMessage | undefined = isRecord(event.data)
+          ? (event.data as SocialAuthMessage)
+          : undefined;
+        if (!data?.type) return;
+
         const allowedOrigins = [
           window.location.origin,
           ...(ENV.API_URL ? [ENV.API_URL.replace(/\/$/, "")] : []),
@@ -144,31 +165,35 @@ export const useFacebookAuth = () => {
           return;
         }
 
-        if (event.data.type === "FACEBOOK_LOGIN_SUCCESS") {
-          const userData = event.data.user || {};
-          const token = event.data.token || event.data.tokens?.access_token;
+        if (data.type === "FACEBOOK_LOGIN_SUCCESS") {
+          const msg = data as FacebookLoginSuccessMessage;
+          const userData = msg.user ?? {};
+          const token = msg.token || msg.tokens?.access_token;
           const tokens = token
             ? {
                 access_token: token,
                 token_type: "Bearer",
               }
-            : event.data.tokens;
+            : msg.tokens;
 
-          handleSuccess(userData, tokens);
-        } else if (event.data.type === "FACEBOOK_LOGIN_ERROR") {
-          handleError(event.data.error || "Facebook login failed");
-        } else if (event.data.type === "OAUTH_SUCCESS") {
-          const userData = event.data.user || {};
-          const token = event.data.token || event.data.tokens?.access_token;
-          const tokens = token
+          handleSuccess({ user: userData, tokens });
+        } else if (data.type === "FACEBOOK_LOGIN_ERROR") {
+          const msg = data as FacebookLoginErrorMessage;
+          handleError(msg.error || msg.message || "Facebook login failed");
+        } else if (data.type === "OAUTH_SUCCESS") {
+          const msg = data as OAuthSuccessMessage;
+          const userData = msg.user ?? {};
+          const token = msg.token || msg.tokens?.access_token;
+          const tokens: SocialTokens | undefined = token
             ? {
                 access_token: token,
                 token_type: "Bearer",
               }
-            : event.data.tokens;
-          handleSuccess(userData, tokens);
-        } else if (event.data.type === "OAUTH_ERROR") {
-          handleError(event.data.error || "OAuth authentication failed");
+            : msg.tokens;
+          handleSuccess({ user: userData, tokens });
+        } else if (data.type === "OAUTH_ERROR") {
+          const msg = data as OAuthErrorMessage;
+          handleError(msg.error || "OAuth authentication failed");
         }
       };
 

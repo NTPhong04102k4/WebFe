@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 
-import { carsApi } from '@/services/api/cars.api'
+import { carRouteFn } from '@/services/api/functions/Cars/Routes.Fn'
 import { useCartStore } from '@/stores/cartStore'
 import { formatCurrency } from '@/common/utils/formatCurrency'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
@@ -23,7 +23,7 @@ export default function CustomerCarDetailPage() {
   const { data, isLoading, error } = useQuery<CarDetailResponse, Error>({
     queryKey: ['customer-car-detail', id],
     enabled: !!id,
-    queryFn: () => carsApi.getCarDetail(id!),
+    queryFn: () => carRouteFn.getDetail(id!),
   })
 
   const car = data as any

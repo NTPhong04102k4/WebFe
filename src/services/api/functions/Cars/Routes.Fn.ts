@@ -6,7 +6,7 @@ import { carRoute } from "./Routes";
 import { logger } from "@/common/utils/logger";
 import { storage } from "src/services/storage";
 import {
-  CarDetailUpdateRequest,
+  CarMutationPayload,
   CarPagingRequest,
   TechSpecDetailUpdateRequest,
 } from "src/shared/types/Request/Car";
@@ -34,7 +34,7 @@ export const carRouteFn = {
     );
     return response.data;
   },
-  create: async (data: CarDetailUpdateRequest, options?: ApiRequestOptions) => {
+  create: async (data: CarMutationPayload, options?: ApiRequestOptions) => {
     try {
       if (data instanceof FormData) {
         const formDataKeys = Array.from(data.keys());
@@ -116,7 +116,7 @@ export const carRouteFn = {
   },
   update: async (
     id: number,
-    data: CarDetailUpdateRequest,
+    data: CarMutationPayload,
     options?: ApiRequestOptions
   ) => {
     const response = await apiClient.put<CarDetailResponse>(

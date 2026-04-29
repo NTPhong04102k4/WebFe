@@ -6,10 +6,9 @@ import {
   useCustomerVehicles,
   useWorkshopMutations,
 } from "src/query/workshop/useWorkshopQueries";
-import { useAppSelector } from "src/redux/hook";
-import { selectUser } from "src/redux/Slice/AuthSlice";
 import { brandCarRouteFn } from "src/services/api/functions/BrandCar/Routes.Fn";
 import type { CustomerVehicleRequest } from "src/services/api/functions/workshop/workshop.types";
+import { useAuthStore } from "@/stores/authStore";
 
 import shell from "../account-shell.module.scss";
 
@@ -34,8 +33,8 @@ const defaultValues: FormValues = {
 };
 
 export default function GaragePage() {
-  const user = useAppSelector(selectUser);
-  const userID = user && "userID" in user ? user.userID : undefined;
+  const user = useAuthStore((s) => s.user);
+  const userID = user?.userID ?? user?.id;
 
   const { data: brands = [], isLoading: loadingBrands } = useQuery({
     queryKey: ["brand-cars"],

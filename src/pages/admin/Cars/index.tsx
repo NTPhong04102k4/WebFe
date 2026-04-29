@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 
-import { carsApi } from '@/services/api/cars.api'
+import { carRouteFn } from '@/services/api/functions/Cars/Routes.Fn'
 import { useAuthStore } from '@/stores/authStore'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 import { formatCurrency } from '@/common/utils/formatCurrency'
@@ -126,7 +126,7 @@ export default function AdminCarsPage() {
     queryKey,
     placeholderData: keepPreviousData,
     queryFn: () =>
-      carsApi.getCarsPaging({
+      carRouteFn.getPaging({
         page,
         pageSize,
         brandCode: brandCode.trim(),
@@ -246,7 +246,7 @@ export default function AdminCarsPage() {
   }
 
   const createMutation = useMutation({
-    mutationFn: async (fd: FormData) => carsApi.createCar(fd),
+    mutationFn: async (fd: FormData) => carRouteFn.create(fd),
     onSuccess: () => {
       toast.success('Tạo xe thành công')
       setModalOpen(false)
@@ -257,7 +257,7 @@ export default function AdminCarsPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, fd }: { id: number; fd: FormData }) =>
-      carsApi.updateCar(id, fd),
+      carRouteFn.update(id, fd),
     onSuccess: () => {
       toast.success('Cập nhật xe thành công')
       setModalOpen(false)

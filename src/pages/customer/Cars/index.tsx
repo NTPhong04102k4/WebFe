@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 
-import { carsApi } from '@/services/api/cars.api'
+import { carRouteFn } from '@/services/api/functions/Cars/Routes.Fn'
 import { useCartStore } from '@/stores/cartStore'
 import { formatCurrency } from '@/common/utils/formatCurrency'
 import type { CarResponse, CarResponseItem } from '@/shared/types/Reponse/Car'
@@ -56,7 +56,7 @@ export default function CustomerCarsPage() {
     queryKey,
     placeholderData: keepPreviousData,
     queryFn: () =>
-      carsApi.getCarsPaging({
+      carRouteFn.getPaging({
         page,
         pageSize,
         brandCode: brandCode.trim(),

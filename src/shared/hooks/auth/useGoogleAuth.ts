@@ -3,6 +3,19 @@ import { ENV } from "src/config/environment";
 import { AUTH_ROUTES } from "src/services/api/functions/auth/auth.routes";
 import { GoogleUserResponse } from "src/shared/types/Reponse/auth/user";
 import { logger } from "@/common/utils/logger";
+import type {
+  OAuthErrorMessage,
+  OAuthSuccessMessage,
+  GoogleLoginErrorMessage,
+  GoogleLoginSuccessMessage,
+  SocialAuthMessage,
+  SocialAuthResult,
+  SocialTokens,
+} from "./socialPopup.types";
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
 
 export const useGoogleAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -47,13 +60,13 @@ export const useGoogleAuth = () => {
         }
       };
 
-      const handleSuccess = (userData: any, tokens?: any) => {
+      const handleSuccess = (result: SocialAuthResult) => {
         if (resolved) return;
         resolved = true;
         cleanup();
         resolve({
-          ...userData,
-          tokens,
+          ...(isRecord(result.user) ? result.user : {}),
+          tokens: result.tokens,
         });
       };
 
@@ -77,9 +90,14 @@ export const useGoogleAuth = () => {
       }, 500);
 
       const messageListener = (event: MessageEvent) => {
+        const data: SocialAuthMessage | undefined = isRecord(event.data)
+          ? (event.data as SocialAuthMessage)
+          : undefined;
+        if (!data?.type) return;
+
         const isGoogleCallbackMessage =
-          event.data?.type === "GOOGLE_LOGIN_SUCCESS" ||
-          event.data?.type === "GOOGLE_LOGIN_ERROR";
+          data.type === "GOOGLE_LOGIN_SUCCESS" ||
+          data.type === "GOOGLE_LOGIN_ERROR";
         const allowedOrigins = [
           ENV.API_URL,
           window.location.origin,
@@ -97,51 +115,72 @@ export const useGoogleAuth = () => {
         }
 
         // Handle GOOGLE_LOGIN_SUCCESS from backend
-        if (event.data.type === "GOOGLE_LOGIN_SUCCESS") {
+        if (data.type === "GOOGLE_LOGIN_SUCCESS") {
+          const msg = data as GoogleLoginSuccessMessage;
           // Backend returns: { type, token, user, message }
-          const userData = event.data.user || {};
-          const token = event.data.token;
+          const userData = msg.user ?? {};
+          const token = msg.token;
 
           if (!token) {
             handleError("No token received from backend");
             return;
           }
 
-          const tokens = {
+          const tokens: SocialTokens = {
             access_token: token,
             token_type: "Bearer",
           };
 
-          // Pass both userData from backend and tokens
-          handleSuccess(
-            {
-              ...userData,
-              // Keep Google user fields for compatibility
-              id: userData.userID?.toString() || userData.id || "",
-              name: userData.fullName || userData.name || "",
-              email: userData.email || "",
-              picture: userData.image || userData.picture || "",
-              verified_email: userData.emailVerified || false,
-            },
-            tokens
-          );
-        } else if (event.data.type === "GOOGLE_LOGIN_ERROR") {
+          const normalizedUser = isRecord(userData)
+            ? {
+                ...userData,
+                id:
+                  typeof userData.userID === "number"
+                    ? String(userData.userID)
+                    : typeof userData.id === "string" || typeof userData.id === "number"
+                      ? String(userData.id)
+                      : "",
+                name:
+                  typeof userData.fullName === "string"
+                    ? userData.fullName
+                    : typeof userData.name === "string"
+                      ? userData.name
+                      : "",
+                email: typeof userData.email === "string" ? userData.email : "",
+                picture:
+                  typeof userData.image === "string"
+                    ? userData.image
+                    : typeof userData.picture === "string"
+                      ? userData.picture
+                      : "",
+                verified_email:
+                  typeof userData.emailVerified === "boolean"
+                    ? userData.emailVerified
+                    : false,
+              }
+            : {};
+
+          handleSuccess({ user: normalizedUser, tokens });
+        } else if (data.type === "GOOGLE_LOGIN_ERROR") {
+          const msg = data as GoogleLoginErrorMessage;
           handleError(
-            event.data.error || event.data.message || "Google login failed"
+            msg.error || msg.message || "Google login failed"
           );
-        } else if (event.data.type === "OAUTH_SUCCESS") {
+        } else if (data.type === "OAUTH_SUCCESS") {
+          const msg = data as OAuthSuccessMessage;
           // Generic OAuth success (fallback)
-          const userData = event.data.user || {};
-          const token = event.data.token || event.data.tokens?.access_token;
+          const userData = msg.user ?? {};
+          const token = msg.token || msg.tokens?.access_token;
           const tokens = token
             ? {
                 access_token: token,
                 token_type: "Bearer",
               }
-            : event.data.tokens;
-          handleSuccess(userData, tokens);
-        } else if (event.data.type === "OAUTH_ERROR") {
-          handleError(event.data.error || "OAuth authentication failed");
+            : msg.tokens;
+          handleSuccess({ user: userData, tokens });
+        } else if (data.type === "OAUTH_ERROR") {
+          const msg = data as OAuthErrorMessage;
+          handleError(msg.error || "OAuth authentication failed");
         }
       };
 

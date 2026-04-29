@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { BellIcon, SearchIcon } from "./icon";
 import { useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "src/redux/hook";
-import { clearCredentials, selectAuth } from "src/redux/Slice/AuthSlice";
 import { authAPI } from "src/services/api/functions/auth/authFn";
+import { useAuthStore } from "@/stores/authStore";
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -140,9 +139,9 @@ const NotificationButton: React.FC = () => {
 const UserInfo: React.FC = () => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const auth = useAppSelector(selectAuth);
+  const user = useAuthStore((s) => s.user);
+  const logoutStore = useAuthStore((s) => s.logout);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -155,9 +154,9 @@ const UserInfo: React.FC = () => {
   }, []);
 
   const name =
-    auth.user?.fullName ||
-    auth.user?.userName ||
-    auth.user?.email ||
+    user?.fullName ||
+    user?.username ||
+    user?.email ||
     "Admin User";
 
   const handleLogout = async () => {
@@ -165,7 +164,7 @@ const UserInfo: React.FC = () => {
       await authAPI.logout();
     } catch (e) {
     } finally {
-      dispatch(clearCredentials());
+      logoutStore();
       navigate("/auth/login");
     }
   };

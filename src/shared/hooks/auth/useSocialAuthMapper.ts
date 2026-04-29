@@ -1,79 +1,47 @@
-import {
+import type { AuthUser } from "@/stores/authStore";
+import type {
   FacebookUserResponse,
   GoogleUserResponse,
 } from "src/shared/types/Reponse/auth/user";
-export interface MappedUserData {
-  userID: number;
-  userUUID: string;
-  userCode: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  dateOfBirth: Date | null;
-  gender: string;
-  identityNumber: string;
-  phone: string;
-  email: string;
-  address: string;
-  username: string;
-  lastLoginDate: Date;
-  loginAttempts: number;
-  isLocked: boolean;
-  lockUntil: Date | null;
-  isActive: boolean;
-  updatedDate: Date;
-  image: string;
-}
+import { getRolesFromToken } from "src/services/decode";
 
 export const useSocialAuthMapper = () => {
-  const mapGoogleUser = (googleUser: GoogleUserResponse): MappedUserData => {
+  const mapGoogleUser = (googleUser: GoogleUserResponse, token: string): AuthUser => {
+    const roles = getRolesFromToken(token);
+    const id = Number.parseInt(googleUser.UserID, 10) || 0;
     return {
-      userID: parseInt(googleUser.UserID),
+      id,
+      userID: id,
       userUUID: googleUser.UserUUID,
       userCode: googleUser.UserCode,
       firstName: googleUser.FirstName,
       lastName: googleUser.LastName,
       fullName: googleUser.FullName,
-      dateOfBirth: null,
-      gender: googleUser.Gender,
-      identityNumber: googleUser.IdentityNumber,
       phone: googleUser.Phone ?? "",
       email: googleUser.Email,
       address: googleUser.Address ?? "",
       username: googleUser.Username,
-      lastLoginDate: new Date(),
-      loginAttempts: 0,
-      isLocked: false,
-      lockUntil: null,
-      isActive: true,
-      updatedDate: new Date(),
       image: googleUser.Image ?? "",
+      role: roles[0] ?? "Customer",
     };
   };
-  const mapFacebookUser = (
-    facebookUser: FacebookUserResponse
-  ): MappedUserData => {
+  const mapFacebookUser = (facebookUser: FacebookUserResponse, token: string): AuthUser => {
+    const roles = getRolesFromToken(token);
+    const id = Number.parseInt(facebookUser.UserID, 10) || 0;
     return {
-      userID: parseInt(facebookUser.UserID),
+      id,
+      userID: id,
       userUUID: facebookUser.UserUUID,
       userCode: facebookUser.UserCode,
       firstName: facebookUser.FirstName,
       lastName: facebookUser.LastName,
       fullName: facebookUser.FullName,
-      dateOfBirth: null,
-      gender: facebookUser.Gender,
-      identityNumber: facebookUser.IdentityNumber,
       phone: facebookUser.Phone ?? "",
       email: facebookUser.Email ?? "",
       address: facebookUser.Address ?? "",
       username: facebookUser.Username ?? "",
-      lastLoginDate: new Date(),
-      loginAttempts: 0,
-      isLocked: false,
-      lockUntil: null,
-      isActive: true,
-      updatedDate: new Date(),
       image: facebookUser.Image ?? "",
+      role: roles[0] ?? "Customer",
     };
   };
   return {

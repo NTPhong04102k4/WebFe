@@ -2,9 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ShieldCheck, RotateCcw } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi } from '@/services/api/auth.api'
-import { useAuthStore } from '@/stores/authStore'
-import { decodeToken } from '@/common/utils/jwtDecode'
+import { useAuthQuery } from '@/query/auth/useAuthQuery'
 import { extractError } from '@/common/utils/errorMessage'
 
 const OTP_LENGTH = 6
@@ -17,7 +15,7 @@ export default function VerifyOtpPage() {
   const [loading, setLoading] = useState(false)
   const [countdown, setCountdown] = useState(0)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-  const { setTokens, setUser } = useAuthStore()
+  const { verifyOtpAsync, resendOtpAsync } = useAuthQuery()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -59,12 +57,9 @@ export default function VerifyOtpPage() {
     if (loading) return
     setLoading(true)
     try {
-      const res = await authApi.verifyOtp({ email, otpCode: code })
+      const res = await verifyOtpAsync({ email, otpCode: code })
       const d = res.data?.data
-      if (d?.accessToken) {
-        setTokens(d.accessToken, d.refreshToken)
-        const decoded = decodeToken(d.accessToken)
-        if (decoded) setUser({ ...decoded, fullName: d.user.fullName ?? decoded.fullName })
+      if (d?.token) {
         toast.success('Xác thực thành công! Chào mừng bạn.')
         navigate('/', { replace: true })
       } else {
@@ -84,7 +79,7 @@ export default function VerifyOtpPage() {
   const handleResend = async () => {
     if (countdown > 0) return
     try {
-      await authApi.resendOtp(email)
+      await resendOtpAsync({ email })
       toast.success('Đã gửi lại OTP!')
       setCountdown(RESEND_COOLDOWN)
     } catch (err) {

@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi } from '@/services/api/auth.api'
+import { useAuthQuery } from '@/query/auth/useAuthQuery'
 import { useAuthStore } from '@/stores/authStore'
 import { decodeToken } from '@/common/utils/jwtDecode'
 import { extractError } from '@/common/utils/errorMessage'
@@ -19,8 +19,8 @@ type FormData = z.infer<typeof schema>
 
 export default function LoginPage() {
   const [showPwd, setShowPwd] = useState(false)
-  const [loading, setLoading] = useState(false)
   const { setTokens, setUser } = useAuthStore()
+  const { loginAsync, isLoginLoading } = useAuthQuery()
   const navigate = useNavigate()
 
   const {
@@ -30,12 +30,14 @@ export default function LoginPage() {
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
   const onSubmit = async (values: FormData) => {
-    setLoading(true)
     try {
-      const { data } = await authApi.login(values)
-      setTokens(data.access_token, data.refresh_token)
-      const decoded = decodeToken(data.access_token)
-      if (decoded) setUser(decoded)
+      const { data } = await loginAsync(values)
+      const token = data.token
+      const decoded = decodeToken(token)
+      if (decoded) {
+        setTokens(token, '')
+        setUser(decoded)
+      }
       toast.success('Đăng nhập thành công!')
       const role = decoded?.role ?? 'Customer'
       if (role === 'Admin' || role === 'SuperAdmin' || role === 'Staff') {
@@ -45,8 +47,6 @@ export default function LoginPage() {
       }
     } catch (err) {
       toast.error(extractError(err))
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -128,10 +128,10 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isLoginLoading}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
         >
-          {loading ? (
+          {isLoginLoading ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
             <LogIn className="h-4 w-4" />

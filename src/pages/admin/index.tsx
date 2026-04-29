@@ -1,17 +1,16 @@
 ﻿import React, { useState } from "react";
-import { storage } from "src/services/storage";
 import { GoArrowRight } from "react-icons/go";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import * as yup from "yup";
 import { authAPI } from "src/services/api/functions/auth/authFn";
-import { useAppDispatch } from "src/redux/hook";
-import { setCredentials } from "src/redux/Slice/AuthSlice";
-import { decodeToken, getTokenClaims } from "src/services/decode";
+import { getRolesFromToken, getTokenClaims } from "src/services/decode";
+import { useAuthStore } from "@/stores/authStore";
 
 const Admin = React.memo(() => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  const setTokens = useAuthStore((s) => s.setTokens);
+  const setUser = useAuthStore((s) => s.setUser);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -56,23 +55,20 @@ const Admin = React.memo(() => {
       const res = await authAPI.adminLogin({ username, password });
       const token = res.data.token;
       const claims = getTokenClaims(token);
-      const userData = {
-        fullName: res.data.fullName,
+      const roles = getRolesFromToken(token);
+
+      setTokens(token, "");
+      setUser({
+        id: Number(claims?.sub ?? 0) || 0,
+        userID: Number(claims?.sub ?? 0) || 0,
+        userUUID: typeof claims?.sub === "string" ? claims.sub : undefined,
         username,
-        roles: claims?.sub,
-        claims,
-      };
+        email: String(claims?.email ?? ""),
+        fullName: res.data.fullName,
+        role: roles[0] ?? "Admin",
+      });
 
-      dispatch(
-        setCredentials({
-          token,
-          user: userData as any,
-          isAuthenticated: true,
-        })
-      );
-
-      storage.setToken(token);
-      if (claims?.sub?.toLowerCase().includes("superadmin")) {
+      if (roles.some((r) => r.toLowerCase() === "superadmin")) {
         navigate("/auth/login/admin/page_manage", { replace: true });
       } else {
         navigate("/home", { replace: true });

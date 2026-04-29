@@ -1,4 +1,5 @@
 import { jwtDecode } from 'jwt-decode'
+import type { AuthUser } from '@/services/types/auth.types'
 
 interface JwtPayload {
   sub?: string
@@ -13,13 +14,7 @@ interface JwtPayload {
   iat?: number
 }
 
-export interface DecodedUser {
-  id: number
-  username: string
-  email: string
-  fullName: string
-  role: string
-}
+export type DecodedUser = AuthUser
 
 export function decodeToken(token: string): DecodedUser | null {
   try {
@@ -34,6 +29,7 @@ export function decodeToken(token: string): DecodedUser | null {
       '0'
     return {
       id: parseInt(nameId, 10) || 0,
+      userID: parseInt(nameId, 10) || 0,
       username: payload.unique_name ?? payload.name ?? '',
       email: payload.email ?? '',
       fullName: payload.name ?? payload.unique_name ?? '',
