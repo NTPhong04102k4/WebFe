@@ -1,5 +1,5 @@
 import React from "react";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 import { setCredentials } from "src/redux/Slice/AuthSlice";
 import { useAppDispatch } from "src/redux/hook";
 import { useFacebookAuth } from "src/shared/hooks/auth/useFacebookAuth";

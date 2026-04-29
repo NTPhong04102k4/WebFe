@@ -24,3 +24,4 @@ export interface PagedResponseFull<T> {
   page: number
   pageSize: number
 }
+

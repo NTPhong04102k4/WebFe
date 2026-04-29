@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useGoogleAuth } from "src/shared/hooks/auth/useGoogleAuth";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 interface GoogleLoginButtonProps {
   onSuccess?: () => void;
   onError?: (error: Error) => void;

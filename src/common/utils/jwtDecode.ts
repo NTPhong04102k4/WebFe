@@ -43,3 +43,4 @@ export function decodeToken(token: string): DecodedUser | null {
     return null
   }
 }
+

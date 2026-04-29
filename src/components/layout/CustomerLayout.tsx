@@ -4,7 +4,7 @@ import { Car, ShoppingCart, User, LogOut, Menu, X, MessageCircle, Bot } from 'lu
 import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
 import toast from 'react-hot-toast'
-import api from '@/api/axiosInstance'
+import api from '@/services/api/axiosInstance'
 
 export default function CustomerLayout() {
   const [menuOpen, setMenuOpen] = useState(false)

@@ -1,13 +1,12 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
-import { useAppSelector } from "src/redux/hook";
-import { selectIsAuthenticated } from "src/redux/Slice/AuthSlice";
+import { useAuthStore } from "@/stores/authStore";
 
 type Props = { children: React.ReactNode };
 
 export function RequireAuth({ children }: Props) {
-  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isAuthenticated = useAuthStore((s) => !!s.accessToken);
   const location = useLocation();
 
   if (!isAuthenticated) {

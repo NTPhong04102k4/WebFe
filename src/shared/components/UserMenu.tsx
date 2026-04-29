@@ -6,7 +6,7 @@ import { useNavigate } from "react-router";
 import { useAppDispatch, useAppSelector } from "src/redux/hook";
 import { clearCredentials, selectToken } from "src/redux/Slice/AuthSlice";
 import { authAPI } from "src/services/api/functions/auth/authFn";
-import { hasStaffBackendAccessFromToken } from "src/utils/roles";
+import { hasStaffBackendAccessFromToken } from "@/common/utils/roles";
 
 type UserMenuProps = {
   name: string;

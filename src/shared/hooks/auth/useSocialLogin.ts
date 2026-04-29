@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppDispatch } from "src/redux/hook";
-import { logger } from "src/utils/logger";
-import { setCredentials } from "src/redux/Slice/AuthSlice";
+import { logger } from "@/common/utils/logger";
 import { useGoogleAuth } from "./useGoogleAuth";
 import { useFacebookAuth } from "./useFacebookAuth";
 import { useSocialAuthMapper } from "./useSocialAuthMapper";
@@ -11,6 +9,7 @@ import {
   UserResponse,
 } from "src/shared/types/Reponse/auth/user";
 import { getTokenClaims } from "src/services/decode";
+import { useAuthStore } from "@/stores/authStore";
 
 interface UseSocialLoginOptions {
   isLogin: boolean;
@@ -24,7 +23,6 @@ export const useSocialLogin = ({
   onSuccess,
 }: UseSocialLoginOptions) => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const { mapGoogleUser, mapFacebookUser } = useSocialAuthMapper();
   const { loginWithGoogle: googleLogin } = useGoogleAuth();
   const { loginWithFacebook: facebookLogin } = useFacebookAuth();
@@ -43,13 +41,10 @@ export const useSocialLogin = ({
 
     logger.log("🔍 [Social Login] Token roles:", normalizedRoles, "User:", userWithRoles);
 
-    dispatch(
-      setCredentials({
-        token: token,
-        user: userWithRoles,
-        isAuthenticated: true,
-      })
-    );
+    // Zustand migration: lưu access/refresh + user vào store
+    const refreshToken = useAuthStore.getState().refreshToken ?? "";
+    useAuthStore.getState().setTokens(token, refreshToken);
+    useAuthStore.getState().setUser(userWithRoles as any);
 
     const message = isLogin
       ? `Đăng nhập ${type === "GOOGLE" ? "Google" : "Facebook"} thành công!`

@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ShieldCheck, RotateCcw } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi } from '@/api/auth.api'
+import { authApi } from '@/services/api/auth.api'
 import { useAuthStore } from '@/stores/authStore'
-import { decodeToken } from '@/utils/jwtDecode'
-import { extractError } from '@/utils/errorMessage'
+import { decodeToken } from '@/common/utils/jwtDecode'
+import { extractError } from '@/common/utils/errorMessage'
 
 const OTP_LENGTH = 6
 const RESEND_COOLDOWN = 60

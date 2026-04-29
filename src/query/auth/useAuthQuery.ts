@@ -11,7 +11,7 @@ import {
   RegisterVerifyResponse,
   UserResponse,
 } from "src/shared/types/Reponse/auth/user";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 
 export const useAuthQuery = () => {
   const dispatch = useAppDispatch();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 import { TabNavigation, MessageDisplay } from "../../shared/components/Login";
 import { LoginContent } from "./components/LoginContent";
 import { useAuthQuery } from "src/query/auth/useAuthQuery";

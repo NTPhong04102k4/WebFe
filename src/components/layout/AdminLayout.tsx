@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import toast from 'react-hot-toast'
-import api from '@/api/axiosInstance'
+import api from '@/services/api/axiosInstance'
 
 interface NavItem {
   label: string

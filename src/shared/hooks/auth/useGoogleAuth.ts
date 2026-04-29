@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { ENV } from "src/config/environment";
 import { AUTH_ROUTES } from "src/services/api/functions/auth/auth.routes";
 import { GoogleUserResponse } from "src/shared/types/Reponse/auth/user";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 
 export const useGoogleAuth = () => {
   const [isLoading, setIsLoading] = useState(false);

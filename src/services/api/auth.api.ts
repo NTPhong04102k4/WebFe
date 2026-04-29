@@ -1,5 +1,5 @@
 import api from './axiosInstance'
-import type { OperationResult } from '@/types/common.types'
+import type { OperationResult } from '@/services/types/common.types'
 import type {
   TokenResponse,
   VerifyOtpResponse,
@@ -9,17 +9,19 @@ import type {
   VerifyOtpRequest,
   AdminLoginRequest,
   CreateStaffRequest,
-} from '@/types/auth.types'
+} from '@/services/types/auth.types'
 
 export const authApi = {
-  login: (data: LoginRequest) =>
-    api.post<TokenResponse>('/auth/login', data),
+  login: (data: LoginRequest) => api.post<TokenResponse>('/auth/login', data),
 
   register: (data: RegisterRequest) =>
     api.post<OperationResult>('/auth/register', data),
 
   verifyOtp: (data: VerifyOtpRequest) =>
-    api.post<OperationResult<VerifyOtpResponse>>('/auth/verify-otp', data),
+    api.post<OperationResult<VerifyOtpResponse>>(
+      '/auth/verify-otp',
+      data
+    ),
 
   resendOtp: (email: string) =>
     api.post<OperationResult>('/auth/resend-otp', { email }),
@@ -36,3 +38,4 @@ export const authApi = {
   createStaff: (data: CreateStaffRequest) =>
     api.post<OperationResult>('/auth/admin/staff/create', data),
 }
+

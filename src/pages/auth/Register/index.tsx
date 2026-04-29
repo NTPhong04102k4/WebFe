@@ -5,8 +5,8 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi } from '@/api/auth.api'
-import { extractError } from '@/utils/errorMessage'
+import { authApi } from '@/services/api/auth.api'
+import { extractError } from '@/common/utils/errorMessage'
 
 const schema = z
   .object({

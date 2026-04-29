@@ -10,8 +10,7 @@ import {
 } from "src/shared/validation/profileSchema";
 import { authAPI } from "src/services/api/functions/auth/authFn";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAppDispatch } from "src/redux/hook";
-import { setCredentials } from "src/redux/Slice/AuthSlice";
+import { useAuthStore } from "@/stores/authStore";
 
 const Container = styled.div`
   min-height: calc(100vh - 160px);
@@ -189,7 +188,8 @@ const UserProfileForm: React.FC = () => {
   const { user, token } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
-  const dispatch = useAppDispatch();
+  const setUser = useAuthStore((s) => s.setUser);
+  const setTokens = useAuthStore((s) => s.setTokens);
 
   const initialValues = useMemo(
     () => ({
@@ -323,14 +323,9 @@ const UserProfileForm: React.FC = () => {
         if (user?.userUUID && token) {
           const profileResponse = await authAPI.getProfile(user.userUUID);
           if (profileResponse?.data) {
-            // Update Redux store with new user data
-            dispatch(
-              setCredentials({
-                token: token,
-                user: profileResponse.data,
-                isAuthenticated: true,
-              })
-            );
+            // Update zustand store with refreshed profile data
+            setTokens(token as string, useAuthStore.getState().refreshToken ?? '')
+            setUser(profileResponse.data as any)
             // Invalidate and refetch profile query
             queryClient.invalidateQueries({ queryKey: ["profile"] });
             queryClient.setQueryData(["profile"], profileResponse);

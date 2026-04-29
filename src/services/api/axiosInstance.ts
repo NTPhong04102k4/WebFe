@@ -1,4 +1,5 @@
 import axios from 'axios'
+
 import { useAuthStore } from '@/stores/authStore'
 
 const api = axios.create({
@@ -37,3 +38,4 @@ api.interceptors.response.use(
 )
 
 export default api
+

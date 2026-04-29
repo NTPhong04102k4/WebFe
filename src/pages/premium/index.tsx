@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 import { IoMdCheckmark } from "react-icons/io";
 import { DATA_PREMIUM } from "./data";
 

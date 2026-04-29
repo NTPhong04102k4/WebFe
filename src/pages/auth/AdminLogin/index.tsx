@@ -5,10 +5,10 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authApi } from '@/api/auth.api'
+import { authApi } from '@/services/api/auth.api'
 import { useAuthStore } from '@/stores/authStore'
-import { decodeToken } from '@/utils/jwtDecode'
-import { extractError } from '@/utils/errorMessage'
+import { decodeToken } from '@/common/utils/jwtDecode'
+import { extractError } from '@/common/utils/errorMessage'
 
 const schema = z.object({
   username: z.string().min(1, 'Vui lòng nhập tên đăng nhập'),

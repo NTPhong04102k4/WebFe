@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 import { DATA_CATEGORIES, DetailItem } from "./data";
 import { CustomPriceSlider } from "./item/SliderPrice";
 import { ProductCard } from "./item/ProductCard";

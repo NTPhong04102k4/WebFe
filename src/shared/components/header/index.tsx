@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 import { IoMdArrowDropdown } from "react-icons/io";
 import { IoCartOutline } from "react-icons/io5";
 import { useNavigate, useLocation } from "react-router";

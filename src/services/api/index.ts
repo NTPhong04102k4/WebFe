@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 import { ENV } from "../../config/environment";
-import { logger } from "../../utils/logger";
+import { logger } from "@/common/utils/logger";
 import { storage } from "../storage";
 
 const API_BASE_URL = ENV.API_URL;

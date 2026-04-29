@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState } from "react";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 import { useLocation, useNavigate } from "react-router-dom";
 import CryptoJS from "crypto-js";
 import { ENV } from "src/config/environment";

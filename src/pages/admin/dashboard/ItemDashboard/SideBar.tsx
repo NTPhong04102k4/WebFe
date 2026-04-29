@@ -1,5 +1,5 @@
 import React from "react";
-import { logger } from "src/utils/logger";
+import { logger } from "@/common/utils/logger";
 import {
   BuyCarIcon,
   MenuIcon,
