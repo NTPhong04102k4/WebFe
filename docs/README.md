@@ -2,6 +2,8 @@
 
 Tài liệu API cho hệ thống bán xe SoldCars (ASP.NET Core 8.0).
 
+> **Tổng quan toàn dự án (stack, entity, service, cấu hình):** [project-overview.md](project-overview.md)
+
 ---
 
 ## Modules
@@ -17,6 +19,12 @@ Tài liệu API cho hệ thống bán xe SoldCars (ASP.NET Core 8.0).
 | Accessory | [accessory/accessory.md](accessory/accessory.md) | `/accessory` |
 | Order & Payment | [order/order.md](order/order.md) | `/orders/payment` |
 | User | [user/user.md](user/user.md) | `/user`, `/user/files` |
+| HR | [api/modules/hr.md](api/modules/hr.md) | `/hr` |
+| Insurance | [api/modules/insurance.md](api/modules/insurance.md) | `/insurance` |
+| Workshop | [api/modules/workshop.md](api/modules/workshop.md) | `/workshop` |
+| Review | [api/modules/review.md](api/modules/review.md) | `/review` |
+| Chat | [api/modules/chat.md](api/modules/chat.md) | `/chat` |
+| AI Chatbot | [api/modules/ai-chatbot.md](api/modules/ai-chatbot.md) | `/ai-chat` |
 
 ---
 

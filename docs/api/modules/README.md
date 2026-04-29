@@ -2,7 +2,8 @@
 
 Mỗi file mô tả một **nhóm nghiệp vụ**: endpoint, **payload gửi lên** (JSON / query / multipart), và **dữ liệu trả về** thường gặp (HTTP 200/201; lỗi xem cuối file).
 
-Tổng quan route: [../frontend-api-reference.md](../frontend-api-reference.md).
+Tổng quan route: [../frontend-api-reference.md](../frontend-api-reference.md).  
+Map endpoint + payload + response + status code: [../endpoint-status-map.md](../endpoint-status-map.md).
 
 | Module | File |
 |--------|------|
@@ -15,6 +16,9 @@ Tổng quan route: [../frontend-api-reference.md](../frontend-api-reference.md).
 | Nhân sự (kỹ thuật viên, lương, …) | [hr.md](./hr.md) |
 | Bảo hiểm | [insurance.md](./insurance.md) |
 | Xưởng (xe khách, lịch hẹn, phiếu CV) | [workshop.md](./workshop.md) |
+| Đánh giá xe & dịch vụ | [review.md](./review.md) |
+| Chat khách hàng ↔ nhân viên | [chat.md](./chat.md) |
+| AI Chatbot | [ai-chatbot.md](./ai-chatbot.md) |
 
 **Quy ước JSON:** camelCase (trừ `TokenResponse` dùng `access_token`, `refresh_token`, …).  
 **Lỗi chung:** `401 Unauthorized`, `403 Forbidden`, `404 NotFound`, `409 Conflict`; body thường là `{ "success": false, "errorCode": "...", "message": "..." }` (`OperationResult`) hoặc `{ "error": "..." }`.
