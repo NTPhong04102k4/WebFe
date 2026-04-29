@@ -17,9 +17,40 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
+      "@/*": ["src/*"],
       "src/*": ["src/*"]
     },
     "noUnusedLocals": true
   },
-  "include": ["src", "src/index.d.ts"]
+  "include": ["src", "src/index.d.ts"],
+  "exclude": [
+    "node_modules",
+    "src/index.tsx",
+    "src/redux/**",
+    "src/query/**",
+    "src/navigation/**",
+    "src/services/**",
+    "src/App.test.tsx",
+    "src/test/**",
+    "src/reportWebVitals.ts",
+    "src/setupTests.ts",
+    "src/react-app-env.d.ts",
+    "src/pages/admin/index.tsx",
+    "src/pages/admin/dashboard/**",
+    "src/pages/account/**",
+    "src/pages/home/**",
+    "src/pages/about/**",
+    "src/pages/contact/**",
+    "src/pages/error/**",
+    "src/pages/faq/**",
+    "src/pages/listings/**",
+    "src/pages/login/**",
+    "src/pages/premium/**",
+    "src/pages/servicesfeatures/**",
+    "src/pages/shop/**",
+    "src/pages/staff/**",
+    "src/pages/term/**",
+    "src/shared/**",
+    "src/components/payment/**"
+  ]
 }
