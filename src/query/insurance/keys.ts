@@ -7,6 +7,9 @@ export const insuranceKeys = {
     [...insuranceKeys.all, "policies", { userId }] as const,
   expiring: (withinDays: number) =>
     [...insuranceKeys.all, "expiring", withinDays] as const,
-  claims: (status?: string) =>
-    [...insuranceKeys.all, "claims", { status }] as const,
+  claims: (params: {
+    page?: number;
+    pageSize?: number;
+    status?: string;
+  }) => [...insuranceKeys.all, "claims", params] as const,
 };

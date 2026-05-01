@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { logger } from "src/utils/logger";
 import { IoMdArrowDropdown } from "react-icons/io";
-import { IoCartOutline } from "react-icons/io5";
+import { IoCartOutline, IoMoon, IoSunny } from "react-icons/io5";
 import { useNavigate, useLocation } from "react-router";
 import styled from "styled-components";
 import { DropdownMenuProps, FEATURES, menuItems } from "./data";
 import { useAuth } from "src/shared/hooks/auth";
 import { UserMenu } from "src/shared/components/UserMenu";
+import { useTheme } from "src/shared/context/ThemeContext";
 
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     logger.log("🔍 Header - Auth state changed:", {
@@ -135,13 +137,27 @@ export function Header() {
           Contact
         </NavItem>
 
+        <ThemeToggleButton
+          type="button"
+          onClick={() => {
+            closeDropdowns();
+            toggleTheme();
+          }}
+          aria-label={
+            theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+          }
+          title={theme === "dark" ? "Light mode" : "Dark mode"}
+        >
+          {theme === "dark" ? <IoSunny size={22} /> : <IoMoon size={22} />}
+        </ThemeToggleButton>
+
         {isAuthenticated ? (
           <>
             <NavItem>
               <IoCartOutline size={24} />
             </NavItem>
             <UserMenu
-              theme={"dark"}
+              theme="dark"
               name={getUserName() || "User"}
               closeAll={() =>
                 setDropdownOpen({
@@ -298,6 +314,32 @@ const NavItem = styled.h1`
   @media (max-width: 480px) {
     font-size: 12px;
     gap: 2px;
+  }
+`;
+
+const ThemeToggleButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.55);
+  }
+
+  @media (max-width: 480px) {
+    width: 36px;
+    height: 36px;
   }
 `;
 

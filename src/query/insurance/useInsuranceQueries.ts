@@ -54,9 +54,14 @@ export function useExpiringPolicies(withinDays: number, enabled = true) {
   });
 }
 
-export function useClaimsList(page = 1, pageSize = 20, status?: string) {
+export function useClaimsList(params: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+}) {
+  const { page = 1, pageSize = 20, status } = params;
   return useQuery({
-    queryKey: insuranceKeys.claims(status),
+    queryKey: insuranceKeys.claims({ page, pageSize, status }),
     queryFn: ({ signal }) =>
       insuranceApi.listClaims({ page, pageSize, status }, { signal }),
     staleTime: SEARCH_STALE_MS,

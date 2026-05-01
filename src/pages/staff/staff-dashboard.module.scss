@@ -3,6 +3,8 @@ $bp-tablet: 640px;
 $bp-desktop: 1024px;
 
 .wrap {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   width: 100%;
   background: #f8fafc;
@@ -60,6 +62,81 @@ $bp-desktop: 1024px;
   @media (min-width: $bp-desktop) {
     padding: 1.25rem 2rem 3rem;
   }
+}
+
+// Layout: sidebar + Outlet (desktop); stacked (mobile)
+.shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem 2rem;
+  box-sizing: border-box;
+  gap: 1rem;
+
+  @media (min-width: $bp-tablet) {
+    padding: 1rem 1.5rem 2.5rem;
+  }
+
+  @media (min-width: $bp-desktop) {
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 1.25rem 2rem 3rem;
+    gap: 1.5rem;
+  }
+}
+
+.sidebar {
+  flex-shrink: 0;
+
+  @media (min-width: $bp-desktop) {
+    width: 220px;
+    position: sticky;
+    top: 4.5rem;
+  }
+}
+
+.sideNav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  @media (min-width: $bp-desktop) {
+    flex-direction: column;
+  }
+}
+
+.sideNavLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: #f8fafc;
+    color: #0f172a;
+  }
+}
+
+.sideNavLinkActive {
+  background: #1e3a8a;
+  color: #fff;
+  border-color: #1e3a8a;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
 }
 
 .tabs {
@@ -210,4 +287,48 @@ $bp-desktop: 1024px;
 .ok {
   color: #15803d;
   font-size: 0.8rem;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.paginationBtn {
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.tableToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+  margin-bottom: 0.65rem;
+
+  input[type="search"],
+  input[type="text"],
+  select {
+    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.85rem;
+    min-width: 0;
+  }
 }

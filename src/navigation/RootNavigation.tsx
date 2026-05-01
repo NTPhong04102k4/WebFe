@@ -63,7 +63,17 @@ const WorkOrdersPage = React.lazy(
 const MyInsurancePage = React.lazy(
   () => import("src/pages/account/insurance/MyInsurancePage"),
 );
-const StaffDashboard = React.lazy(() => import("src/pages/staff/StaffDashboard"));
+const StaffLayout = React.lazy(() => import("src/pages/staff/StaffLayout"));
+const StaffWorkshopPanel = React.lazy(() =>
+  import("src/pages/staff/panels/StaffWorkshopPanel").then((m) => ({
+    default: m.StaffWorkshopPanel,
+  })),
+);
+const StaffInsurancePanel = React.lazy(() =>
+  import("src/pages/staff/panels/StaffInsurancePanel").then((m) => ({
+    default: m.StaffInsurancePanel,
+  })),
+);
 const Profile = React.lazy(() => import("src/pages/profile/UserProfileForm"));
 const AccessoryEditorPage = React.lazy(
   () =>
@@ -297,10 +307,17 @@ export function RootNavigation() {
                   path="/staff"
                   element={
                     <StaffRoute>
-                      <StaffDashboard />
+                      <StaffLayout />
                     </StaffRoute>
                   }
-                />
+                >
+                  <Route
+                    index
+                    element={<Navigate to="/staff/workshop" replace />}
+                  />
+                  <Route path="workshop" element={<StaffWorkshopPanel />} />
+                  <Route path="insurance" element={<StaffInsurancePanel />} />
+                </Route>
                 {/* <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/error" element={<PaymentError />} />
         <Route path="/payment/cancel" element={<PaymentCancel />} /> */}

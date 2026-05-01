@@ -9,6 +9,7 @@ import App from "./App";
 import { createAppQueryClient } from "./query/queryClient";
 import { store } from "./redux/store";
 import { ErrorBoundary } from "./shared/components/ErrorBoundary";
+import { ThemeProvider } from "./shared/context/ThemeContext";
 
 const queryClient = createAppQueryClient();
 
@@ -17,9 +18,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <ErrorBoundary>
       <ReduxProvider store={store}>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <ThemeProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </ThemeProvider>
         </QueryClientProvider>
       </ReduxProvider>
     </ErrorBoundary>

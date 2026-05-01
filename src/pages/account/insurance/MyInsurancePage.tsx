@@ -45,7 +45,7 @@ export default function MyInsurancePage() {
   const vehicles = vehiclesRes?.data ?? [];
 
   const { data: packages = [] } = useInsurancePackages(undefined);
-  const { data: claimsRes } = useClaimsList(1, 30);
+  const { data: claimsRes } = useClaimsList({ page: 1, pageSize: 30 });
   const claims = claimsRes?.data ?? [];
 
   const { createPolicy, createClaim } = useInsuranceMutations();
