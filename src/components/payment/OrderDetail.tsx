@@ -1,5 +1,5 @@
 import React from "react";
-import { useSePayOrder } from "src/shared/hooks/Payment";
+import { useSePayOrder } from "src/query/payment/usePaymentQueries";
 import { SePayTransaction } from "src/shared/types/Reponse/Payment";
 
 interface OrderDetailProps {

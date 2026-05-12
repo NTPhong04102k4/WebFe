@@ -29,14 +29,14 @@ export const useGoogleAuth = () => {
 
       if (!baseApiUrl) {
         setIsLoading(false);
-        reject(new Error("Thiếu cấu hình VITE_API_URL cho social login"));
+        reject(new Error("Thiếu cấu hình VITE_API_BASE_URL cho social login"));
         return;
       }
 
       const popup = window.open(
         authUrl,
         "google-login",
-        "width=500,height=600,scrollbars=yes,resizable=yes,popup=yes"
+        "width=500,height=600,scrollbars=yes,resizable=yes,popup=yes",
       );
 
       if (!popup) {
@@ -137,7 +137,8 @@ export const useGoogleAuth = () => {
                 id:
                   typeof userData.userID === "number"
                     ? String(userData.userID)
-                    : typeof userData.id === "string" || typeof userData.id === "number"
+                    : typeof userData.id === "string" ||
+                        typeof userData.id === "number"
                       ? String(userData.id)
                       : "",
                 name:
@@ -163,9 +164,7 @@ export const useGoogleAuth = () => {
           handleSuccess({ user: normalizedUser, tokens });
         } else if (data.type === "GOOGLE_LOGIN_ERROR") {
           const msg = data as GoogleLoginErrorMessage;
-          handleError(
-            msg.error || msg.message || "Google login failed"
-          );
+          handleError(msg.error || msg.message || "Google login failed");
         } else if (data.type === "OAUTH_SUCCESS") {
           const msg = data as OAuthSuccessMessage;
           // Generic OAuth success (fallback)

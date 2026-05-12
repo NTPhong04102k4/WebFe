@@ -1,7 +1,7 @@
 import React from "react";
-import { useCarList } from "src/shared/hooks/Car";
-import { useBrandCar } from "src/shared/hooks/BrandCar";
-import { useBodyType } from "src/shared/hooks/BodyType";
+import { useCarList } from "src/query/car/useCarQueries";
+import { useBrandCarList } from "src/query/brand-car/useBrandCarQueries";
+import { useBodyTypeList } from "src/query/body-type/useBodyTypeQueries";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
 import { CarFilters } from "./Components/CarFilters";
 import { CarList } from "./Components/CarList";
@@ -30,8 +30,8 @@ export const Cars: React.FC = () => {
   const [selectedCarId, setSelectedCarId] = React.useState<number | null>(null);
 
   // Get brands and bodyTypes for mapping
-  const { brandCar } = useBrandCar();
-  const { bodyTypes } = useBodyType();
+  const { data: brandCar = [] } = useBrandCarList();
+  const { data: bodyTypes = [] } = useBodyTypeList();
   const { data: allCarsData, refetch: refetchCarList } = useCarList({
     page: 1,
     pageSize: 20,

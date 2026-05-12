@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthContext } from '@/contexts/AuthContext'
 
 interface Props {
   children: React.ReactNode
@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function ProtectedRoute({ children, roles, redirectTo = '/auth/login' }: Props) {
-  const { user } = useAuthStore()
+  const { user } = useAuthContext()
   if (!user) return <Navigate to={redirectTo} replace />
   if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />
   return <>{children}</>

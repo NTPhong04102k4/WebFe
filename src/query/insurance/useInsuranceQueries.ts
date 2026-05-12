@@ -5,6 +5,7 @@ import { insuranceApi } from "src/services/api/functions/insurance/insurance.api
 import type {
   InsuranceClaimRequest,
   InsuranceClaimStatusRequest,
+  InsuranceCompanyRequest,
   InsurancePackageRequest,
 } from "src/services/api/functions/insurance/insurance.types";
 
@@ -62,6 +63,29 @@ export function useClaimsList(page = 1, pageSize = 20, status?: string) {
     staleTime: SEARCH_STALE_MS,
     placeholderData: keepPreviousData,
   });
+}
+
+export function useInsuranceCompanyMutations() {
+  const qc = useQueryClient();
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: insuranceKeys.companies() });
+
+  return {
+    createCompany: useMutation({
+      mutationFn: (body: InsuranceCompanyRequest) =>
+        insuranceApi.createCompany(body),
+      onSuccess: invalidate,
+    }),
+    updateCompany: useMutation({
+      mutationFn: ({ id, body }: { id: number; body: InsuranceCompanyRequest }) =>
+        insuranceApi.updateCompany(id, body),
+      onSuccess: invalidate,
+    }),
+    deleteCompany: useMutation({
+      mutationFn: (id: number) => insuranceApi.deleteCompany(id),
+      onSuccess: invalidate,
+    }),
+  };
 }
 
 export function useInsuranceMutations() {

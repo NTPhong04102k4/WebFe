@@ -74,14 +74,14 @@ export const useFacebookAuth = () => {
 
       if (!baseApiUrl) {
         setIsLoading(false);
-        reject(new Error("Thiếu cấu hình VITE_API_URL cho social login"));
+        reject(new Error("Thiếu cấu hình VITE_API_BASE_URL cho social login"));
         return;
       }
 
       const popup = window.open(
         authUrl,
         "facebook-login",
-        "width=500,height=600,scrollbars=yes,resizable=yes,popup=yes"
+        "width=500,height=600,scrollbars=yes,resizable=yes,popup=yes",
       );
 
       if (!popup) {

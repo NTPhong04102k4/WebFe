@@ -1,6 +1,6 @@
 import React from "react";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
-import { useCarTechSpec } from "src/shared/hooks/Car";
+import { useCarTechSpec } from "src/query/car/useCarQueries";
 import { TechSpecForm } from "./TechSpecForm";
 
 export interface CarDetailViewProps {
@@ -13,7 +13,7 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({
   onBack,
 }) => {
   const [showSpecForm, setShowSpecForm] = React.useState(false);
-  const { techSpec, isLoading, error, refetch } = useCarTechSpec(car.carID);
+  const { data: techSpec, isLoading, error, refetch } = useCarTechSpec(car.carID);
 
   const hasSpec = React.useMemo(() => {
     if (error) return false;

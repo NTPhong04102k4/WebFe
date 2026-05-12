@@ -1,7 +1,7 @@
 import React from "react";
-import { useBodyType } from "src/shared/hooks/BodyType";
-import { useLocation } from "src/shared/hooks/location";
-import { useCarMutation } from "src/shared/hooks/Car";
+import { useBodyTypeList } from "src/query/body-type/useBodyTypeQueries";
+import { useLocationList } from "src/query/location/useLocationQueries";
+import { useCarMutations } from "src/query/car/useCarQueries";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
 import { CarDetailUpdateRequest } from "src/shared/types/Request/Car";
 import { useAuth } from "src/shared/hooks/auth";
@@ -19,9 +19,9 @@ export const EditCarForm: React.FC<EditCarFormProps> = ({
   onUpdated,
   onCancel,
 }) => {
-  const { bodyTypes, loading: bodiesLoading } = useBodyType();
-  const { locations, loading: locationsLoading } = useLocation();
-  const { update, isUpdating } = useCarMutation();
+  const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList();
+  const { data: locations = [], isLoading: locationsLoading } = useLocationList();
+  const { updateCar } = useCarMutations();
   const { user } = useAuth();
   const [selectedImages, setSelectedImages] = React.useState<File[]>([]);
   const [selectedVideo, setSelectedVideo] = React.useState<File | null>(null);
@@ -235,7 +235,7 @@ export const EditCarForm: React.FC<EditCarFormProps> = ({
       formData.append("VideoFile", selectedVideo);
     }
 
-    update(
+    updateCar.mutate(
       { id: car.carID, data: formData as any },
       {
         onSuccess: () => {
@@ -711,7 +711,7 @@ export const EditCarForm: React.FC<EditCarFormProps> = ({
               type="button"
               className="px-4 py-2 rounded-md border"
               onClick={onCancel}
-              disabled={isUpdating}
+              disabled={updateCar.isPending}
             >
               Hủy
             </button>
@@ -719,9 +719,9 @@ export const EditCarForm: React.FC<EditCarFormProps> = ({
           <button
             type="submit"
             className="px-4 py-2 rounded-md bg-blue-600 text-white disabled:opacity-50"
-            disabled={isUpdating}
+            disabled={updateCar.isPending}
           >
-            {isUpdating ? "Đang cập nhật..." : "Cập nhật xe"}
+            {updateCar.isPending ? "Đang cập nhật..." : "Cập nhật xe"}
           </button>
         </div>
       </form>
