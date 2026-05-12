@@ -1,5 +1,7 @@
 # Order & Payment Module — API Documentation
 
+> **FE / codegen:** contract tập trung — **[`../api/modules/orders-payment.md`](../api/modules/orders-payment.md)**. Nếu mâu thuẫn, chốt theo `api/modules/`.
+
 Base path: `/orders/payment`
 
 ---

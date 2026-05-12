@@ -1,87 +1,40 @@
-# Module: Dữ liệu chung (`/common`)
+# Module: Common Catalog (`/common`)
 
-Brand, body type, location — kết hợp nhiều controller dùng route prefix `common`.
+This module exposes shared lookup data: brands, accessory brands, body types, and locations.
 
----
+## Brands
 
-## 1. Thương hiệu xe
+| Method | Path | Auth | Request | Response |
+|---|---|---|---|---|
+| GET | `/common/brands` | Public | none | `OperationResult.data = brand[]` |
+| POST | `/common/brands` | Admin, SuperAdmin | multipart `BrandRequest` | `201 OperationResult.data = brand` |
+| PUT | `/common/brands/{brandCode}` | Admin, SuperAdmin | multipart `BrandRequest` | `OperationResult.data = brand` |
 
-### `GET /common/brands`
+`brandCode` is the natural key used by the service.
 
-**Response 200:** mảng brand (theo `BrandServices`).
+## Accessory Brands
 
-**404:** không có brand.
+| Method | Path | Auth | Request | Response |
+|---|---|---|---|---|
+| GET | `/common/brand-accessories` | Public | none | `OperationResult.data = brandAccessory[]` |
+| POST | `/common/brand-accessories` | Admin, SuperAdmin | multipart `BrandAccessoryRequest` | `201 OperationResult.data = brandAccessory` |
+| PUT | `/common/brand-accessories/{name}` | Admin, SuperAdmin, Staff | multipart `BrandAccessoryRequest` | `OperationResult.data = brandAccessory` |
 
----
+`name` is the natural key used by the current service.
 
-### `POST /common/brand/create` · `PATCH /common/brand/edit`
+## Body Types
 
-**Header:** Admin, SuperAdmin.  
-**Content-Type:** `multipart/form-data` — **`BrandRequest`**
+| Method | Path | Auth | Request | Response |
+|---|---|---|---|---|
+| GET | `/common/bodytypes` | Public | none | `OperationResult.data = bodyType[]` |
+| POST | `/common/body-types` | Admin, SuperAdmin | multipart `BodyCarRequest` | `201 OperationResult.data = bodyType` |
+| PUT | `/common/body-types/{bodyCode}` | Admin, SuperAdmin | multipart `BodyCarUpdateRequest` | `OperationResult.data = bodyType` |
 
-| Field | Type |
-|-------|------|
-| brandCode | string (bắt buộc) |
-| brandName, countryOrigin | string? |
-| logo | file? (ảnh ≤10MB) |
-| description | string? |
-| displayOrder | number? |
-| isActive | bool? |
-| linkWebsite | string? |
+`bodyCode` is the natural key used by the service.
 
-**Response 200:** brand đã tạo/cập nhật.
+## Locations
 
----
-
-## 2. Thương hiệu phụ kiện
-
-### `GET /common/brand_accessories`
-
-**Response 200:** mảng brand accessory.
-
----
-
-### `POST /common/brand_accessory/create` · `PATCH /common/brand_accessory/edit`
-
-**Header:** Admin, SuperAdmin (+ Staff cho edit).  
-**Content-Type:** `multipart/form-data` — **`BrandAccessoryRequest`** (xem `Models/InputModel/FeatureCore/Brand/BrandAccessoryRequest.cs`).
-
----
-
-## 3. Kiểu dáng thân xe (body type)
-
-### `GET /common/bodytypes`
-
-**Response 200:** mảng body type.
-
----
-
-### `POST /common/bodytype/create`
-
-**Header:** SuperAdmin, Admin.  
-**Form:** `BodyCarRequest` — có `imageFile` optional (ảnh ≤10MB).
-
----
-
-### `PUT /common/bodytype/update`
-
-**Header:** Admin, SuperAdmin.  
-**Form:** `BodyCarUpdateRequest` — cần `bodyCode`, có thể kèm `imageFile`.
-
----
-
-## 4. Địa điểm / IP
-
-### `GET /common/location?ip={ip}`
-
-**Response 200:** thông tin location theo IP (theo `LocationServices`).
-
-**404:** không tìm thấy.
-
----
-
-### `GET /common/locations`
-
-**Response 200:** danh sách tất cả địa điểm (showroom, …).
-
-**404:** không có dữ liệu.
+| Method | Path | Auth | Request | Response |
+|---|---|---|---|---|
+| GET | `/common/location?ip={ip}` | Public | query `ip` | `OperationResult.data = location` |
+| GET | `/common/locations` | Public | none | `OperationResult.data = location[]` |

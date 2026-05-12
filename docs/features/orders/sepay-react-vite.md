@@ -52,7 +52,9 @@ npm install --save-dev @types/react @types/react-dom
 
 ## 2. Cấu hình biến môi trường
 
-Tạo file `.env.development`:
+Dùng **`VITE_API_BASE_URL`** trỏ tới Web API (cùng host mà app gọi `POST /orders/payment/order`, v.v.). Mẫu đầy đủ: [`../../fe.env.example`](../../fe.env.example).
+
+`.env.development` (ví dụ):
 
 ```env
 VITE_API_BASE_URL=https://localhost:7250
@@ -60,12 +62,12 @@ VITE_RETURN_URL=http://localhost:5173/soldcars/payment/success
 VITE_CANCEL_URL=http://localhost:5173/soldcars/payment/cancel
 ```
 
-Tạo file `.env.production`:
+`.env.production` (thay placeholder bằng URL deploy thật — **không** hardcode nhiều host khác nhau giữa các tài liệu):
 
 ```env
-VITE_API_BASE_URL=https://soldcar-web-637322035022.asia-southeast1.run.app
-VITE_RETURN_URL=https://soldcar-v1.web.app/soldcars/payment/success
-VITE_CANCEL_URL=https://soldcar-v1.web.app/soldcars/payment/cancel
+VITE_API_BASE_URL=https://YOUR-API-HOST
+VITE_RETURN_URL=https://YOUR-FRONTEND-HOST/soldcars/payment/success
+VITE_CANCEL_URL=https://YOUR-FRONTEND-HOST/soldcars/payment/cancel
 ```
 
 ---

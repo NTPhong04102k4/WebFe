@@ -2,6 +2,8 @@
 
 Tổng hợp toàn bộ thông tin dự án: kiến trúc, module, entity, service, cấu hình và tích hợp bên ngoài.
 
+**Frontend React:** cửa vào tài liệu gọi API + UI — [FE-START.md](./FE-START.md).
+
 ---
 
 ## Thông tin chung
@@ -133,7 +135,7 @@ Roles: `SuperAdmin`, `Admin`, `Staff`, `Customer`
 
 ---
 
-### Car — `/car`
+### Car - `/cars`
 
 | Controller | Endpoints chính |
 |-----------|----------------|
@@ -141,7 +143,7 @@ Roles: `SuperAdmin`, `Admin`, `Staff`, `Customer`
 
 ---
 
-### Accessory & Category — `/accessory`, `/category`
+### Accessory & Category - `/accessories`, `/categories`
 
 | Controller | Endpoints chính |
 |-----------|----------------|
@@ -199,7 +201,7 @@ Roles: `SuperAdmin`, `Admin`, `Staff`, `Customer`
 
 ---
 
-### Review — `/review`
+### Review — `/reviews`
 
 | Controller | Endpoints chính |
 |-----------|----------------|
@@ -215,7 +217,7 @@ Roles: `SuperAdmin`, `Admin`, `Staff`, `Customer`
 
 ---
 
-### AI Chatbot — `/ai-chat`
+### AI Chatbot — `/ai`
 
 | Controller | Endpoints chính |
 |-----------|----------------|

@@ -2,6 +2,8 @@
 
 Tài liệu kiến trúc và tối ưu hệ thống cho SoldCars backend.
 
+**Frontend (React):** cửa vào tài liệu API/UI — [../FE-START.md](../FE-START.md).
+
 | File | Nội dung |
 |------|----------|
 | [url-flow.md](url-flow.md) | Luồng xử lý HTTP request từ browser đến API, các điểm chậm, bottleneck |

@@ -6,9 +6,13 @@ Xây dựng frontend **SoldCars** — hệ thống bán xe hơi gồm:
 - **Trang khách hàng** (customer-facing): duyệt xe, mua xe, phụ kiện, đặt lịch hẹn, đánh giá, chat, AI chatbot
 - **Trang quản trị admin** (`/admin/*`): CRUD toàn bộ dữ liệu, quản lý đơn hàng, HR, bảo hiểm, xưởng
 
-**Backend API (đã deploy):** `https://web-7012.onrender.com`  
-**Không có prefix `/api`** — path đúng như trong tài liệu.  
-**Frontend deploy:** Firebase Hosting (tự triển khai riêng — không cần cấu hình deploy).
+**Backend API (base URL):** không hardcode URL deploy trong mã — dùng **`import.meta.env.VITE_API_BASE_URL`** (Vite). Mẫu biến: [`docs/fe.env.example`](./fe.env.example). Local: thường `https://localhost:7250` hoặc `http://localhost:5000` (xem `Properties/launchSettings.json` trong repo Web API).
+
+**Không có prefix `/api`** — path HTTP đúng như trong `docs/api/modules/*.md` và Swagger.
+
+**Frontend deploy:** Firebase Hosting (tự triển khai riêng — không cần cấu hình deploy trong repo Web API).
+
+**Cửa vào tài liệu:** [FE-START.md](./FE-START.md) → `docs/api/README.md` → `docs/api/modules/`.
 
 ---
 
@@ -149,8 +153,10 @@ src/
 import axios from 'axios'
 import { useAuthStore } from '@/stores/authStore'
 
+const baseURL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? ''
+
 const api = axios.create({
-  baseURL: 'https://web-7012.onrender.com',
+  baseURL,
   timeout: 30000,
 })
 
@@ -171,7 +177,7 @@ api.interceptors.response.use(
       try {
         const refreshToken = useAuthStore.getState().refreshToken
         const { data } = await axios.post(
-          'https://web-7012.onrender.com/auth/refresh-token',
+          `${baseURL}/auth/refresh-token`,
           { refreshToken }
         )
         useAuthStore.getState().setTokens(data.access_token, data.refresh_token)
@@ -247,7 +253,7 @@ Cấu hình React Router v6 với:
   - `/appointments` → `AppointmentsPage` (cần đăng nhập)
   - `/profile` → `ProfilePage` (cần đăng nhập)
   - `/chat` → `ChatPage` (cần đăng nhập)
-  - `/ai-chat` → `AiChatPage`
+  - `/ai-chat` → `AiChatPage` *(đường dẫn trang React; API backend: `/ai/...` — xem `docs/api/modules/ai-chatbot.md`)*
 
 - `/auth/*` → `AuthLayout` wrapper
   - `/auth/login` → `LoginPage`
@@ -369,19 +375,19 @@ import type { Car, CarDetail, CarPagingParams } from '@/types/car.types'
 
 export const carApi = {
   paging: (params: CarPagingParams) =>
-    api.post<PagedResponse<Car>>('/car/paging', null, { params }),
+    api.get<PagedResponse<Car>>('/cars', { params }),
 
   getById: (id: number) =>
-    api.get<CarDetail>(`/car/detail`, { params: { id } }),
+    api.get<CarDetail>(`/cars/${id}`),
 
   create: (form: FormData) =>
-    api.post('/car/create', form),
+    api.post('/cars', form),
 
   update: (id: number, form: FormData) =>
-    api.put(`/car/update/${id}`, form),
+    api.put(`/cars/${id}`, form),
 
   delete: (id: number) =>
-    api.delete(`/car/delete/${id}`),
+    api.delete(`/cars/${id}`),
 }
 ```
 
@@ -414,15 +420,15 @@ export const carApi = {
 ### 2. Trang chủ (`/`)
 
 - Hero banner với CTA "Xem xe ngay"
-- Section "Xe nổi bật": gọi `POST /car/paging?isFeature=true&pageSize=6`
+- Section "Xe nổi bật": gọi `GET /cars?isFeature=true&pageSize=6`
 - Section "Thương hiệu": gọi `GET /common/brands` → hiển thị logo dạng grid
-- Section "Phụ kiện hot": gọi `GET /accessory/all?pageSize=6&sortBy=viewCount`
+- Section "Phụ kiện hot": gọi `GET /accessories?pageSize=6&sortBy=viewCount`
 
 ---
 
 ### 3. Danh sách xe (`/cars`)
 
-**API:** `POST /car/paging` — params qua query string:
+**API:** `GET /cars` — params qua query string:
 ```
 pageIndex, pageSize, bodyCode, brandCode, priceFrom, priceTo
 ```
@@ -438,19 +444,19 @@ pageIndex, pageSize, bodyCode, brandCode, priceFrom, priceTo
 
 ### 4. Chi tiết xe (`/cars/:id`)
 
-**API:** `GET /car/detail?id={id}`
+**API:** `GET /cars/{id}`
 
 **UI:**
 - Gallery ảnh (lightbox nếu nhiều ảnh) + video embed nếu có `videoPath`
 - Thông số kỹ thuật dạng bảng 2 cột
-- Nút "Đặt mua" → tạo đơn `POST /orders/payment/create-order`
-- Section đánh giá: gọi `GET /review/car/{carId}` → list + form thêm review (cần đăng nhập)
+- Nút "Đặt mua" → tạo đơn `POST /orders/payment/order` (body `OrderInput` — xem `docs/api/modules/orders-payment.md`)
+- Section đánh giá: gọi `GET /reviews/cars/{carId}` → list + form thêm review (cần đăng nhập)
 
 ---
 
 ### 5. Phụ kiện (`/accessories`)
 
-**API:** `GET /accessory/all` — params: `page`, `pageSize`, `categoryID`, `brandAccessoryID`, `priceFrom`, `priceTo`, `sortBy`
+**API:** `GET /accessories` — params: `page`, `pageSize`, `categoryID`, `brandAccessoryID`, `priceFrom`, `priceTo`, `sortBy`
 
 **UI:**
 - Filter danh mục (tabs hoặc sidebar)
@@ -458,7 +464,7 @@ pageIndex, pageSize, bodyCode, brandCode, priceFrom, priceTo
 - Nút "Thêm vào giỏ" → `cartStore`
 
 **Chi tiết phụ kiện (`/accessories/:id`):**
-- `GET /accessory/detail?accessoryId={id}`
+- `GET /accessories/{id}`
 - Mô tả, giá, nút mua
 
 ---
@@ -467,7 +473,7 @@ pageIndex, pageSize, bodyCode, brandCode, priceFrom, priceTo
 
 **Cart** lưu local (Zustand persist). Hiển thị items, tổng tiền.
 
-**Checkout → `POST /orders/payment/create-order`**
+**Checkout → `POST /orders/payment/order`** (body `OrderInput` — xem `docs/api/modules/orders-payment.md`)
 
 ```typescript
 // Payload (JSON)
@@ -539,11 +545,13 @@ pageIndex, pageSize, bodyCode, brandCode, priceFrom, priceTo
 
 ---
 
-### 10. AI Chatbot (`/ai-chat`)
+### 10. AI Chatbot (route React có thể là `/ai-chat`; **API backend** là `/ai`)
 
-**API:**
-- `POST /ai-chat/chat` → `{ message: string, sessionId?: string }`
-- Response: `{ reply: string, sessionId: string }`
+**API (khớp `AIChatController`):**
+- `POST /ai/chat` → body `AIChatRequest` (JSON) — chi tiết: `docs/api/modules/ai-chatbot.md`
+- Session: `GET/POST /ai/sessions`, v.v.
+
+**Response:** thường bọc `OperationResult` (`success`, `data`, …) — không giả định cố định `{ reply, sessionId }`; xem module doc hoặc Swagger.
 
 **UI:**
 - Floating button → mở chat panel
@@ -632,10 +640,10 @@ const createMutation = useMutation({
 ### Admin: Quản lý xe
 
 **API:**
-- List: `POST /car/paging` (admin thấy tất cả trạng thái)
-- Tạo: `POST /car/create` — `multipart/form-data`
-- Sửa: `PUT /car/update/{id}` — `multipart/form-data`
-- Xóa: `DELETE /car/delete/{id}`
+- List: `GET /cars` (admin thấy tất cả trạng thái)
+- Tạo: `POST /cars` — `multipart/form-data`
+- Sửa: `PUT /cars/{id}` — `multipart/form-data`
+- Xóa: chưa có endpoint trong controller hiện tại
 
 **Form tạo/sửa xe** (multipart):
 
@@ -807,11 +815,10 @@ Mỗi resource: `GET` list (paging), `GET` by id, `POST` create, `PUT` update, `
 
 ### Admin: Đánh giá
 
-**API:**
-- `GET /review/car?page=1&pageSize=20` — list tất cả đánh giá xe
-- `GET /review/service?page=1&pageSize=20` — đánh giá dịch vụ
-- `DELETE /review/car/{id}` — xóa đánh giá vi phạm (Admin)
-- `DELETE /review/service/{id}`
+**API:** (prefix backend `/reviews` — xem `docs/api/modules/review.md`)
+- `GET /reviews/admin/pending` — queue chờ duyệt (Admin/SuperAdmin)
+- `PUT /reviews/admin/{reviewId}/moderate` — duyệt / từ chối
+- Public list theo xe: `GET /reviews/cars/{carId}`; dịch vụ: `GET /reviews/services/technician/{id}`, `.../location/{id}`, v.v.
 
 **UI:** bảng hiển thị rating (sao), nội dung, tên người đánh giá, ngày, trạng thái report
 
@@ -898,12 +905,14 @@ export function extractError(err: unknown): string {
 
 ## Environment Variables
 
+Sao chép từ [`docs/fe.env.example`](./fe.env.example) sang `.env.development` / `.env.production` trong **repo frontend** (Vite). **Không** commit file `.env` chứa secret.
+
 ```env
-# .env
-VITE_API_BASE_URL=https://web-7012.onrender.com
+# Trỏ tới Web API đang dùng (local / staging / prod — mỗi môi trường một giá trị)
+VITE_API_BASE_URL=https://localhost:7250
 ```
 
-Dùng `import.meta.env.VITE_API_BASE_URL` trong `axiosInstance.ts`.
+Trong `axiosInstance.ts` dùng `import.meta.env.VITE_API_BASE_URL` như mục Axios ở trên.
 
 ---
 
@@ -940,6 +949,9 @@ Dùng `import.meta.env.VITE_API_BASE_URL` trong `axiosInstance.ts`.
 
 | File | Nội dung |
 |------|----------|
+| [FE-START.md](./FE-START.md) | Cửa vào + thứ tự đọc tài liệu cho FE |
+| [DOCUMENTATION_MAP.md](./DOCUMENTATION_MAP.md) | Hai lớp tài liệu (domain vs contract API) |
+| [fe.env.example](./fe.env.example) | Mẫu `VITE_API_BASE_URL` |
 | `docs/api/modules/auth.md` | Payload/response auth đầy đủ |
 | `docs/api/modules/car.md` | CRUD xe + paging params |
 | `docs/api/modules/accessory-category.md` | Phụ kiện + danh mục |

@@ -1,5 +1,9 @@
 # Feature modules — API (payload & response)
 
+> **Contract cho FE:** đây là lớp tài liệu **bắt buộc** khi implement gọi HTTP (`*.api.ts`, types).  
+> Các file `docs/car/`, `docs/brand/`, … mô tả theo domain — có thể dùng để hiểu nghiệp vụ; nếu lệch với file dưới đây thì **ưu tiên các file trong `api/modules/`** và Swagger `/swagger`.  
+> Xem thêm: [../DOCUMENTATION_MAP.md](../DOCUMENTATION_MAP.md), [../FE-START.md](../FE-START.md).
+
 Mỗi file mô tả một **nhóm nghiệp vụ**: endpoint, **payload gửi lên** (JSON / query / multipart), và **dữ liệu trả về** thường gặp (HTTP 200/201; lỗi xem cuối file).
 
 Tổng quan route: [../frontend-api-reference.md](../frontend-api-reference.md).  

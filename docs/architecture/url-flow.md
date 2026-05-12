@@ -27,7 +27,7 @@ Browser  →  DNS  →  TCP/TLS  →  HTTP Request  →  CDN / Edge
 2. **DNS resolution** — trình duyệt query DNS server để lấy IP của `api.soldcars.com`. Kết quả có thể được cache ở OS resolver / browser.
 3. **TCP handshake + TLS handshake** — 3-way handshake TCP, rồi TLS (ALPN → HTTP/2).
 4. **HTTP request** — gửi request line (`GET /hr/technicians HTTP/2`), headers (`Authorization: Bearer ...`, `Accept`, `Accept-Encoding`...).
-5. **CDN / Edge** — nếu endpoint là public & cacheable (GET `/brand`, GET `/car/{id}`), Cloudflare / Fastly có thể trả về ngay từ edge, bỏ qua origin.
+5. **CDN / Edge** — nếu endpoint là public & cacheable (GET `/common/brands`, GET `/cars/{id}`), Cloudflare / Fastly có thể trả về ngay từ edge, bỏ qua origin.
 6. **Load Balancer** — phân phối request tới các backend instance theo thuật toán (xem `load-balancing.md`).
 7. **Reverse proxy / TLS termination** — Nginx / Cloud Load Balancer terminate TLS, forward plain HTTP về Kestrel (kèm `X-Forwarded-For`, `X-Forwarded-Proto`).
 8. **ASP.NET Core pipeline** — Middleware pipeline lần lượt chạy:

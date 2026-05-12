@@ -6,6 +6,20 @@ Tài liệu được sinh từ scan `Controllers`, `Models/InputModel`, `Models/
 
 ---
 
+## Checklist đồng bộ tài liệu (PR)
+
+Khi PR **đổi route, controller action, DTO, status code**, người mở PR nên hoàn thành tối thiểu:
+
+- [ ] Cập nhật **[endpoint-status-map.md](./endpoint-status-map.md)** cho từng endpoint đụng tới.
+- [ ] Cập nhật file module tương ứng trong **`modules/`** (danh sách: [modules/README.md](./modules/README.md)) — bảng mô tả + payload/response nếu khác.
+- [ ] Rà **[frontend-api-reference.md](./frontend-api-reference.md)** (mục route tổng hợp) nếu path/method/auth đổi.
+- [ ] Nếu có tài liệu domain song song (`docs/car/`, `docs/brand/`, …): sửa cho khớp **hoặc** thêm dòng “xem `api/modules/…` làm chuẩn”.
+- [ ] (Tuỳ chọn) Chạy [export OpenAPI](../tools/export-openapi.ps1) và commit `docs/api/swagger.json` để FE diff schema.
+
+**Gợi ý:** So khớp nhanh với Swagger sau khi chạy API (`/swagger`).
+
+---
+
 ## 1. Quy ước chung
 
 | Mục | Chi tiết |
@@ -43,8 +57,8 @@ Tài liệu được sinh từ scan `Controllers`, `Models/InputModel`, `Models/
 
 | Method | Path | Auth | Ghi chú |
 |--------|------|------|---------|
-| GET | `/user/detail?gmailOrUserName=` | Customer | User entity / profile |
-| POST | `/user/update-profile` | Customer | **multipart/form-data** `UpdateUserProfilesInput` — ảnh, phone, address, … |
+| GET | `/user/{gmailOrUserName}` | Customer | User entity / profile |
+| PATCH | `/user/profile` | Customer | **multipart/form-data** `UpdateUserProfilesInput` — ảnh, phone, address, … |
 | PATCH | `/user/changepassword?passwordOld=&newPassword=&username=` | Customer | Query string |
 | PATCH | `/user/forgetPassword?email=` | Không | Gửi OTP |
 | POST | `/user/verifyOtpForPassword` | Không | JSON `VerifyOtpForPasswordRequest` |
@@ -76,13 +90,13 @@ Tài liệu được sinh từ scan `Controllers`, `Models/InputModel`, `Models/
 
 | Method | Path | Auth | Ghi chú |
 |--------|------|------|---------|
-| GET | `/car/detail?id=` | Không | Chi tiết xe (service) |
-| POST | `/car/paging` | Bearer (optional theo logic) | Query `CarPagingRequest`: `pageIndex`, `pageSize`, `bodyCode`, `brandCode`, `priceFrom`, `priceTo` — body POST có thể rỗng; filter qua query |
-| POST | `/car/create` | Admin, SuperAdmin | **multipart/form-data** `CarRequest` |
-| PUT | `/car/edit?id=` | Admin, SuperAdmin | **multipart/form-data** `CarRequest` |
-| GET | `/car/techSpec/detail?id=` | Không | |
-| PATCH | `/car/techSpec/edit?id=` | Admin, SuperAdmin | JSON `CarDetailRequest` |
-| POST | `/car/techSpec/create` | Admin, SuperAdmin | JSON `CarDetailRequest` |
+| GET | `/cars` | Bearer optional theo logic | Query `CarPagingRequest`: `pageIndex`, `pageSize`, `bodyCode`, `brandCode`, `priceFrom`, `priceTo` |
+| GET | `/cars/{id}` | Không | Chi tiết xe |
+| POST | `/cars` | Admin, SuperAdmin | **multipart/form-data** `CarRequest` |
+| PUT | `/cars/{id}` | Admin, SuperAdmin | **multipart/form-data** `CarRequest` |
+| GET | `/cars/{id}/tech-spec` | Không | |
+| POST | `/cars/{id}/tech-spec` | Admin, SuperAdmin | JSON `CarDetailRequest` |
+| PATCH | `/cars/{id}/tech-spec` | Admin, SuperAdmin | JSON `CarDetailRequest` |
 
 DTO: `Models/InputModel/Common/Car/CarRequest.cs`, `CarPagingRequest.cs`, `CarDetailRequest.cs`.  
 ViewModel: `Models/ViewModel/FeatureCore/Car/`.
@@ -93,14 +107,14 @@ ViewModel: `Models/ViewModel/FeatureCore/Car/`.
 
 | Method | Path | Auth | Ghi chú |
 |--------|------|------|---------|
-| GET | `/accessory/detail?accessoryId=` | Không | |
-| GET | `/accessory/all` | Không | Query `AccessoriesPagingRequest` |
-| POST | `/accessory/create` | Admin, SuperAdmin, Staff | **multipart** `AccessoriesRequest` |
-| PUT | `/accessory/edit?id=` | Admin, SuperAdmin, Staff | **multipart** `AccessoriesRequest` |
-| GET | `/category/all` | Không | |
-| GET | `/category/detail?categoryId=` | Không | |
-| POST | `/category/create` | Admin, SuperAdmin, Staff | JSON `CategoryRequest` |
-| PUT | `/category/edit?id=` | Admin, SuperAdmin, Staff | JSON `CategoryRequest` |
+| GET | `/accessories` | Không | Query `AccessoriesPagingRequest` |
+| GET | `/accessories/{id}` | Không | |
+| POST | `/accessories` | Admin, SuperAdmin, Staff | **multipart** `AccessoriesRequest` |
+| PUT | `/accessories/{id}` | Admin, SuperAdmin, Staff | **multipart** `AccessoriesRequest` |
+| GET | `/categories` | Không | |
+| GET | `/categories/{id}` | Không | |
+| POST | `/categories` | Admin, SuperAdmin, Staff | JSON `CategoryRequest` |
+| PUT | `/categories/{id}` | Admin, SuperAdmin, Staff | JSON `CategoryRequest` |
 
 ViewModel: `Models/ViewModel/FeatureCore/Accessories/`, `Category/`.
 
@@ -111,14 +125,14 @@ ViewModel: `Models/ViewModel/FeatureCore/Accessories/`, `Category/`.
 | Method | Path | Auth | Ghi chú |
 |--------|------|------|---------|
 | GET | `/common/brands` | Không | |
-| GET | `/common/brand_accessories` | Không | |
-| POST | `/common/brand/create` | Admin, SuperAdmin | **multipart** `BrandRequest` |
-| PATCH | `/common/brand/edit` | Admin, SuperAdmin | **multipart** `BrandRequest` |
-| POST | `/common/brand_accessory/create` | Admin, SuperAdmin, Staff | **multipart** `BrandAccessoryRequest` |
-| PATCH | `/common/brand_accessory/edit` | Admin, SuperAdmin, Staff | **multipart** `BrandAccessoryRequest` |
+| POST | `/common/brands` | Admin, SuperAdmin | **multipart** `BrandRequest` |
+| PUT | `/common/brands/{brandCode}` | Admin, SuperAdmin | **multipart** `BrandRequest` |
+| GET | `/common/brand-accessories` | Không | |
+| POST | `/common/brand-accessories` | Admin, SuperAdmin | **multipart** `BrandAccessoryRequest` |
+| PUT | `/common/brand-accessories/{name}` | Admin, SuperAdmin, Staff | **multipart** `BrandAccessoryRequest` |
 | GET | `/common/bodytypes` | Không | |
-| POST | `/common/bodytype/create` | SuperAdmin, Admin | **multipart** `BodyCarRequest` |
-| PUT | `/common/bodytype/update` | Admin, SuperAdmin | **multipart** `BodyCarUpdateRequest` |
+| POST | `/common/body-types` | SuperAdmin, Admin | **multipart** `BodyCarRequest` |
+| PUT | `/common/body-types/{bodyCode}` | Admin, SuperAdmin | **multipart** `BodyCarUpdateRequest` |
 | GET | `/common/location?ip=` | Không | |
 | GET | `/common/locations` | Không | |
 

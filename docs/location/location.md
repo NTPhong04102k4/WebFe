@@ -1,5 +1,7 @@
 # Location Module — API Documentation
 
+> **FE / codegen:** contract tập trung — **[`../api/modules/common-catalog.md`](../api/modules/common-catalog.md)**. Nếu mâu thuẫn, chốt theo `api/modules/`.
+
 Base path: `/common`
 
 ---

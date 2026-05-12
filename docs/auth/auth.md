@@ -1,5 +1,7 @@
 # Auth Module — API Documentation
 
+> **FE / codegen:** contract tập trung — **[`../api/modules/auth.md`](../api/modules/auth.md)**. Nếu mâu thuẫn, chốt theo `api/modules/`.
+
 Base paths: `/auth`, `/auth/admin`
 
 ---

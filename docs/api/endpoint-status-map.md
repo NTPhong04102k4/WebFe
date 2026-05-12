@@ -40,8 +40,8 @@ Mục tiêu: nhìn nhanh **endpoint**, **InputModel/payload**, **response data/v
 
 | Method | Path | Input / Payload | Response data | Status code |
 |---|---|---|---|---|
-| GET | `/user/detail?gmailOrUserName=` | query string | `OperationResult.data` (user profile) | `200`, `404`, `401`, `403` |
-| POST | `/user/update-profile` | `UpdateUserProfilesInput` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `404`, `401`, `403` |
+| GET | `/user/{gmailOrUserName}` | route string | `OperationResult.data` (user profile) | `200`, `404`, `401`, `403` |
+| PATCH | `/user/profile` | `UpdateUserProfilesInput` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `404`, `401`, `403` |
 | PATCH | `/user/changepassword?passwordOld=&newPassword=&username=` | query string | `OperationResult` | `200`, `400`, `401`, `404`, `403` |
 | PATCH | `/user/forgetPassword?email=` | query string | `OperationResult` | `200`, `400`, `404`, `500` |
 | POST | `/user/verifyOtpForPassword` | `VerifyOtpForPasswordRequest` (JSON) | `OperationResult` | `200`, `400`, `401`, `404` |
@@ -53,40 +53,40 @@ Mục tiêu: nhìn nhanh **endpoint**, **InputModel/payload**, **response data/v
 
 | Method | Path | Input / Payload | Response data | Status code |
 |---|---|---|---|---|
-| GET | `/car/detail?id=` | query `id` | `OperationResult.data` (car detail view model) | `200`, `404` |
-| POST | `/car/paging` | query `CarPagingRequest` | `OperationResult.data = { data, totalCount }` | `200` |
-| POST | `/car/create` | `CarRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `401`, `403` |
-| PUT | `/car/edit?id=` | query `id` + `CarRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `401`, `403` |
-| GET | `/car/techSpec/detail?id=` | query `id` | `OperationResult.data` | `200`, `404` |
-| PATCH | `/car/techSpec/edit?id=` | query `id` + `CarDetailRequest` (JSON) | `OperationResult.data` | `200`, `400`, `401`, `403` |
-| POST | `/car/techSpec/create` | `CarDetailRequest` (JSON) | `OperationResult.data` | `200`, `400`, `401`, `403` |
+| GET | `/cars` | query `CarPagingRequest` | `OperationResult.data = { data, totalCount }` | `200` |
+| GET | `/cars/{id}` | route `id` | `OperationResult.data` (car detail view model) | `200`, `404` |
+| POST | `/cars` | `CarRequest` (multipart/form-data) | `OperationResult.data` | `201`, `400`, `401`, `403` |
+| PUT | `/cars/{id}` | route `id` + `CarRequest` (multipart/form-data) | `OperationResult.data` | `200`, `404`, `401`, `403` |
+| GET | `/cars/{id}/tech-spec` | route `id` | `OperationResult.data` | `200`, `404` |
+| POST | `/cars/{id}/tech-spec` | route `id` + `CarDetailRequest` (JSON) | `OperationResult.data` | `201`, `400`, `401`, `403` |
+| PATCH | `/cars/{id}/tech-spec` | route `id` + `CarDetailRequest` (JSON) | `OperationResult.data` | `200`, `404`, `401`, `403` |
 
 ## 4) Accessory + Category
 
 | Method | Path | Input / Payload | Response data | Status code |
 |---|---|---|---|---|
-| GET | `/accessory/detail?accessoryId=` | query | accessory detail | `200`, `404` |
-| GET | `/accessory/all` | query `AccessoriesPagingRequest` | `AccessoriesPagedResponse` | `200`, `400` |
-| POST | `/accessory/create` | `AccessoriesRequest` (multipart/form-data) | created accessory | `201`, `400`, `401`, `403` |
-| PUT | `/accessory/edit?id=` | query `id` + `AccessoriesRequest` (multipart/form-data) | updated accessory | `200`, `400`, `401`, `403` |
-| GET | `/category/all` | - | `OperationResult.data` (list category) | `200`, `404` |
-| GET | `/category/detail?categoryId=` | query | `OperationResult.data` | `200`, `404` |
-| POST | `/category/create` | `CategoryRequest` (JSON) | `OperationResult.data` | `200`, `400`, `401`, `403` |
-| PUT | `/category/edit?id=` | query `id` + `CategoryRequest` (JSON) | `OperationResult.data` | `200`, `400`, `401`, `403` |
+| GET | `/accessories` | query `AccessoriesPagingRequest` | `AccessoriesPagedResponse` | `200`, `400` |
+| GET | `/accessories/{id}` | route `id` | accessory detail | `200`, `404` |
+| POST | `/accessories` | `AccessoriesRequest` (multipart/form-data) | created accessory | `201`, `400`, `401`, `403` |
+| PUT | `/accessories/{id}` | route `id` + `AccessoriesRequest` (multipart/form-data) | updated accessory | `200`, `400`, `401`, `403`, `404` |
+| GET | `/categories` | - | `OperationResult.data` (list category) | `200` |
+| GET | `/categories/{id}` | route `id` | `OperationResult.data` | `200`, `404` |
+| POST | `/categories` | `CategoryRequest` (JSON) | `OperationResult.data` | `201`, `400`, `401`, `403` |
+| PUT | `/categories/{id}` | route `id` + `CategoryRequest` (JSON) | `OperationResult.data` | `200`, `404`, `401`, `403` |
 
 ## 5) Common catalog (Brand / BodyType / Location)
 
 | Method | Path | Input / Payload | Response data | Status code |
 |---|---|---|---|---|
 | GET | `/common/brands` | - | `OperationResult.data` (brand list) | `200`, `404` |
-| POST | `/common/brand/create` | `BrandRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `401`, `403` |
-| PATCH | `/common/brand/edit` | `BrandRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `401`, `403` |
-| GET | `/common/brand_accessories` | - | `OperationResult.data` | `200`, `404` |
-| POST | `/common/brand_accessory/create` | `BrandAccessoryRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `401`, `403` |
-| PATCH | `/common/brand_accessory/edit` | `BrandAccessoryRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `401`, `403` |
+| POST | `/common/brands` | `BrandRequest` (multipart/form-data) | `OperationResult.data` | `201`, `400`, `401`, `403` |
+| PUT | `/common/brands/{brandCode}` | `BrandRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `401`, `403`, `404` |
+| GET | `/common/brand-accessories` | - | `OperationResult.data` | `200` |
+| POST | `/common/brand-accessories` | `BrandAccessoryRequest` (multipart/form-data) | `OperationResult.data` | `201`, `400`, `401`, `403` |
+| PUT | `/common/brand-accessories/{name}` | `BrandAccessoryRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `401`, `403`, `404` |
 | GET | `/common/bodytypes` | - | `OperationResult.data` | `200`, `404` |
-| POST | `/common/bodytype/create` | `BodyCarRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `401`, `403` |
-| PUT | `/common/bodytype/update` | `BodyCarUpdateRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `404`, `401`, `403` |
+| POST | `/common/body-types` | `BodyCarRequest` (multipart/form-data) | `OperationResult.data` | `201`, `400`, `401`, `403` |
+| PUT | `/common/body-types/{bodyCode}` | `BodyCarUpdateRequest` (multipart/form-data) | `OperationResult.data` | `200`, `400`, `404`, `401`, `403` |
 | GET | `/common/location?ip=` | query `ip` | `OperationResult.data` | `200`, `404` |
 | GET | `/common/locations` | - | `OperationResult.data` | `200`, `404` |
 
