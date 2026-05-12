@@ -10,7 +10,7 @@ import { TbManualGearbox } from "react-icons/tb";
 import { useLocation, useNavigate } from "react-router";
 import { CarDetail } from "src/pages/home/item/typeData";
 import { useAuth } from "src/shared/hooks/auth";
-import { useCarDetail } from "src/shared/hooks/Car";
+import { useCarDetail } from "src/query/car/useCarQueries";
 
 const DetailsCar = () => {
   const location = useLocation();

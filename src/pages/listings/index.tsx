@@ -7,7 +7,7 @@ import { GoArrowUpRight } from "react-icons/go";
 import { Pagination } from "./item/Paingation";
 import { useNavigate } from "react-router";
 import { CarDetail } from "../home/item/typeData";
-import { useCarList } from "src/shared/hooks/Car";
+import { useCarList } from "src/query/car/useCarQueries";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
 
 const ITEMS_PER_PAGE = 100;

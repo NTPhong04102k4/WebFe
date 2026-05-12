@@ -154,6 +154,14 @@ export const API = {
       workOrderPartId: string | number
     ) => `/workshop/work-orders/${workOrderId}/parts/${workOrderPartId}`,
   },
+  review: {
+    carList: "/review/car",
+    car: (id: string | number) => `/review/car/${id}`,
+    serviceList: "/review/service",
+    service: (id: string | number) => `/review/service/${id}`,
+    adminPending: "/review/pending",
+    adminModerate: (id: string | number) => `/review/${id}/moderate`,
+  },
 } as const;
 
 export type ApiEndpoints = typeof API;

@@ -20,7 +20,7 @@ import {
 import { CustomerComment, DATA_REVIEWS } from "./item/CustomerComment";
 import LatestBlogList from "./item/LatestBlog";
 import { HeaderHome } from "./item/Header";
-import { useCarList } from "src/shared/hooks/Car";
+import { useCarList } from "src/query/car/useCarQueries";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
 import { CarDetail } from "./item/typeData";
 

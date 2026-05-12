@@ -7,7 +7,7 @@ import { SiSpeedtest } from "react-icons/si";
 import { CiBookmark } from "react-icons/ci";
 import { useNavigate } from "react-router";
 import { CarDetail } from "src/pages/home/item/typeData";
-import { useCarList } from "src/shared/hooks/Car";
+import { useCarList } from "src/query/car/useCarQueries";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
 
 const ITEMS_PER_PAGE = 100;

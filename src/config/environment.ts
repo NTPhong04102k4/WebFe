@@ -3,7 +3,7 @@ const env = import.meta.env;
 const MODE = env.MODE ?? "development";
 
 export const ENV = {
-  API_URL: env.VITE_API_URL as string | undefined,
+  API_URL: env.VITE_API_BASE_URL as string | undefined,
   GOOGLE_CLIENT_ID: env.VITE_GOOGLE_CLIENT_ID as string | undefined,
   FACEBOOK_APP_ID: env.VITE_FACEBOOK_APP_ID as string | undefined,
   NODE_ENV: MODE,

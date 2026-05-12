@@ -1,6 +1,6 @@
 import React from "react";
-import { useBrandCar } from "src/shared/hooks/BrandCar";
-import { useBodyType } from "src/shared/hooks/BodyType";
+import { useBrandCarList } from "src/query/brand-car/useBrandCarQueries";
+import { useBodyTypeList } from "src/query/body-type/useBodyTypeQueries";
 
 type Condition = "new" | "used" | "certified" | "";
 
@@ -16,8 +16,8 @@ export const CarFilters: React.FC<{
   value: CarFiltersValue;
   onChange: (next: Partial<CarFiltersValue>) => void;
 }> = ({ value, onChange }) => {
-  const { brandCar, loading: brandsLoading } = useBrandCar();
-  const { bodyTypes, loading: bodiesLoading } = useBodyType();
+  const { data: brandCar = [], isLoading: brandsLoading } = useBrandCarList();
+  const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList();
 
   return (
     <div className="bg-gray-50 border rounded-md p-4">

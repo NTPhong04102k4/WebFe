@@ -8,6 +8,7 @@ import type {
   InsuranceClaimRequest,
   InsuranceClaimStatusRequest,
   InsuranceClaimViewModel,
+  InsuranceCompanyRequest,
   InsuranceCompanyViewModel,
   InsurancePackageRequest,
   InsurancePackageViewModel,
@@ -56,6 +57,32 @@ export const insuranceApi = {
       withSignal({}, options)
     );
     return res.data;
+  },
+
+  createCompany: async (body: InsuranceCompanyRequest, options?: ApiRequestOptions) => {
+    const res = await apiClient.post<InsuranceCompanyViewModel>(
+      API.insurance.companies,
+      body,
+      withSignal({}, options)
+    );
+    return res.data;
+  },
+
+  updateCompany: async (
+    id: number,
+    body: InsuranceCompanyRequest,
+    options?: ApiRequestOptions
+  ) => {
+    const res = await apiClient.put<InsuranceCompanyViewModel>(
+      API.insurance.company(id),
+      body,
+      withSignal({}, options)
+    );
+    return res.data;
+  },
+
+  deleteCompany: async (id: number, options?: ApiRequestOptions) => {
+    await apiClient.delete(API.insurance.company(id), withSignal({}, options));
   },
 
   listPackages: async (

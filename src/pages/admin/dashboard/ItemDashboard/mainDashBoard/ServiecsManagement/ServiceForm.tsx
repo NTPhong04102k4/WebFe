@@ -3,11 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import * as yup from "yup";
 import { CategoryRequestCreate } from "src/shared/types/Request/Category";
-import { useCategory } from "src/shared/hooks/Category";
+import { useCategoryList } from "src/query/category/useCategoryQueries";
 import {
-  useCategoryDetail,
-  useCategoryMutation,
-} from "src/shared/hooks/Category/useCategoryManagement";
+  useServiceCategoryDetail,
+  useServiceCategoryMutations,
+} from "src/query/service-category/useServiceCategoryQueries";
 
 const ServiceForm: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -16,20 +16,13 @@ const ServiceForm: React.FC = () => {
   const isEditMode = !!categoryId;
 
   const [error, setError] = useState<string | null>(null);
-  const { categories } = useCategory();
-  const { category: initialData, loading: loadingDetail } = useCategoryDetail(
+  const { data: categories = [] } = useCategoryList();
+  const { data: initialData, isLoading: loadingDetail } = useServiceCategoryDetail(
     categoryId || null
   );
-  const {
-    createAsync,
-    updateAsync,
-    isCreating,
-    isUpdating,
-    createError,
-    updateError,
-  } = useCategoryMutation();
+  const { createCategory, updateCategory } = useServiceCategoryMutations();
 
-  const loading = isCreating || isUpdating || loadingDetail;
+  const loading = createCategory.isPending || updateCategory.isPending || loadingDetail;
 
   const defaultForm = {
     categoryName: "",

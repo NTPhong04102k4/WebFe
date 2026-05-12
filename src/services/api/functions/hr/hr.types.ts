@@ -21,3 +21,52 @@ export interface PagedResult<T> {
   page: number;
   pageSize: number;
 }
+
+// ─── Payroll ────────────────────────────────────────────────────────────────
+
+export interface PayrollListParams {
+  page?: number;
+  pageSize?: number;
+  staffId?: number;
+  month?: number;
+  year?: number;
+}
+
+export interface PayrollRequest {
+  staffID: number;
+  payPeriod: string;
+  baseSalary: number;
+  workingHours: number;
+  overtimeHours: number;
+  jobsCompleted: number;
+  commissionAmount: number;
+  bonusAmount: number;
+  deductionAmount: number;
+  taxAmount: number;
+  notes?: string | null;
+}
+
+export interface PayrollPaymentRequest {
+  paymentStatus: "Pending" | "Paid";
+  paidDate?: string | null;
+}
+
+export interface PayrollViewModel {
+  payrollID: number;
+  staffID: number;
+  staffFullName?: string | null;
+  payPeriod: string;
+  baseSalary: number;
+  workingHours: number;
+  overtimeHours: number;
+  jobsCompleted: number;
+  commissionAmount: number;
+  bonusAmount: number;
+  deductionAmount: number;
+  grossSalary: number;
+  taxAmount: number;
+  netSalary: number;
+  paymentStatus: string;
+  paidDate?: string | null;
+  notes?: string | null;
+}

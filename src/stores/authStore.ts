@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { AuthRole, AuthUser } from '@/services/types/auth.types'
+import { localPersistStorage } from './persistStorage'
 
 export type { AuthUser, AuthRole }
 
@@ -31,6 +32,15 @@ export const useAuthStore = create<AuthState>()(
       isSuperAdmin: () => get().user?.role === 'SuperAdmin',
       isStaff: () => get().user?.role === 'Staff',
     }),
-    { name: 'soldcars-auth' }
+    {
+      name: 'soldcars-auth',
+      storage: localPersistStorage,
+      version: 1,
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        user: state.user,
+      }),
+    }
   )
 )

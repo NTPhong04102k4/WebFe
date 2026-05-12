@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useSePayOrder } from "src/shared/hooks/Payment/index";
+import { useSePayOrder } from "src/query/payment/usePaymentQueries";
 import { FaCheckCircle } from "react-icons/fa";
 
 const PaymentSuccess = () => {

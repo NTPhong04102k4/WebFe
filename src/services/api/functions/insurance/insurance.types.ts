@@ -2,6 +2,15 @@ import type { PagedResult } from "../hr/hr.types";
 
 export type { PagedResult } from "../hr/hr.types";
 
+export interface InsuranceCompanyRequest {
+  companyCode: string;
+  companyName: string;
+  hotline?: string | null;
+  email?: string | null;
+  address?: string | null;
+  isActive: boolean;
+}
+
 export interface InsuranceCompanyViewModel {
   companyID: number;
   companyCode: string;

@@ -1,6 +1,6 @@
 import React from "react";
 import { logger } from "@/common/utils/logger";
-import { useCarTechSpec } from "src/shared/hooks/Car";
+import { useCarTechSpecMutations } from "src/query/car/useCarQueries";
 import { CarDetailResponse } from "src/shared/types/Reponse/Car";
 import { TechSpecDetailUpdateRequest } from "src/shared/types/Request/Car";
 
@@ -17,12 +17,7 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
   onSaved,
   onCancel,
 }) => {
-  const {
-    createTechSpec,
-    updateTechSpec,
-    isCreatingTechSpec,
-    isUpdatingTechSpec,
-  } = useCarTechSpec(carId);
+  const { createTechSpec, updateTechSpec } = useCarTechSpecMutations();
 
   // Use a more flexible form state that allows empty strings
   const [form, setForm] = React.useState<{
@@ -211,7 +206,7 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
     });
 
     if (isEditMode) {
-      updateTechSpec(
+      updateTechSpec.mutate(
         { id: carId, data: submitData },
         {
           onSuccess: () => {
@@ -226,7 +221,7 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
     } else {
       logger.log(form);
       logger.log(submitData);
-      createTechSpec(
+      createTechSpec.mutate(
         { id: carId, data: submitData },
         {
           onSuccess: () => {
@@ -245,7 +240,7 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
     }
   };
 
-  const isLoading = isCreatingTechSpec || isUpdatingTechSpec;
+  const isLoading = createTechSpec.isPending || updateTechSpec.isPending;
 
   return (
     <form onSubmit={handleSubmit}>

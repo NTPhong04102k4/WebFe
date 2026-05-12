@@ -1,10 +1,10 @@
 import React from "react";
 import { ENV } from "src/config/environment";
 import { logger } from "@/common/utils/logger";
-import { useBrandCar } from "src/shared/hooks/BrandCar";
-import { useBodyType } from "src/shared/hooks/BodyType";
-import { useLocation } from "src/shared/hooks/location";
-import { useCarMutation } from "src/shared/hooks/Car";
+import { useBrandCarList } from "src/query/brand-car/useBrandCarQueries";
+import { useBodyTypeList } from "src/query/body-type/useBodyTypeQueries";
+import { useLocationList } from "src/query/location/useLocationQueries";
+import { useCarMutations } from "src/query/car/useCarQueries";
 import { CarDetailUpdateRequest } from "src/shared/types/Request/Car";
 import { useAuth } from "src/shared/hooks/auth";
 
@@ -13,10 +13,10 @@ type Condition = "New" | "Used" | "Certified";
 export const CreateCarForm: React.FC<{
   onCreated?: () => void;
 }> = ({ onCreated }) => {
-  const { brandCar, loading: brandsLoading } = useBrandCar();
-  const { bodyTypes, loading: bodiesLoading } = useBodyType();
-  const { locations, loading: locationsLoading } = useLocation();
-  const { create, isCreating } = useCarMutation();
+  const { data: brandCar = [], isLoading: brandsLoading } = useBrandCarList();
+  const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList();
+  const { data: locations = [], isLoading: locationsLoading } = useLocationList();
+  const { createCar } = useCarMutations();
   const { user } = useAuth();
   const [form, setForm] = React.useState({
     carCode: "",
@@ -197,7 +197,7 @@ export const CreateCarForm: React.FC<{
       formData.append("VideoFile", selectedVideo);
     }
 
-    create(
+    createCar.mutate(
       { data: formData as any },
       {
         onSuccess: () => {
@@ -788,16 +788,16 @@ export const CreateCarForm: React.FC<{
                 isFeature: false,
               })
             }
-            disabled={isCreating}
+            disabled={createCar.isPending}
           >
             Làm mới
           </button>
           <button
             type="submit"
             className="px-4 py-2 rounded-md bg-blue-600 text-white disabled:opacity-50"
-            disabled={!canSubmit || isCreating}
+            disabled={!canSubmit || createCar.isPending}
           >
-            {isCreating ? "Đang tạo..." : "Tạo xe"}
+            {createCar.isPending ? "Đang tạo..." : "Tạo xe"}
           </button>
         </div>
       </form>

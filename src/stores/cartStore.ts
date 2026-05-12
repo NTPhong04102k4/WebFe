@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { localPersistStorage } from './persistStorage'
 
 export interface CartItem {
   type: 'car' | 'accessory'
@@ -55,6 +56,11 @@ export const useCartStore = create<CartState>()(
       totalCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
       totalPrice: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
     }),
-    { name: 'soldcars-cart' }
+    {
+      name: 'soldcars-cart',
+      storage: localPersistStorage,
+      version: 1,
+      partialize: (state) => ({ items: state.items }),
+    }
   )
 )
