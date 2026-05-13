@@ -1,0 +1,23 @@
+import React from "react";
+import { Inbox } from "lucide-react";
+
+export type EmptyStateProps = {
+  title?: string;
+  description?: string;
+  action?: React.ReactNode;
+};
+
+export function EmptyState({
+  title = "Khong co du lieu",
+  description = "Chua co muc nao de hien thi.",
+  action,
+}: EmptyStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <Inbox className="mb-4 h-12 w-12 text-slate-300" />
+      <h3 className="mb-1 text-lg font-medium text-slate-700 dark:text-slate-200">{title}</h3>
+      <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+      {action}
+    </div>
+  );
+}
