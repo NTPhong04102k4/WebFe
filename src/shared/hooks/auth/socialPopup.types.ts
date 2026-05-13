@@ -7,6 +7,9 @@ export interface OAuthSuccessMessage {
   type: "OAUTH_SUCCESS";
   user?: unknown;
   token?: string;
+  access_token?: string;
+  refresh_token?: string;
+  refreshToken?: string;
   tokens?: SocialTokens;
 }
 
@@ -20,6 +23,10 @@ export interface GoogleLoginSuccessMessage {
   type: "GOOGLE_LOGIN_SUCCESS";
   user?: unknown;
   token?: string;
+  access_token?: string;
+  refresh_token?: string;
+  refreshToken?: string;
+  tokens?: SocialTokens;
   message?: string;
 }
 
@@ -33,6 +40,9 @@ export interface FacebookLoginSuccessMessage {
   type: "FACEBOOK_LOGIN_SUCCESS";
   user?: unknown;
   token?: string;
+  access_token?: string;
+  refresh_token?: string;
+  refreshToken?: string;
   tokens?: SocialTokens;
 }
 
@@ -50,8 +60,12 @@ export type SocialAuthMessage =
   | FacebookLoginSuccessMessage
   | FacebookLoginErrorMessage;
 
+export type SocialAuthProvider = "google" | "facebook";
+
 export type SocialAuthResult = {
+  provider: SocialAuthProvider;
   user: unknown;
-  tokens?: SocialTokens;
+  refreshToken?: string;
+  tokens: SocialTokens;
 };
 
