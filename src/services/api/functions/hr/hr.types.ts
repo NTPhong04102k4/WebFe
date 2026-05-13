@@ -8,6 +8,33 @@ export interface SkillViewModel {
   isActive: boolean;
 }
 
+export interface SkillRequest {
+  skillCode: string;
+  skillName: string;
+  description?: string | null;
+  category?: string | null;
+  isActive?: boolean;
+}
+
+export interface TechnicianLevelRequest {
+  levelCode: string;
+  levelName: string;
+  baseSalary: number;
+  hourlyRate: number;
+  bonusPerJob?: number | null;
+  displayOrder?: number;
+}
+
+export interface TechnicianLevelViewModel {
+  levelID: number;
+  levelCode: string;
+  levelName: string;
+  baseSalary: number;
+  hourlyRate: number;
+  bonusPerJob?: number | null;
+  displayOrder: number;
+}
+
 export interface TechnicianListParams {
   page?: number;
   pageSize?: number;
@@ -22,14 +49,70 @@ export interface PagedResult<T> {
   pageSize: number;
 }
 
+export interface TechnicianRequest {
+  staffID: number;
+  levelID: number;
+  hireDate: string;
+  yearsOfExperience?: number;
+  certifications?: string | null;
+  isAvailable?: boolean;
+  notes?: string | null;
+  isActive?: boolean;
+}
+
+export interface AssignSkillRequest {
+  skillID: number;
+  proficiencyLevel: number;
+  certifiedDate?: string | null;
+  expiryDate?: string | null;
+}
+
+export interface TechnicianSkillViewModel {
+  technicianSkillID: number;
+  skillID: number;
+  skillCode?: string | null;
+  skillName?: string | null;
+  proficiencyLevel: number;
+  certifiedDate?: string | null;
+  expiryDate?: string | null;
+}
+
+export interface TechnicianViewModel {
+  technicianID: number;
+  staffID: number;
+  staffFullName?: string | null;
+  staffEmail?: string | null;
+  levelID: number;
+  levelName?: string | null;
+  hireDate: string;
+  yearsOfExperience: number;
+  certifications?: string | null;
+  isAvailable: boolean;
+  currentWorkload: number;
+  totalJobsCompleted: number;
+  averageRating?: number | null;
+  notes?: string | null;
+  isActive: boolean;
+  skills?: TechnicianSkillViewModel[] | null;
+}
+
+export interface TechnicianPerformanceViewModel {
+  technicianID: number;
+  staffFullName?: string | null;
+  currentWorkload: number;
+  totalJobsCompleted: number;
+  averageRating?: number | null;
+  completedThisMonth: number;
+  totalRevenueGenerated: number;
+}
+
 // ─── Payroll ────────────────────────────────────────────────────────────────
 
 export interface PayrollListParams {
   page?: number;
   pageSize?: number;
   staffId?: number;
-  month?: number;
-  year?: number;
+  period?: string;
 }
 
 export interface PayrollRequest {

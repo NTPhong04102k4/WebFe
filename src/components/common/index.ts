@@ -8,3 +8,5 @@ export { Modal } from "src/components/core/Modal/Modal";
 export type { ModalProps } from "src/components/core/Modal/Modal";
 export { DataTable } from "src/components/core/Table/DataTable";
 export type { DataTableProps } from "src/components/core/Table/DataTable";
+export { SelectField } from "src/shared/components/Form/SelectField";
+export type { SelectOption } from "src/shared/components/Form/SelectField";
