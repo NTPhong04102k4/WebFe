@@ -1,0 +1,77 @@
+import { useMemo } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+
+import { DataTable } from "src/components/core";
+import type { BodyCarReponse } from "src/shared/types/Reponse/Car";
+
+type BodyTypeTableProps = {
+  bodyTypes: BodyCarReponse[];
+  onEdit: (bodyType: BodyCarReponse) => void;
+};
+
+export function BodyTypeTable({ bodyTypes, onEdit }: BodyTypeTableProps) {
+  const columns = useMemo<ColumnDef<BodyCarReponse>[]>(
+    () => [
+      {
+        accessorKey: "bodyName",
+        header: "Kieu than",
+        cell: ({ row }) => {
+          const bodyType = row.original;
+
+          return (
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                {bodyType.imagePath ? (
+                  <img className="h-full w-full object-cover" src={bodyType.imagePath} alt={bodyType.bodyName} />
+                ) : null}
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-slate-900">{bodyType.bodyName}</div>
+                <div className="truncate text-xs text-slate-600">Code: {bodyType.bodyCode}</div>
+              </div>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "seatCapacityRange",
+        header: "So ghe",
+        cell: ({ getValue }) => String(getValue() || "-"),
+      },
+      {
+        accessorKey: "description",
+        header: "Mo ta",
+        cell: ({ getValue }) => (
+          <span className="block max-w-xs truncate">{String(getValue() || "-")}</span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Hanh dong",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              onClick={() => onEdit(row.original)}
+            >
+              Sua
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [onEdit]
+  );
+
+  return (
+    <DataTable
+      data={bodyTypes}
+      columns={columns}
+      getRowId={(bodyType) => bodyType.bodyCode}
+      emptyTitle="Khong co kieu than xe"
+      emptyDescription="Chua co kieu than xe phu hop voi bo loc."
+    />
+  );
+}
