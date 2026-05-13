@@ -1,4 +1,5 @@
 import { CarDetailResponse, CarResponse } from "src/shared/types/Reponse/Car";
+import type { OperationResult, PagedResponse } from "src/services/types/common.types";
 import apiClient from "../..";
 import type { ApiRequestOptions } from "../../requestOptions";
 import { withSignal } from "../../requestOptions";
@@ -20,19 +21,29 @@ export const carRouteFn = {
     return response.data;
   },
   getPaging: async (params: CarPagingRequest, options?: ApiRequestOptions) => {
-    const response = await apiClient.post<CarResponse>(
+    const response = await apiClient.get<OperationResult<PagedResponse<CarResponse["data"][number]>>>(
       carRoute.paging,
-      {
-        Page: params.page ?? 1,
-        PageSize: params.pageSize ?? 20,
-        BrandCode: params.brandCode ?? "",
-        BodyCode: params.bodyCode ?? "",
-        PriceFrom: params.PriceFrom ?? undefined,
-        PriceTo: params.PriceTo ?? undefined,
-      },
-      withSignal({}, options)
+      withSignal(
+        {
+          params: {
+            pageIndex: params.pageIndex ?? 1,
+            pageSize: params.pageSize ?? 10,
+            search: params.search?.trim() || undefined,
+            carName: params.carName?.trim() || undefined,
+            brandCode: params.brandCode || undefined,
+            bodyCode: params.bodyCode || undefined,
+            priceFrom: params.priceFrom ?? undefined,
+            priceTo: params.priceTo ?? undefined,
+          },
+        },
+        options
+      )
     );
-    return response.data;
+    const page = response.data.data ?? { data: [], totalCount: 0 };
+    return {
+      data: page.data,
+      totalCount: page.totalCount,
+    };
   },
   create: async (data: CarMutationPayload, options?: ApiRequestOptions) => {
     try {

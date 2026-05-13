@@ -1,7 +1,5 @@
 import React from "react";
 import { useCarList } from "src/query/car/useCarQueries";
-import { useBrandCarList } from "src/query/brand-car/useBrandCarQueries";
-import { useBodyTypeList } from "src/query/body-type/useBodyTypeQueries";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
 import { CarFilters } from "./Components/CarFilters";
 import { CarList } from "./Components/CarList";
@@ -15,12 +13,14 @@ type ViewMode = "list" | "create" | "edit" | "detail";
 export const Cars: React.FC = () => {
   const [query, setQuery] = React.useState<{
     condition: "new" | "used" | "certified" | "";
+    search: string;
     brandCode: string;
     bodyCode: string;
     page: number;
     pageSize: number;
   }>({
     condition: "",
+    search: "",
     brandCode: "",
     bodyCode: "",
     page: 1,
@@ -29,14 +29,12 @@ export const Cars: React.FC = () => {
   const [viewMode, setViewMode] = React.useState<ViewMode>("list");
   const [selectedCarId, setSelectedCarId] = React.useState<number | null>(null);
 
-  // Get brands and bodyTypes for mapping
-  const { data: brandCar = [] } = useBrandCarList();
-  const { data: bodyTypes = [] } = useBodyTypeList();
   const { data: allCarsData, refetch: refetchCarList } = useCarList({
-    page: 1,
-    pageSize: 20,
-    brandCode: "",
-    bodyCode: "",
+    pageIndex: query.page,
+    pageSize: query.pageSize,
+    search: query.search,
+    brandCode: query.brandCode,
+    bodyCode: query.bodyCode,
   });
 
   // Filter and paginate cars locally
@@ -60,46 +58,11 @@ export const Cars: React.FC = () => {
       );
     }
 
-    // Filter by brandCode
-    if (query.brandCode) {
-      const brandIndex = brandCar.findIndex(
-        (b) => b.brandCode === query.brandCode
-      );
-      if (brandIndex >= 0) {
-        // Map brandCode to brandID using index + 1 (same logic as in forms)
-        const expectedBrandID = brandIndex + 1;
-        filtered = filtered.filter((car) => car.brandID === expectedBrandID);
-      }
-    }
-
-    // Filter by bodyCode
-    if (query.bodyCode) {
-      const bodyType = bodyTypes.find((t) => t.bodyCode === query.bodyCode);
-      if (bodyType) {
-        // Similar issue - we need bodyTypeID but have bodyCode
-        // We'll use index + 1 as fallback (same logic as in forms)
-        const bodyTypeIndex = bodyTypes.findIndex(
-          (t) => t.bodyCode === query.bodyCode
-        );
-        if (bodyTypeIndex >= 0) {
-          const expectedBodyTypeID = bodyTypeIndex + 1;
-          filtered = filtered.filter(
-            (car) => car.bodyTypeID === expectedBodyTypeID
-          );
-        }
-      }
-    }
-
-    // Paginate
-    const startIndex = (query.page - 1) * query.pageSize;
-    const endIndex = startIndex + query.pageSize;
-    const paginated = filtered.slice(startIndex, endIndex);
-
     return {
-      data: paginated,
-      total: filtered.length,
+      data: filtered,
+      total: query.condition ? filtered.length : allCarsData.totalCount,
     };
-  }, [allCarsData, query, brandCar, bodyTypes]);
+  }, [allCarsData, query]);
 
   // Find selected car from all cars
   const selectedCar: CarResponseItem | undefined = React.useMemo(() => {

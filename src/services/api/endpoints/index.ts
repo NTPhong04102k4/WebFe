@@ -39,7 +39,7 @@ export const API = {
   },
   car: {
     detail: "/car/detail",
-    paging: "/car/paging",
+    paging: "/cars",
     create: "/car/create",
     edit: "/car/edit",
     /** Backend route currently used by app (see Swagger if 404). */

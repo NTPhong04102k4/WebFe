@@ -60,23 +60,23 @@ export interface CarResponseItem {
   price: number;
   importPrice: number | null;
   salePrice: number;
-  engineSize: 2.5;
+  engineSize: number;
   fuelType: string;
-  transmission: "Automatic";
+  transmission: string;
   driveType: string;
   doors: number;
   seats: number;
   color: string;
   mileage: number;
-  videoPath: any | null;
-  imagePaths: any[];
-  primaryImagePath: any;
+  videoPath: string | null;
+  imagePaths: string | string[] | null;
+  primaryImagePath: string | null;
   detailedDescription: string | null;
-  shortDescription: string;
+  shortDescription: string | null;
   isFeature: boolean;
   viewCount: number;
 }
 export interface CarResponse {
   data: CarResponseItem[];
-  total: number;
+  totalCount: number;
 }

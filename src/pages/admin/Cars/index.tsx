@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 
 import { carRouteFn } from '@/services/api/functions/Cars/Routes.Fn'
@@ -7,6 +8,9 @@ import { useAuthStore } from '@/stores/authStore'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 import { formatCurrency } from '@/common/utils/formatCurrency'
 import type { CarResponse, CarResponseItem } from '@/shared/types/Reponse/Car'
+import { useBrandCarList } from '@/query/brand-car/useBrandCarQueries'
+import { useBodyTypeList } from '@/query/body-type/useBodyTypeQueries'
+import { SelectField } from '@/shared/components/Form/SelectField'
 
 type CarCondition = 'New' | 'Used' | 'Certified' | string
 
@@ -36,6 +40,8 @@ type CarFormState = {
   detailedDescription: string
   isFeature: boolean
   isActive: boolean
+  imageFiles: File[]
+  videoFile: File | null
 }
 
 const emptyForm: CarFormState = {
@@ -64,6 +70,8 @@ const emptyForm: CarFormState = {
   detailedDescription: '',
   isFeature: false,
   isActive: true,
+  imageFiles: [],
+  videoFile: null,
 }
 
 function getImageSrc(car: CarResponseItem): string | undefined {
@@ -88,12 +96,15 @@ function appendIfNotEmpty(fd: FormData, key: string, value: string) {
 export default function AdminCarsPage() {
   const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
+  const { data: brandCars = [], isLoading: brandsLoading } = useBrandCarList()
+  const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList()
 
   const [page, setPage] = useState(1)
   const pageSize = 10
 
   const [brandCode, setBrandCode] = useState('')
   const [bodyCode, setBodyCode] = useState('')
+  const [search, setSearch] = useState('')
   const [priceFrom, setPriceFrom] = useState<string>('')
   const [priceTo, setPriceTo] = useState<string>('')
 
@@ -114,12 +125,41 @@ export default function AdminCarsPage() {
       'admin-cars',
       page,
       pageSize,
+      search,
       brandCode,
       bodyCode,
       priceFromNum,
       priceToNum,
     ],
-    [page, pageSize, brandCode, bodyCode, priceFromNum, priceToNum]
+    [page, pageSize, search, brandCode, bodyCode, priceFromNum, priceToNum]
+  )
+
+  const brandOptions = useMemo(
+    () => brandCars.map((brand) => ({ value: brand.brandCode, label: brand.brandName })),
+    [brandCars]
+  )
+
+  const bodyOptions = useMemo(
+    () => bodyTypes.map((body) => ({ value: body.bodyCode, label: body.bodyName })),
+    [bodyTypes]
+  )
+
+  const brandIdOptions = useMemo(
+    () =>
+      brandCars.map((brand) => ({
+        value: String(brand.id),
+        label: brand.brandName,
+      })),
+    [brandCars]
+  )
+
+  const bodyTypeIdOptions = useMemo(
+    () =>
+      bodyTypes.map((body, index) => ({
+        value: String(index + 1),
+        label: body.bodyName,
+      })),
+    [bodyTypes]
   )
 
   const { data, isLoading, error } = useQuery<CarResponse, Error>({
@@ -127,31 +167,43 @@ export default function AdminCarsPage() {
     placeholderData: keepPreviousData,
     queryFn: () =>
       carRouteFn.getPaging({
-        page,
+        pageIndex: page,
         pageSize,
+        search: search.trim(),
         brandCode: brandCode.trim(),
         bodyCode: bodyCode.trim(),
-        ...(priceFromNum !== undefined ? { PriceFrom: priceFromNum } : {}),
-        ...(priceToNum !== undefined ? { PriceTo: priceToNum } : {}),
+        ...(priceFromNum !== undefined ? { priceFrom: priceFromNum } : {}),
+        ...(priceToNum !== undefined ? { priceTo: priceToNum } : {}),
       }),
   })
 
-  const total = data?.total ?? 0
+  const total = data?.totalCount ?? 0
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   const [modalOpen, setModalOpen] = useState(false)
   const [mode, setMode] = useState<'create' | 'edit'>('create')
   const [editingCar, setEditingCar] = useState<CarResponseItem | null>(null)
 
-  const [form, setForm] = useState<CarFormState>(emptyForm)
-  const [selectedImages, setSelectedImages] = useState<File[]>([])
-  const [selectedVideo, setSelectedVideo] = useState<File | null>(null)
+  const {
+    control,
+    handleSubmit,
+    register,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<CarFormState>({
+    defaultValues: emptyForm,
+    mode: 'onBlur',
+  })
+  const watchedImageFiles = watch('imageFiles')
+  const watchedVideoFile = watch('videoFile')
 
   useEffect(() => {
     if (!modalOpen) return
     if (mode !== 'edit' || !editingCar) return
 
-    setForm({
+    reset({
       carCode: editingCar.carCode ?? '',
       vin: editingCar.vin ?? '',
       carName: editingCar.carName ?? '',
@@ -180,20 +232,18 @@ export default function AdminCarsPage() {
       detailedDescription: String(editingCar.detailedDescription ?? ''),
       isFeature: Boolean(editingCar.isFeature ?? false),
       isActive: Boolean((editingCar as any).isActive ?? true),
+      imageFiles: [],
+      videoFile: null,
     })
-    setSelectedImages([])
-    setSelectedVideo(null)
-  }, [modalOpen, mode, editingCar])
+  }, [modalOpen, mode, editingCar, reset])
 
   useEffect(() => {
     if (!modalOpen) return
     if (mode !== 'create') return
-    setForm(emptyForm)
-    setSelectedImages([])
-    setSelectedVideo(null)
-  }, [modalOpen, mode])
+    reset(emptyForm)
+  }, [modalOpen, mode, reset])
 
-  const buildCarFormData = () => {
+  const buildCarFormData = (values: CarFormState) => {
     if (!user) throw new Error('Bạn cần đăng nhập')
 
     const fd = new FormData()
@@ -204,43 +254,43 @@ export default function AdminCarsPage() {
     fd.append('CreatedBy', String(user.id ?? 0))
 
     // Basic fields
-    appendIfNotEmpty(fd, 'CarCode', form.carCode)
-    appendIfNotEmpty(fd, 'VIN', form.vin)
-    appendIfNotEmpty(fd, 'CarName', form.carName)
-    fd.append('ModelYear', String(toNumberOrZero(form.modelYear)))
-    appendIfNotEmpty(fd, 'ModelName', form.modelName)
-    fd.append('BrandID', String(toNumberOrZero(form.brandID)))
-    fd.append('BodyTypeID', String(toNumberOrZero(form.bodyTypeID)))
-    fd.append('StatusID', String(toNumberOrZero(form.statusID)))
-    appendIfNotEmpty(fd, 'Condition', String(form.condition))
-    fd.append('LocationID', String(toNumberOrZero(form.locationID)))
+    appendIfNotEmpty(fd, 'CarCode', values.carCode)
+    appendIfNotEmpty(fd, 'VIN', values.vin)
+    appendIfNotEmpty(fd, 'CarName', values.carName)
+    fd.append('ModelYear', String(toNumberOrZero(values.modelYear)))
+    appendIfNotEmpty(fd, 'ModelName', values.modelName)
+    fd.append('BrandID', String(toNumberOrZero(values.brandID)))
+    fd.append('BodyTypeID', String(toNumberOrZero(values.bodyTypeID)))
+    fd.append('StatusID', String(toNumberOrZero(values.statusID)))
+    appendIfNotEmpty(fd, 'Condition', String(values.condition))
+    fd.append('LocationID', String(toNumberOrZero(values.locationID)))
 
-    fd.append('Price', String(toNumberOrZero(form.price)))
-    fd.append('ImportPrice', String(toNumberOrZero(form.importPrice)))
-    fd.append('SalePrice', String(toNumberOrZero(form.salePrice)))
+    fd.append('Price', String(toNumberOrZero(values.price)))
+    fd.append('ImportPrice', String(toNumberOrZero(values.importPrice)))
+    fd.append('SalePrice', String(toNumberOrZero(values.salePrice)))
 
-    fd.append('EngineSize', String(toNumberOrZero(form.engineSize)))
-    appendIfNotEmpty(fd, 'FuelType', form.fuelType)
-    appendIfNotEmpty(fd, 'Transmission', form.transmission)
-    appendIfNotEmpty(fd, 'DriveType', form.driveType)
-    fd.append('Doors', String(toNumberOrZero(form.doors)))
-    fd.append('Seats', String(toNumberOrZero(form.seats)))
-    appendIfNotEmpty(fd, 'Color', form.color)
-    fd.append('Mileage', String(toNumberOrZero(form.mileage)))
+    fd.append('EngineSize', String(toNumberOrZero(values.engineSize)))
+    appendIfNotEmpty(fd, 'FuelType', values.fuelType)
+    appendIfNotEmpty(fd, 'Transmission', values.transmission)
+    appendIfNotEmpty(fd, 'DriveType', values.driveType)
+    fd.append('Doors', String(toNumberOrZero(values.doors)))
+    fd.append('Seats', String(toNumberOrZero(values.seats)))
+    appendIfNotEmpty(fd, 'Color', values.color)
+    fd.append('Mileage', String(toNumberOrZero(values.mileage)))
 
     // Descriptions
-    fd.append('ShortDescription', form.shortDescription || '')
-    fd.append('DetailedDescription', form.detailedDescription || '')
-    fd.append('IsFeature', String(form.isFeature))
+    fd.append('ShortDescription', values.shortDescription || '')
+    fd.append('DetailedDescription', values.detailedDescription || '')
+    fd.append('IsFeature', String(values.isFeature))
 
     // Tech/extra
     fd.append('ViewCount', '0')
     fd.append('SoldDate', '')
-    fd.append('IsActive', String(form.isActive))
+    fd.append('IsActive', String(values.isActive))
 
     // Files
-    selectedImages.forEach((f) => fd.append('ImageFiles', f))
-    if (selectedVideo) fd.append('VideoFile', selectedVideo)
+    values.imageFiles.forEach((f) => fd.append('ImageFiles', f))
+    if (values.videoFile) fd.append('VideoFile', values.videoFile)
 
     return fd
   }
@@ -289,31 +339,40 @@ export default function AdminCarsPage() {
           </button>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Brand code</span>
+            <span className="text-sm font-medium text-slate-700">Tên xe</span>
             <input
               className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              value={brandCode}
+              value={search}
               onChange={(e) => {
                 setPage(1)
-                setBrandCode(e.target.value)
+                setSearch(e.target.value)
               }}
-              placeholder="VD: TOYOTA"
+              placeholder="VD: Camry"
             />
           </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Body code</span>
-            <input
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              value={bodyCode}
-              onChange={(e) => {
-                setPage(1)
-                setBodyCode(e.target.value)
-              }}
-              placeholder="VD: SEDAN"
-            />
-          </label>
+
+          <SelectField
+            label="Hãng xe"
+            value={brandCode}
+            options={brandOptions}
+            disabled={brandsLoading}
+            onChange={(e) => {
+              setPage(1)
+              setBrandCode(e.target.value)
+            }}
+          />
+          <SelectField
+            label="Kiểu thân xe"
+            value={bodyCode}
+            options={bodyOptions}
+            disabled={bodiesLoading}
+            onChange={(e) => {
+              setPage(1)
+              setBodyCode(e.target.value)
+            }}
+          />
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-slate-700">Giá từ</span>
             <input
@@ -348,6 +407,7 @@ export default function AdminCarsPage() {
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             onClick={() => {
               setPage(1)
+              setSearch('')
               setBrandCode('')
               setBodyCode('')
               setPriceFrom('')
@@ -489,25 +549,25 @@ export default function AdminCarsPage() {
                   <span className="text-sm font-medium text-slate-700">Car code</span>
                   <input
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.carCode}
-                    onChange={(e) => setForm((s) => ({ ...s, carCode: e.target.value }))}
+                    {...register('carCode')}
                   />
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-sm font-medium text-slate-700">VIN</span>
                   <input
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.vin}
-                    onChange={(e) => setForm((s) => ({ ...s, vin: e.target.value }))}
+                    {...register('vin')}
                   />
                 </label>
                 <label className="flex flex-col gap-1 md:col-span-2">
                   <span className="text-sm font-medium text-slate-700">Tên xe</span>
                   <input
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.carName}
-                    onChange={(e) => setForm((s) => ({ ...s, carName: e.target.value }))}
+                    {...register('carName', { required: 'Vui lòng nhập tên xe' })}
                   />
+                  {errors.carName ? (
+                    <span className="text-xs text-red-600">{errors.carName.message}</span>
+                  ) : null}
                 </label>
 
                 <label className="flex flex-col gap-1">
@@ -515,45 +575,41 @@ export default function AdminCarsPage() {
                   <input
                     inputMode="numeric"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.modelYear}
-                    onChange={(e) => setForm((s) => ({ ...s, modelYear: e.target.value }))}
+                    {...register('modelYear', { required: 'Vui lòng nhập năm sản xuất' })}
                   />
+                  {errors.modelYear ? (
+                    <span className="text-xs text-red-600">{errors.modelYear.message}</span>
+                  ) : null}
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-sm font-medium text-slate-700">Model name</span>
                   <input
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.modelName}
-                    onChange={(e) => setForm((s) => ({ ...s, modelName: e.target.value }))}
+                    {...register('modelName')}
                   />
                 </label>
 
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-slate-700">Brand ID</span>
-                  <input
-                    inputMode="numeric"
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.brandID}
-                    onChange={(e) => setForm((s) => ({ ...s, brandID: e.target.value }))}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-slate-700">BodyType ID</span>
-                  <input
-                    inputMode="numeric"
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.bodyTypeID}
-                    onChange={(e) => setForm((s) => ({ ...s, bodyTypeID: e.target.value }))}
-                  />
-                </label>
+                <SelectField
+                  label="Hãng xe"
+                  options={brandIdOptions}
+                  placeholder="Chọn hãng xe"
+                  disabled={brandsLoading}
+                  {...register('brandID', { required: 'Vui lòng chọn hãng xe' })}
+                />
+                <SelectField
+                  label="Kiểu thân xe"
+                  options={bodyTypeIdOptions}
+                  placeholder="Chọn kiểu thân xe"
+                  disabled={bodiesLoading}
+                  {...register('bodyTypeID', { required: 'Vui lòng chọn kiểu thân xe' })}
+                />
 
                 <label className="flex flex-col gap-1">
                   <span className="text-sm font-medium text-slate-700">Status ID</span>
                   <input
                     inputMode="numeric"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.statusID}
-                    onChange={(e) => setForm((s) => ({ ...s, statusID: e.target.value }))}
+                    {...register('statusID')}
                   />
                 </label>
                 <label className="flex flex-col gap-1">
@@ -561,8 +617,7 @@ export default function AdminCarsPage() {
                   <input
                     inputMode="numeric"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.locationID}
-                    onChange={(e) => setForm((s) => ({ ...s, locationID: e.target.value }))}
+                    {...register('locationID')}
                   />
                 </label>
 
@@ -570,8 +625,7 @@ export default function AdminCarsPage() {
                   <span className="text-sm font-medium text-slate-700">Tình trạng</span>
                   <select
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.condition}
-                    onChange={(e) => setForm((s) => ({ ...s, condition: e.target.value }))}
+                    {...register('condition')}
                   >
                     <option value="New">Xe mới</option>
                     <option value="Used">Xe cũ</option>
@@ -584,17 +638,18 @@ export default function AdminCarsPage() {
                   <input
                     inputMode="numeric"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.price}
-                    onChange={(e) => setForm((s) => ({ ...s, price: e.target.value }))}
+                    {...register('price', { required: 'Vui lòng nhập giá' })}
                   />
+                  {errors.price ? (
+                    <span className="text-xs text-red-600">{errors.price.message}</span>
+                  ) : null}
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-sm font-medium text-slate-700">Import price</span>
                   <input
                     inputMode="numeric"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.importPrice}
-                    onChange={(e) => setForm((s) => ({ ...s, importPrice: e.target.value }))}
+                    {...register('importPrice')}
                   />
                 </label>
 
@@ -603,8 +658,7 @@ export default function AdminCarsPage() {
                   <input
                     inputMode="numeric"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.salePrice}
-                    onChange={(e) => setForm((s) => ({ ...s, salePrice: e.target.value }))}
+                    {...register('salePrice')}
                   />
                 </label>
 
@@ -613,8 +667,7 @@ export default function AdminCarsPage() {
                   <input
                     inputMode="decimal"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.engineSize}
-                    onChange={(e) => setForm((s) => ({ ...s, engineSize: e.target.value }))}
+                    {...register('engineSize')}
                   />
                 </label>
 
@@ -622,8 +675,7 @@ export default function AdminCarsPage() {
                   <span className="text-sm font-medium text-slate-700">Fuel type</span>
                   <input
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.fuelType}
-                    onChange={(e) => setForm((s) => ({ ...s, fuelType: e.target.value }))}
+                    {...register('fuelType')}
                   />
                 </label>
 
@@ -631,8 +683,7 @@ export default function AdminCarsPage() {
                   <span className="text-sm font-medium text-slate-700">Transmission</span>
                   <input
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.transmission}
-                    onChange={(e) => setForm((s) => ({ ...s, transmission: e.target.value }))}
+                    {...register('transmission')}
                   />
                 </label>
 
@@ -640,8 +691,7 @@ export default function AdminCarsPage() {
                   <span className="text-sm font-medium text-slate-700">Drive type</span>
                   <input
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.driveType}
-                    onChange={(e) => setForm((s) => ({ ...s, driveType: e.target.value }))}
+                    {...register('driveType')}
                   />
                 </label>
 
@@ -650,8 +700,7 @@ export default function AdminCarsPage() {
                   <input
                     inputMode="numeric"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.doors}
-                    onChange={(e) => setForm((s) => ({ ...s, doors: e.target.value }))}
+                    {...register('doors')}
                   />
                 </label>
                 <label className="flex flex-col gap-1">
@@ -659,8 +708,7 @@ export default function AdminCarsPage() {
                   <input
                     inputMode="numeric"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.seats}
-                    onChange={(e) => setForm((s) => ({ ...s, seats: e.target.value }))}
+                    {...register('seats')}
                   />
                 </label>
 
@@ -668,8 +716,7 @@ export default function AdminCarsPage() {
                   <span className="text-sm font-medium text-slate-700">Color</span>
                   <input
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.color}
-                    onChange={(e) => setForm((s) => ({ ...s, color: e.target.value }))}
+                    {...register('color')}
                   />
                 </label>
                 <label className="flex flex-col gap-1">
@@ -677,8 +724,7 @@ export default function AdminCarsPage() {
                   <input
                     inputMode="numeric"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.mileage}
-                    onChange={(e) => setForm((s) => ({ ...s, mileage: e.target.value }))}
+                    {...register('mileage')}
                   />
                 </label>
 
@@ -686,24 +732,21 @@ export default function AdminCarsPage() {
                   <span className="text-sm font-medium text-slate-700">Short description</span>
                   <input
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.shortDescription}
-                    onChange={(e) => setForm((s) => ({ ...s, shortDescription: e.target.value }))}
+                    {...register('shortDescription')}
                   />
                 </label>
                 <label className="flex flex-col gap-1 md:col-span-2">
                   <span className="text-sm font-medium text-slate-700">Detailed description</span>
                   <textarea
                     className="min-h-[96px] rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    value={form.detailedDescription}
-                    onChange={(e) => setForm((s) => ({ ...s, detailedDescription: e.target.value }))}
+                    {...register('detailedDescription')}
                   />
                 </label>
 
                 <label className="flex items-center gap-2 md:col-span-2">
                   <input
                     type="checkbox"
-                    checked={form.isFeature}
-                    onChange={(e) => setForm((s) => ({ ...s, isFeature: e.target.checked }))}
+                    {...register('isFeature')}
                   />
                   <span className="text-sm font-medium text-slate-700">Xe nổi bật</span>
                 </label>
@@ -711,8 +754,7 @@ export default function AdminCarsPage() {
                 <label className="flex items-center gap-2 md:col-span-2">
                   <input
                     type="checkbox"
-                    checked={form.isActive}
-                    onChange={(e) => setForm((s) => ({ ...s, isActive: e.target.checked }))}
+                    {...register('isActive')}
                   />
                   <span className="text-sm font-medium text-slate-700">Đang hoạt động</span>
                 </label>
@@ -726,12 +768,12 @@ export default function AdminCarsPage() {
                     className="text-sm"
                     onChange={(e) => {
                       const files = e.target.files ? Array.from(e.target.files) : []
-                      setSelectedImages(files)
+                      setValue('imageFiles', files, { shouldDirty: true })
                     }}
                   />
-                  {selectedImages.length > 0 && (
+                  {watchedImageFiles.length > 0 && (
                     <div className="text-xs text-slate-500">
-                      Đã chọn {selectedImages.length} ảnh
+                      Đã chọn {watchedImageFiles.length} ảnh
                     </div>
                   )}
                 </label>
@@ -744,12 +786,12 @@ export default function AdminCarsPage() {
                     className="text-sm"
                     onChange={(e) => {
                       const f = e.target.files?.[0] ?? null
-                      setSelectedVideo(f)
+                      setValue('videoFile', f, { shouldDirty: true })
                     }}
                   />
-                  {selectedVideo && (
+                  {watchedVideoFile && (
                     <div className="text-xs text-slate-500">
-                      Đã chọn: {selectedVideo.name}
+                      Đã chọn: {watchedVideoFile.name}
                     </div>
                   )}
                 </label>
@@ -771,9 +813,9 @@ export default function AdminCarsPage() {
                   createMutation.isPending || updateMutation.isPending
                 }
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-                onClick={async () => {
+                onClick={handleSubmit(async (values) => {
                   try {
-                    const fd = buildCarFormData()
+                    const fd = buildCarFormData(values)
                     if (mode === 'create') {
                       await createMutation.mutateAsync(fd)
                     } else {
@@ -783,7 +825,7 @@ export default function AdminCarsPage() {
                   } catch (e: any) {
                     toast.error(e?.message ?? 'Có lỗi xảy ra')
                   }
-                }}
+                })}
               >
                 {mode === 'create' ? 'Tạo xe' : 'Lưu thay đổi'}
               </button>

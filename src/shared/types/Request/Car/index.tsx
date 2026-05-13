@@ -1,10 +1,12 @@
 export interface CarPagingRequest {
-  page: number;
-  pageSize: number;
-  brandCode: string;
-  bodyCode: string;
-  PriceFrom?: number | null;
-  PriceTo?: number | null;
+  pageIndex?: number;
+  pageSize?: number;
+  search?: string;
+  carName?: string;
+  brandCode?: string;
+  bodyCode?: string;
+  priceFrom?: number | null;
+  priceTo?: number | null;
 }
 export interface CarDetailUpdateRequest {
   userUUID: string;

@@ -184,7 +184,7 @@ const ListingCarOld = () => {
     isError,
     error,
   } = useCarList({
-    page: currentPage,
+    pageIndex: currentPage,
     pageSize: ITEMS_PER_PAGE,
     brandCode: "",
     bodyCode: "",
@@ -277,7 +277,7 @@ const ListingCarOld = () => {
     );
   }
 
-  const totalResults = carResponse?.total || 0;
+  const totalResults = carResponse?.totalCount || 0;
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-[#050b2b]">
