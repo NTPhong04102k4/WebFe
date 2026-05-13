@@ -1,6 +1,6 @@
 export const accessoryRoute = {
-  list: "/accessory/all",
-  create: "/accessory/create",
-  update: "/accessory/edit",
-  detail: "/accessory/detail",
+  list: "/accessories",
+  create: "/accessories",
+  update: (id: number) => `/accessories/${encodeURIComponent(id)}`,
+  detail: (id: number) => `/accessories/${encodeURIComponent(id)}`,
 };

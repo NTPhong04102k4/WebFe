@@ -26,20 +26,18 @@ function toFormData(
 }
 
 export const accessoryRouteFn = {
-  getDetail: async (accessoryId: number) => {
+  getDetail: async (id: number) => {
     const response = await apiClient.get<AccessoryDetailResponse>(
-      `${accessoryRoute.detail}`,
-      { params: { accessoryId } }
+      accessoryRoute.detail(id)
     );
     return response.data;
   },
 
   getAll: async () => {
-    // Fetch a large page to simulate "all" for client-side filtering
     const response = await apiClient.get<AccessoryListResponse>(
       accessoryRoute.list,
       {
-        params: { Page: 1, PageSize: 1000 },
+        params: { page: 1, pageSize: 1000 },
       }
     );
     return response.data;
@@ -50,14 +48,14 @@ export const accessoryRouteFn = {
       accessoryRoute.list,
       {
         params: {
-          Page: params.page ?? 1,
-          PageSize: params.pageSize ?? 20,
-          PriceFrom: params.priceFrom ?? undefined,
-          PriceTo: params.priceTo ?? undefined,
-          CategoryID: params.categoryID ?? undefined,
-          BrandAccessoryID: params.brandAccessoryID ?? undefined,
-          SortBy: params.sortBy ?? undefined,
-          SortDescending: params.sortDescending ?? false,
+          page: params.page ?? 1,
+          pageSize: params.pageSize ?? 20,
+          priceFrom: params.priceFrom ?? undefined,
+          priceTo: params.priceTo ?? undefined,
+          categoryID: params.categoryID ?? undefined,
+          brandAccessoryID: params.brandAccessoryID ?? undefined,
+          sortBy: params.sortBy ?? undefined,
+          sortDescending: params.sortDescending ?? false,
         },
       }
     );
@@ -79,10 +77,9 @@ export const accessoryRouteFn = {
   update: async (id: number, data: AccessoryRequestUpdate) => {
     const form = toFormData(data);
     const response = await apiClient.put<AccessoryDetailResponse>(
-      accessoryRoute.update,
+      accessoryRoute.update(id),
       form,
       {
-        params: { id },
         headers: { "Content-Type": "multipart/form-data" },
       }
     );

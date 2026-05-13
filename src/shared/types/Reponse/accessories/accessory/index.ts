@@ -21,7 +21,7 @@ export interface AccessoriesListItem {
   accessoryID: number;
   accessoryName: string;
   price: number;
-  costPrice: number;
+  costPrice?: number | null;
   imagePath: string;
   categoryName: string;
   brandName: string;
