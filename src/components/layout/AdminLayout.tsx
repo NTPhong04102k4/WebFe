@@ -3,9 +3,10 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Car, ChevronDown, ChevronRight, LayoutDashboard, LogOut,
   Menu, Package, ShoppingBag, Users, Wrench, Shield, Star,
-  UserCog, MapPin, X, Briefcase,
+  UserCog, MapPin, X, Briefcase, Moon, Sun,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { resolveAppTheme, useUiPreferenceStore } from '@/stores/uiStore'
 import toast from 'react-hot-toast'
 import api from '@/services/api/axiosInstance'
 
@@ -99,8 +100,8 @@ function SidebarItem({
           onClick={() => setOpen(!open)}
           className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
             isActive
-              ? 'bg-blue-50 text-blue-700'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100'
           }`}
         >
           <span className="flex items-center gap-3">
@@ -117,8 +118,8 @@ function SidebarItem({
                 to={child.to}
                 className={`block rounded-lg px-3 py-1.5 text-sm transition-colors ${
                   location.pathname === child.to
-                    ? 'bg-blue-600 font-medium text-white'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                    ? 'bg-blue-600 font-medium text-white dark:bg-blue-500 dark:text-slate-900'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100'
                 }`}
               >
                 {child.label}
@@ -135,8 +136,8 @@ function SidebarItem({
       to={item.to!}
       className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
         location.pathname === item.to
-          ? 'bg-blue-600 text-white'
-          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-slate-900'
+          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100'
       }`}
     >
       {item.icon}
@@ -148,6 +149,9 @@ function SidebarItem({
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user, logout, accessToken, isSuperAdmin } = useAuthStore()
+  const theme = useUiPreferenceStore((state) => state.theme)
+  const toggleTheme = useUiPreferenceStore((state) => state.toggleTheme)
+  const isDarkTheme = resolveAppTheme(theme) === 'dark'
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -168,11 +172,11 @@ export default function AdminLayout() {
   const sidebar = (
     <div className="flex h-full flex-col">
       {/* Brand */}
-      <div className="flex h-16 items-center gap-2 border-b border-slate-200 px-4">
+      <div className="flex h-16 items-center gap-2 border-b border-slate-300 px-4 dark:border-slate-600">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
           <Car className="h-4 w-4 text-white" />
         </div>
-        <span className="font-bold text-slate-800">SoldCars Admin</span>
+        <span className="font-bold text-slate-800 dark:text-slate-100">SoldCars Admin</span>
       </div>
 
       {/* Nav */}
@@ -183,14 +187,14 @@ export default function AdminLayout() {
       </nav>
 
       {/* User info */}
-      <div className="border-t border-slate-200 p-3">
-        <div className="mb-2 rounded-lg bg-slate-50 px-3 py-2">
-          <div className="text-xs font-medium text-slate-800 truncate">{user?.fullName || user?.username}</div>
-          <div className="text-xs text-slate-500">{user?.role}</div>
+      <div className="border-t border-slate-300 p-3 dark:border-slate-600">
+        <div className="mb-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
+          <div className="text-xs font-medium text-slate-800 truncate dark:text-slate-100">{user?.fullName || user?.username}</div>
+          <div className="text-xs text-slate-600 dark:text-slate-300">{user?.role}</div>
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900"
         >
           <LogOut className="h-4 w-4" /> Đăng xuất
         </button>
@@ -199,9 +203,9 @@ export default function AdminLayout() {
   )
 
   return (
-    <div className="flex h-screen bg-slate-100">
+    <div className="flex h-screen bg-slate-100 dark:bg-slate-900">
       {/* Desktop sidebar */}
-      <aside className="hidden w-60 flex-shrink-0 border-r border-slate-200 bg-white lg:block">
+      <aside className="hidden w-60 flex-shrink-0 border-r border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900 lg:block">
         {sidebar}
       </aside>
 
@@ -209,9 +213,9 @@ export default function AdminLayout() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-60 bg-white shadow-xl">
+          <aside className="absolute left-0 top-0 h-full w-60 bg-white shadow-xl dark:bg-slate-900">
             <button
-              className="absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"
+              className="absolute right-3 top-3 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="h-4 w-4" />
@@ -224,25 +228,34 @@ export default function AdminLayout() {
       {/* Main */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+        <header className="flex h-16 items-center justify-between border-b border-slate-300 bg-white px-4 dark:border-slate-600 dark:bg-slate-900 sm:px-6">
           <button
-            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"
+            className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 lg:hidden"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-5 w-5" />
           </button>
           <div className="ml-auto flex items-center gap-3">
-            <span className="hidden text-sm text-slate-600 sm:block">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-slate-400 text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600/30 dark:border-slate-500 dark:text-slate-100 dark:hover:bg-slate-800 dark:focus:ring-blue-300/30"
+              aria-label={isDarkTheme ? 'Chuyen sang giao dien sang' : 'Chuyen sang giao dien toi'}
+              title={isDarkTheme ? 'Sang' : 'Toi'}
+            >
+              {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <span className="hidden text-sm text-slate-600 dark:text-slate-300 sm:block">
               Xin chào, <strong>{user?.fullName || user?.username}</strong>
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 text-sm font-bold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 text-sm font-bold dark:bg-blue-900 dark:text-blue-300">
               {(user?.fullName || user?.username || 'A')[0].toUpperCase()}
             </div>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto p-4 text-slate-800 dark:text-slate-100 sm:p-6">
           <Outlet />
         </main>
       </div>
