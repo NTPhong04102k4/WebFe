@@ -23,7 +23,7 @@ import { workshopKeys } from "./keys";
 export function useCustomerVehicles(params: {
   page?: number;
   pageSize?: number;
-  userId?: number;
+  userId?: string | number;
 }) {
   return useQuery({
     queryKey: workshopKeys.vehicles(params),
@@ -60,6 +60,14 @@ export function useAppointments(q: AppointmentQueryRequest) {
     queryFn: ({ signal }) => workshopApi.listAppointments(q, { signal }),
     staleTime: SEARCH_STALE_MS,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useAppointmentDetail(id: number | null) {
+  return useQuery({
+    queryKey: id != null ? workshopKeys.appointment(id) : ["workshop", "appointment", "none"],
+    queryFn: ({ signal }) => workshopApi.getAppointment(id!, { signal }),
+    enabled: id != null,
   });
 }
 
@@ -104,6 +112,10 @@ export function useWorkshopMutations() {
         id: number;
         body: CustomerVehicleUpdateMileageRequest;
       }) => workshopApi.patchVehicleMileage(id, body),
+      onSuccess: invalidateAll,
+    }),
+    deleteVehicle: useMutation({
+      mutationFn: (id: number) => workshopApi.deleteCustomerVehicle(id),
       onSuccess: invalidateAll,
     }),
     createAppointment: useMutation({
@@ -174,6 +186,16 @@ export function useWorkshopMutations() {
       }) => workshopApi.addWorkOrderService(id, body),
       onSuccess: invalidateAll,
     }),
+    deleteWorkOrderService: useMutation({
+      mutationFn: ({
+        workOrderId,
+        workOrderServiceId,
+      }: {
+        workOrderId: number;
+        workOrderServiceId: number;
+      }) => workshopApi.deleteWorkOrderService(workOrderId, workOrderServiceId),
+      onSuccess: invalidateAll,
+    }),
     addWorkOrderPart: useMutation({
       mutationFn: ({
         id,
@@ -182,6 +204,16 @@ export function useWorkshopMutations() {
         id: number;
         body: WorkOrderPartItemRequest;
       }) => workshopApi.addWorkOrderPart(id, body),
+      onSuccess: invalidateAll,
+    }),
+    deleteWorkOrderPart: useMutation({
+      mutationFn: ({
+        workOrderId,
+        workOrderPartId,
+      }: {
+        workOrderId: number;
+        workOrderPartId: number;
+      }) => workshopApi.deleteWorkOrderPart(workOrderId, workOrderPartId),
       onSuccess: invalidateAll,
     }),
     payWorkOrder: useMutation({

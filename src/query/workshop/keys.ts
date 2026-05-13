@@ -2,7 +2,7 @@ import type { AppointmentQueryRequest, WorkOrderQueryRequest } from "src/service
 
 export const workshopKeys = {
   all: ["workshop"] as const,
-  vehicles: (p: { userId?: number; page?: number; pageSize?: number }) =>
+  vehicles: (p: { userId?: string | number; page?: number; pageSize?: number }) =>
     [...workshopKeys.all, "vehicles", p] as const,
   vehicle: (id: number) => [...workshopKeys.all, "vehicle", id] as const,
   history: (id: number) => [...workshopKeys.all, "history", id] as const,

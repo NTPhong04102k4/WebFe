@@ -1,11 +1,12 @@
 import type { PagedResult } from "../hr/hr.types";
+import type { OperationResult } from "src/services/types/common.types";
 
 export type {
   PagedResult,
 } from "../hr/hr.types";
 
 export interface CustomerVehicleRequest {
-  userID: number;
+  userID: string | number;
   carID?: number | null;
   vin: string;
   licensePlate?: string | null;
@@ -26,7 +27,7 @@ export interface CustomerVehicleUpdateMileageRequest {
 
 export interface CustomerVehicleViewModel {
   customerVehicleID: number;
-  userID: number;
+  userID: string | number;
   ownerFullName?: string | null;
   carID?: number | null;
   vin: string;
@@ -91,9 +92,10 @@ export interface AppointmentStatusRequest {
 }
 
 export interface AppointmentServiceViewModel {
+  appointmentServiceID: number;
   serviceID: number;
   serviceName?: string | null;
-  estimatedPrice?: number;
+  estimatedPrice: number;
   notes?: string | null;
 }
 
@@ -182,10 +184,15 @@ export interface WorkOrderServiceViewModel {
   workOrderServiceID: number;
   serviceID: number;
   serviceName?: string | null;
-  technicianID?: number | null;
+  technicianID: number;
+  technicianName?: string | null;
   laborHours: number;
   unitPrice: number;
+  totalPrice: number;
   lineTotal?: number;
+  status: string;
+  startTime?: string | null;
+  endTime?: string | null;
   notes?: string | null;
 }
 
@@ -195,7 +202,11 @@ export interface WorkOrderPartViewModel {
   accessoryName?: string | null;
   quantity: number;
   unitPrice: number;
+  totalPrice: number;
   lineTotal?: number;
+  installedByTechnicianID?: number | null;
+  installedByTechnicianName?: string | null;
+  installedDate?: string | null;
   notes?: string | null;
 }
 
@@ -240,3 +251,4 @@ export interface WorkOrderViewModel {
 export type CustomerVehicleListResult = PagedResult<CustomerVehicleViewModel>;
 export type AppointmentListResult = PagedResult<AppointmentViewModel>;
 export type WorkOrderListResult = PagedResult<WorkOrderViewModel>;
+export type WorkshopOperationResult<T = unknown> = OperationResult<T>;

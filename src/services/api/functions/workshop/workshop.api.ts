@@ -24,6 +24,7 @@ import type {
   WorkOrderServiceItemRequest,
   WorkOrderStatusRequest,
   WorkOrderViewModel,
+  WorkshopOperationResult,
 } from "./workshop.types";
 
 export const workshopApi = {
@@ -32,7 +33,7 @@ export const workshopApi = {
     params: {
       page?: number;
       pageSize?: number;
-      userId?: number;
+      userId?: string | number;
     },
     options?: ApiRequestOptions
   ) => {
@@ -60,7 +61,7 @@ export const workshopApi = {
   },
 
   createCustomerVehicle: async (body: CustomerVehicleRequest) => {
-    const res = await apiClient.post<CustomerVehicleViewModel>(
+    const res = await apiClient.post<WorkshopOperationResult<number>>(
       API.workshop.customerVehicles,
       body
     );
@@ -68,7 +69,7 @@ export const workshopApi = {
   },
 
   updateCustomerVehicle: async (id: number, body: CustomerVehicleRequest) => {
-    const res = await apiClient.put<CustomerVehicleViewModel>(
+    const res = await apiClient.put<WorkshopOperationResult>(
       API.workshop.customerVehicle(id),
       body
     );
@@ -79,7 +80,7 @@ export const workshopApi = {
     id: number,
     body: CustomerVehicleUpdateMileageRequest
   ) => {
-    const res = await apiClient.patch<unknown>(
+    const res = await apiClient.patch<WorkshopOperationResult>(
       API.workshop.customerVehicleMileage(id),
       body
     );
@@ -87,7 +88,10 @@ export const workshopApi = {
   },
 
   deleteCustomerVehicle: async (id: number) => {
-    await apiClient.delete(API.workshop.customerVehicle(id));
+    const res = await apiClient.delete<WorkshopOperationResult>(
+      API.workshop.customerVehicle(id)
+    );
+    return res.data;
   },
 
   // —— Appointments ——
@@ -111,7 +115,9 @@ export const workshopApi = {
   },
 
   createAppointment: async (body: AppointmentRequest) => {
-    const res = await apiClient.post<AppointmentViewModel>(
+    const res = await apiClient.post<
+      WorkshopOperationResult<{ appointmentID: number; appointmentNumber: string }>
+    >(
       API.workshop.appointments,
       body
     );
@@ -119,7 +125,7 @@ export const workshopApi = {
   },
 
   confirmAppointment: async (id: number) => {
-    const res = await apiClient.put<unknown>(
+    const res = await apiClient.put<WorkshopOperationResult>(
       API.workshop.appointmentConfirm(id),
       {}
     );
@@ -127,7 +133,7 @@ export const workshopApi = {
   },
 
   cancelAppointment: async (id: number, body?: AppointmentStatusRequest) => {
-    const res = await apiClient.put<unknown>(
+    const res = await apiClient.put<WorkshopOperationResult>(
       API.workshop.appointmentCancel(id),
       body ?? {}
     );
@@ -138,7 +144,7 @@ export const workshopApi = {
     id: number,
     body: AppointmentStatusRequest
   ) => {
-    const res = await apiClient.patch<unknown>(
+    const res = await apiClient.patch<WorkshopOperationResult>(
       API.workshop.appointmentStatus(id),
       body
     );
@@ -146,7 +152,7 @@ export const workshopApi = {
   },
 
   sendAppointmentReminder: async (id: number) => {
-    const res = await apiClient.post<unknown>(
+    const res = await apiClient.post<WorkshopOperationResult>(
       API.workshop.appointmentReminder(id),
       {}
     );
@@ -174,7 +180,9 @@ export const workshopApi = {
   },
 
   createWorkOrder: async (body: WorkOrderRequest) => {
-    const res = await apiClient.post<WorkOrderViewModel>(
+    const res = await apiClient.post<
+      WorkshopOperationResult<{ workOrderID: number; workOrderNumber: string }>
+    >(
       API.workshop.workOrders,
       body
     );
@@ -182,7 +190,7 @@ export const workshopApi = {
   },
 
   patchWorkOrderStatus: async (id: number, body: WorkOrderStatusRequest) => {
-    const res = await apiClient.patch<unknown>(
+    const res = await apiClient.patch<WorkshopOperationResult>(
       API.workshop.workOrderStatus(id),
       body
     );
@@ -190,7 +198,7 @@ export const workshopApi = {
   },
 
   assignTechnician: async (id: number, body: AssignTechnicianRequest) => {
-    const res = await apiClient.patch<unknown>(
+    const res = await apiClient.patch<WorkshopOperationResult>(
       API.workshop.workOrderAssignTechnician(id),
       body
     );
@@ -201,7 +209,7 @@ export const workshopApi = {
     id: number,
     body: WorkOrderServiceItemRequest
   ) => {
-    const res = await apiClient.post<unknown>(
+    const res = await apiClient.post<WorkshopOperationResult>(
       API.workshop.workOrderServices(id),
       body
     );
@@ -212,13 +220,14 @@ export const workshopApi = {
     workOrderId: number,
     workOrderServiceId: number
   ) => {
-    await apiClient.delete(
+    const res = await apiClient.delete<WorkshopOperationResult>(
       API.workshop.workOrderServiceItem(workOrderId, workOrderServiceId)
     );
+    return res.data;
   },
 
   addWorkOrderPart: async (id: number, body: WorkOrderPartItemRequest) => {
-    const res = await apiClient.post<unknown>(
+    const res = await apiClient.post<WorkshopOperationResult>(
       API.workshop.workOrderParts(id),
       body
     );
@@ -229,13 +238,14 @@ export const workshopApi = {
     workOrderId: number,
     workOrderPartId: number
   ) => {
-    await apiClient.delete(
+    const res = await apiClient.delete<WorkshopOperationResult>(
       API.workshop.workOrderPartItem(workOrderId, workOrderPartId)
     );
+    return res.data;
   },
 
   payWorkOrder: async (id: number, body: WorkOrderPaymentRequest) => {
-    const res = await apiClient.post<unknown>(
+    const res = await apiClient.post<WorkshopOperationResult>(
       API.workshop.workOrderPay(id),
       body
     );
@@ -246,7 +256,7 @@ export const workshopApi = {
     id: number,
     body: WorkOrderFeedbackRequest
   ) => {
-    const res = await apiClient.post<unknown>(
+    const res = await apiClient.post<WorkshopOperationResult>(
       API.workshop.workOrderFeedback(id),
       body
     );
