@@ -10,6 +10,7 @@ import {
   useWorkshopMutations,
 } from "src/query/workshop/useWorkshopQueries";
 import { useHrTechniciansSearch } from "src/query/hr/useHrQueries";
+import { useServiceCatalog } from "src/query/service-catalog/useServiceCatalogQueries";
 import type {
   WorkOrderQueryRequest,
   WorkOrderRequest,
@@ -72,7 +73,9 @@ export default function WorkOrdersPage() {
   const detail = useWorkOrderDetail(detailId);
   const mutations = useWorkshopMutations();
   const { data: techRes } = useHrTechniciansSearch({ page: 1, pageSize: 200 });
+  const { data: serviceRes } = useServiceCatalog({ page: 1, pageSize: 200, isActive: true });
   const technicians = techRes?.data ?? [];
+  const services = serviceRes?.data ?? [];
   const createForm = useForm<CreateForm>({ defaultValues: createDefaults });
 
   const applyFilter = () => {
@@ -206,6 +209,7 @@ export default function WorkOrdersPage() {
         <WorkOrderActionModal
           action={action}
           technicians={technicians}
+          services={services}
           onClose={() => setAction(null)}
           mutations={mutations}
         />
@@ -278,11 +282,13 @@ function CreateFields({
 function WorkOrderActionModal({
   action,
   technicians,
+  services,
   onClose,
   mutations,
 }: {
   action: { type: "status" | "assign" | "service" | "part" | "pay"; workOrder: WorkOrderViewModel };
   technicians: Array<{ technicianID: number; staffFullName?: string | null }>;
+  services: Array<{ serviceID: number; serviceName: string; serviceCode: string; price: number }>;
   onClose: () => void;
   mutations: ReturnType<typeof useWorkshopMutations>;
 }) {
@@ -373,7 +379,28 @@ function WorkOrderActionModal({
       ) : null}
       {action.type === "service" ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="ServiceID" type="number" min={1} value={service.serviceID} onChange={(e) => setService((s) => ({ ...s, serviceID: e.target.value }))} />
+          <label className="space-y-1">
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Dich vu</span>
+            <select
+              value={service.serviceID}
+              onChange={(e) => {
+                const selected = services.find((item) => item.serviceID === Number(e.target.value));
+                setService((s) => ({
+                  ...s,
+                  serviceID: e.target.value,
+                  unitPrice: selected ? String(selected.price) : s.unitPrice,
+                }));
+              }}
+              className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
+            >
+              <option value="">Chon dich vu</option>
+              {services.map((item) => (
+                <option key={item.serviceID} value={item.serviceID}>
+                  {item.serviceName} - {item.price.toLocaleString("vi-VN")} VND
+                </option>
+              ))}
+            </select>
+          </label>
           <Select label="Ky thuat vien" value={service.technicianID} onChange={(value) => setService((s) => ({ ...s, technicianID: value }))} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
           <Input label="Gio cong" type="number" min={0} max={24} value={service.laborHours} onChange={(e) => setService((s) => ({ ...s, laborHours: e.target.value }))} />
           <Input label="Don gia" type="number" min={0} value={service.unitPrice} onChange={(e) => setService((s) => ({ ...s, unitPrice: e.target.value }))} />

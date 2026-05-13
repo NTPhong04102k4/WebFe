@@ -50,6 +50,7 @@ const InsuranceClaimsPage        = lazy(() => import('@/pages/admin/Insurance/Cl
 const WorkshopAppointmentsPage   = lazy(() => import('@/pages/admin/Workshop/Appointments'))
 const CustomerVehiclesPage       = lazy(() => import('@/pages/admin/Workshop/CustomerVehicles'))
 const WorkOrdersPage             = lazy(() => import('@/pages/admin/Workshop/WorkOrders'))
+const ServiceCatalogPage          = lazy(() => import('@/pages/admin/Workshop/Services'))
 const AdminReviewsPage           = lazy(() => import('@/pages/admin/Reviews'))
 const StaffPage                  = lazy(() => import('@/pages/admin/Staff'))
 
@@ -129,6 +130,7 @@ export default function AppRouter() {
           <Route path="workshop/appointments" element={<WorkshopAppointmentsPage />} />
           <Route path="workshop/vehicles" element={<CustomerVehiclesPage />} />
           <Route path="workshop/work-orders" element={<WorkOrdersPage />} />
+          <Route path="workshop/services" element={<ServiceCatalogPage />} />
 
           <Route path="reviews" element={<AdminReviewsPage />} />
 

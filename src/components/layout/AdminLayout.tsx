@@ -67,6 +67,7 @@ const navItems: NavItem[] = [
       { label: 'Lịch hẹn', to: '/admin/workshop/appointments' },
       { label: 'Xe khách hàng', to: '/admin/workshop/vehicles' },
       { label: 'Phiếu công việc', to: '/admin/workshop/work-orders' },
+      { label: 'Danh mục dịch vụ', to: '/admin/workshop/services' },
     ],
   },
   { label: 'Đánh giá', icon: <Star className="h-4 w-4" />, to: '/admin/reviews' },

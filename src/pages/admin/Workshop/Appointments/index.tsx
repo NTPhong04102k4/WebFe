@@ -10,6 +10,7 @@ import {
   useWorkshopMutations,
 } from "src/query/workshop/useWorkshopQueries";
 import { useHrTechniciansSearch } from "src/query/hr/useHrQueries";
+import { useServiceCatalog } from "src/query/service-catalog/useServiceCatalogQueries";
 import type {
   AppointmentQueryRequest,
   AppointmentRequest,
@@ -82,7 +83,9 @@ export default function WorkshopAppointmentsPage() {
   const { data, isLoading, refetch } = useAppointments(query);
   const detail = useAppointmentDetail(detailId);
   const { data: techRes } = useHrTechniciansSearch({ page: 1, pageSize: 200, available: true });
+  const { data: serviceRes } = useServiceCatalog({ page: 1, pageSize: 200, isActive: true });
   const technicians = techRes?.data ?? [];
+  const services = serviceRes?.data ?? [];
   const mutations = useWorkshopMutations();
   const { register, handleSubmit, reset } = useForm<AppointmentForm>({ defaultValues: defaults });
 
@@ -251,7 +254,7 @@ export default function WorkshopAppointmentsPage() {
           <ActionButton variant="primary" onClick={handleSubmit(createAppointment)} disabled={mutations.createAppointment.isPending}>Tao lich</ActionButton>
         </div>
       }>
-        <AppointmentFields register={register} technicians={technicians} />
+        <AppointmentFields register={register} technicians={technicians} services={services} />
       </Modal>
 
       <Modal open={detailId !== null} onClose={() => setDetailId(null)} title="Chi tiet lich hen" size="xl">
@@ -333,9 +336,11 @@ function Select({
 function AppointmentFields({
   register,
   technicians,
+  services,
 }: {
   register: ReturnType<typeof useForm<AppointmentForm>>["register"];
   technicians: Array<{ technicianID: number; staffFullName?: string | null }>;
+  services: Array<{ serviceID: number; serviceName: string; serviceCode: string; price: number }>;
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -358,7 +363,17 @@ function AppointmentFields({
           <option value="Inspection">Inspection</option>
         </select>
       </label>
-      <Input label="ServiceID" type="number" min={1} {...register("serviceID")} />
+      <label className="space-y-1">
+        <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Dich vu</span>
+        <select className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900" {...register("serviceID")}>
+          <option value="">Chua chon</option>
+          {services.map((service) => (
+            <option key={service.serviceID} value={service.serviceID}>
+              {service.serviceName} - {service.price.toLocaleString("vi-VN")} VND
+            </option>
+          ))}
+        </select>
+      </label>
       <Input label="Gia du kien" type="number" min={0} {...register("estimatedPrice")} />
       <Input label="Ghi chu dich vu" {...register("serviceNotes")} />
       <Input label="Ghi chu staff" {...register("staffNote")} />

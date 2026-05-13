@@ -154,6 +154,11 @@ export const API = {
       workOrderPartId: string | number
     ) => `/workshop/work-orders/${workOrderId}/parts/${workOrderPartId}`,
   },
+  serviceCatalog: {
+    list: "/services",
+    detail: (id: string | number) => `/services/${id}`,
+    status: (id: string | number) => `/services/${id}/status`,
+  },
   review: {
     carList: "/review/car",
     car: (id: string | number) => `/review/car/${id}`,
