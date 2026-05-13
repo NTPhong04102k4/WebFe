@@ -9,6 +9,8 @@ import { useAuthQuery } from '@/query/auth/useAuthQuery'
 import { useAuthStore } from '@/stores/authStore'
 import { decodeToken } from '@/common/utils/jwtDecode'
 import { extractError } from '@/common/utils/errorMessage'
+import { openSocialAuthPopup } from '@/shared/hooks/auth/socialPopup'
+import type { SocialAuthProvider } from '@/shared/hooks/auth/socialPopup.types'
 
 const schema = z.object({
   usernameOrPhoneOrEmail: z.string().min(1, 'Vui lòng nhập tài khoản'),
@@ -50,25 +52,25 @@ export default function LoginPage() {
     }
   }
 
-  const handleSocialLogin = (provider: 'google' | 'facebook') => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? 'https://web-7012.onrender.com'
-    const popup = window.open(
-      `${baseUrl}/auth/login/${provider}`,
-      'oauth-popup',
-      'width=500,height=600'
-    )
-    const handler = (e: MessageEvent) => {
-      if (e.data?.access_token) {
-        setTokens(e.data.access_token, e.data.refresh_token)
-        const decoded = decodeToken(e.data.access_token)
-        if (decoded) setUser(decoded)
-        toast.success('Đăng nhập thành công!')
+  const handleSocialLogin = async (provider: SocialAuthProvider) => {
+    try {
+      const result = await openSocialAuthPopup(provider)
+      const token = result.tokens.access_token
+      const decoded = decodeToken(token)
+
+      setTokens(token, result.refreshToken ?? '')
+      if (decoded) setUser(decoded)
+
+      toast.success('Đăng nhập thành công!')
+      const role = decoded?.role ?? 'Customer'
+      if (role === 'Admin' || role === 'SuperAdmin' || role === 'Staff') {
+        navigate('/admin/dashboard', { replace: true })
+      } else {
         navigate('/', { replace: true })
-        window.removeEventListener('message', handler)
-        popup?.close()
       }
+    } catch (err) {
+      toast.error(extractError(err))
     }
-    window.addEventListener('message', handler)
   }
 
   return (
