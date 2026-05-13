@@ -13,21 +13,21 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
 
     return (
       <div className="space-y-1">
-        <label htmlFor={inputId} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+        <label htmlFor={inputId} className="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-100">
           <input
             ref={ref}
             id={inputId}
             type="radio"
             aria-invalid={Boolean(error)}
             className={cn(
-              "h-4 w-4 border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800",
+              "h-4 w-4 border-2 border-slate-400 text-blue-600 focus:ring-2 focus:ring-blue-600/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-500 dark:bg-slate-900 dark:text-blue-300 dark:focus:ring-blue-300/30",
               className
             )}
             {...props}
           />
           {label ? <span>{label}</span> : null}
         </label>
-        {error ? <p className="text-xs text-red-500">{error}</p> : null}
+        {error ? <p className="text-xs text-red-600 dark:text-red-300">{error}</p> : null}
       </div>
     );
   }

@@ -20,11 +20,11 @@ export default function AdminBodyTypesPage() {
       {bodyTypeManager.isLoading ? (
         <Loading label="Dang tai kieu than xe..." />
       ) : bodyTypeManager.error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <div className="rounded-xl border-2 border-red-500 bg-red-50 p-4 text-sm font-medium text-slate-800 dark:border-red-400 dark:bg-red-900 dark:text-slate-100">
           Loi: {bodyTypeManager.error.message}
         </div>
       ) : bodyTypeManager.filteredBodyTypes.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white">
+        <div className="rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900">
           <EmptyState title="Khong co kieu than xe" description="Chua co kieu than xe phu hop voi bo loc." />
         </div>
       ) : (

@@ -57,20 +57,20 @@ export function Modal({
         if (closeOnBackdrop && event.target === event.currentTarget) onClose();
       }}
     >
-      <div className={cn("w-full rounded-xl bg-white shadow-2xl dark:bg-slate-800", sizeClass[size])}>
-        <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-slate-700">
-          {title ? <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2> : <span />}
+      <div className={cn("w-full rounded-xl bg-white shadow-xl-light dark:bg-slate-900 dark:shadow-xl-dark", sizeClass[size])}>
+        <div className="flex items-center justify-between gap-4 border-b border-slate-300 px-5 py-4 dark:border-slate-600">
+          {title ? <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{title}</h2> : <span />}
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
             aria-label="Dong"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
         <div className="max-h-[75vh] overflow-y-auto px-5 py-4">{children}</div>
-        {footer ? <div className="border-t border-slate-200 px-5 py-4 dark:border-slate-700">{footer}</div> : null}
+        {footer ? <div className="border-t border-slate-300 px-5 py-4 dark:border-slate-600">{footer}</div> : null}
       </div>
     </div>
   );

@@ -14,9 +14,9 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <Inbox className="mb-4 h-12 w-12 text-slate-300" />
-      <h3 className="mb-1 text-lg font-medium text-slate-700 dark:text-slate-200">{title}</h3>
-      <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+      <Inbox className="mb-4 h-12 w-12 text-slate-500 dark:text-slate-400" />
+      <h3 className="mb-1 text-lg font-medium text-slate-800 dark:text-slate-100">{title}</h3>
+      <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">{description}</p>
       {action}
     </div>
   );

@@ -7,7 +7,7 @@ export type LoadingProps = {
 
 export function Loading({ label = "Dang tai...", className = "" }: LoadingProps) {
   return (
-    <div className={`flex items-center justify-center gap-3 py-8 text-sm text-slate-500 ${className}`}>
+    <div className={`flex items-center justify-center gap-3 py-8 text-sm text-slate-600 dark:text-slate-300 ${className}`}>
       <LoadingSpinner size="sm" />
       <span>{label}</span>
     </div>

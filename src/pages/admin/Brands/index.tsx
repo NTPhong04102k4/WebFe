@@ -20,11 +20,11 @@ export default function AdminBrandsPage() {
       {brandManager.isLoading ? (
         <Loading label="Dang tai hang xe..." />
       ) : brandManager.error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <div className="rounded-xl border-2 border-red-500 bg-red-50 p-4 text-sm font-medium text-slate-800 dark:border-red-400 dark:bg-red-900 dark:text-slate-100">
           Loi: {brandManager.error.message}
         </div>
       ) : brandManager.filteredBrands.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white">
+        <div className="rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900">
           <EmptyState title="Khong co hang xe" description="Chua co hang xe phu hop voi bo loc." />
         </div>
       ) : (

@@ -69,7 +69,7 @@ function SortableRow({ dragId, index, manager, draggable, children, className, .
   return (
     <tr
       ref={rowRef}
-      className={cn("border-b border-slate-100 bg-white transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/70", className)}
+      className={cn("border-b border-slate-300 bg-white transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800", className)}
       {...props}
     >
       {draggable ? (
@@ -77,7 +77,7 @@ function SortableRow({ dragId, index, manager, draggable, children, className, .
           <button
             ref={handleRef}
             type="button"
-            className="inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 active:cursor-grabbing dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 active:cursor-grabbing dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
             aria-label="Keo de sap xep"
           >
             <GripVertical className="h-4 w-4" />
@@ -159,10 +159,10 @@ export function DataTable<TData>({
   const colSpan = columns.length + (isDraggable ? 1 : 0);
 
   return (
-    <div className={cn("overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900", className)}>
+    <div className={cn("overflow-hidden rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900", className)}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {isDraggable ? <th className="w-10 px-3 py-3" aria-label="Sap xep" /> : null}
@@ -214,7 +214,7 @@ export function DataTable<TData>({
                     className={onRowClick ? "cursor-pointer" : undefined}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                      <td key={cell.id} className="px-4 py-3 text-slate-800 dark:text-slate-100">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
@@ -225,14 +225,14 @@ export function DataTable<TData>({
         </table>
       </div>
       {enablePagination ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-300">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-300 px-4 py-3 text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300">
           <span>
             Trang {table.getState().pagination.pageIndex + 1} / {table.getPageCount() || 1}
           </span>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600"
+              className="rounded-lg border-2 border-slate-400 px-3 py-1.5 text-slate-800 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-500 dark:text-slate-100 dark:hover:bg-slate-800"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
             >
@@ -240,7 +240,7 @@ export function DataTable<TData>({
             </button>
             <button
               type="button"
-              className="rounded-lg border border-slate-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600"
+              className="rounded-lg border-2 border-slate-400 px-3 py-1.5 text-slate-800 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-500 dark:text-slate-100 dark:hover:bg-slate-800"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
             >

@@ -23,7 +23,7 @@ export function HoverInfo({ children, content, side = "top", className }: HoverI
       <span
         role="tooltip"
         className={cn(
-          "pointer-events-none absolute z-40 hidden w-max max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-lg group-hover:block group-focus-within:block dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200",
+          "pointer-events-none absolute z-40 hidden w-max max-w-xs rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-xs text-slate-800 shadow-lg-light group-hover:block group-focus-within:block dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:shadow-lg-dark",
           sideClass[side],
           className
         )}
