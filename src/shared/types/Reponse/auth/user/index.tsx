@@ -58,6 +58,66 @@ export interface ResendOtpResponse {
   data: null;
 }
 
+export type UserProfile = {
+  userID: string;
+  userUUID?: string;
+  userCode?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  fullName?: string | null;
+  dateOfBirth?: string | null;
+  gender?: "Male" | "Female" | "Other" | string | null;
+  identityNumber?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  username: string;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
+  idSocial?: string | null;
+  lastLoginDate?: string | null;
+  loginAttempts?: number;
+  isLocked?: boolean;
+  lockUntil?: string | null;
+  isActive: boolean;
+  createdDate?: string;
+  updatedDate?: string;
+  image?: string | null;
+  fcmToken?: string | null;
+};
+
+export type UserListPeriod = "7d" | "30d" | "all" | "custom";
+
+export type UserListQuery = {
+  page?: number;
+  pageSize?: number;
+  period?: UserListPeriod;
+  fromDate?: string;
+  toDate?: string;
+  search?: string;
+  email?: string;
+  username?: string;
+  phone?: string;
+  isActive?: boolean;
+  isLocked?: boolean;
+  sortBy?: "createdDate" | "updatedDate" | "lastLoginDate" | "username";
+  sortDir?: "asc" | "desc";
+};
+
+export type PagedUsersResponse = {
+  items: UserProfile[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  period: UserListPeriod;
+  fromDate?: string | null;
+  toDate?: string | null;
+  search?: string | null;
+};
+
 export interface GoogleUserResponse {
   FirstName: string;
   Address: string;
