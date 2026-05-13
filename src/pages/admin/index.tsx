@@ -6,6 +6,7 @@ import * as yup from "yup";
 import { authAPI } from "src/services/api/functions/auth/authFn";
 import { getRolesFromToken, getTokenClaims } from "src/services/decode";
 import { useAuthStore } from "@/stores/authStore";
+import { canAccessStaffBackend } from "@/common/utils/roles";
 
 const Admin = React.memo(() => {
   const navigate = useNavigate();
@@ -68,11 +69,13 @@ const Admin = React.memo(() => {
         role: roles[0] ?? "Admin",
       });
 
-      if (roles.some((r) => r.toLowerCase() === "superadmin")) {
-        navigate("/auth/login/admin/page_manage", { replace: true });
-      } else {
-        navigate("/home", { replace: true });
+      if (!canAccessStaffBackend(roles)) {
+        useAuthStore.getState().logout();
+        setError("Tài khoản này không có quyền vào khu quản trị");
+        return;
       }
+
+      navigate("/admin/dashboard", { replace: true });
     } catch (e: any) {
       setError(
         e?.response?.data?.message ||

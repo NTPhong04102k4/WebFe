@@ -97,7 +97,7 @@ export default function AppRouter() {
         <Route
           path="admin"
           element={
-            <ProtectedRoute roles={['Admin', 'SuperAdmin', 'Staff']}>
+            <ProtectedRoute roles={['Admin', 'SuperAdmin', 'Staff']} redirectTo="/auth/admin/login">
               <AdminLayout />
             </ProtectedRoute>
           }

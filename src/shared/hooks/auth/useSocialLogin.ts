@@ -58,7 +58,7 @@ export const useSocialLogin = ({
 
     setTimeout(() => {
       if (isSuperAdmin) {
-        navigate("/auth/login/admin/page_manage", { replace: true });
+        navigate("/admin/dashboard", { replace: true });
       } else {
         logger.log("Regular user, navigating to home");
         navigate("/", { replace: true });

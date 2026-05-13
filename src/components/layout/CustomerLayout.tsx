@@ -1,16 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { Car, ShoppingCart, User, LogOut, Menu, X, MessageCircle, Bot } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
 import toast from 'react-hot-toast'
 import api from '@/services/api/axiosInstance'
+import { canAccessStaffBackend, getUserRoles } from '@/common/utils/roles'
 
 export default function CustomerLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { user, logout, accessToken } = useAuthStore()
   const cartCount = useCartStore((s) => s.totalCount())
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (canAccessStaffBackend(getUserRoles(user))) {
+      navigate('/admin/dashboard', { replace: true })
+    }
+  }, [navigate, user])
 
   const handleLogout = async () => {
     try {

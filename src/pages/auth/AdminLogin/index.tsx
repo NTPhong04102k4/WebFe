@@ -7,6 +7,9 @@ import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuthQuery } from '@/query/auth/useAuthQuery'
 import { extractError } from '@/common/utils/errorMessage'
+import { canAccessStaffBackend } from '@/common/utils/roles'
+import { getRolesFromToken } from '@/services/decode'
+import { useAuthStore } from '@/stores/authStore'
 
 const schema = z.object({
   username: z.string().min(1, 'Vui lòng nhập tên đăng nhập'),
@@ -18,6 +21,7 @@ type FormData = z.infer<typeof schema>
 export default function AdminLoginPage() {
   const [showPwd, setShowPwd] = useState(false)
   const { adminLoginAsync, isAdminLoginLoading } = useAuthQuery()
+  const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
 
   const {
@@ -29,6 +33,12 @@ export default function AdminLoginPage() {
   const onSubmit = async (values: FormData) => {
     try {
       const { data } = await adminLoginAsync(values)
+      const roles = getRolesFromToken(data.token)
+      if (!canAccessStaffBackend(roles)) {
+        logout()
+        toast.error('Tai khoan nay khong co quyen vao khu quan tri')
+        return
+      }
       toast.success(`Chào mừng, ${data.fullName}!`)
       navigate('/admin/dashboard', { replace: true })
     } catch (err) {

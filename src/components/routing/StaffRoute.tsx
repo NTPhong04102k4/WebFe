@@ -19,7 +19,7 @@ export function StaffRoute({ children }: Props) {
 
   const roles = getRolesFromToken(token);
   if (!canAccessStaffBackend(roles)) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
