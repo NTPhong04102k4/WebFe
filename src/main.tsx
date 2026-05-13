@@ -6,8 +6,11 @@ import './index.css'
 import App from './App'
 import { AppProviders } from './contexts/AppProviders'
 import { createAppQueryClient } from './query/queryClient'
+import { subscribeToAppTheme } from './stores/uiStore'
 
 const queryClient = createAppQueryClient()
+
+subscribeToAppTheme()
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

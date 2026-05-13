@@ -7,8 +7,10 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AppProviders } from "./contexts/AppProviders";
 import { createAppQueryClient } from "./query/queryClient";
+import { subscribeToAppTheme } from "./stores/uiStore";
 
 const queryClient = createAppQueryClient();
+subscribeToAppTheme();
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
