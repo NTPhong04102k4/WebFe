@@ -1,5 +1,5 @@
 export const brandRoute = {
-  getBrands: "/common/brand_accessories",
-  createBrand: "/common/brand_accessory/create",
-  updateBrand: "/common/brand_accessory/edit",
+  getBrands: "/common/brand-accessories",
+  createBrand: "/common/brand-accessories",
+  updateBrand: (name: string) => `/common/brand-accessories/${encodeURIComponent(name)}`,
 };

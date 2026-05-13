@@ -1,6 +1,6 @@
 export const serviceRoute = {
-  list: "/category/all",
-  create: "/category/create",
-  update: "/category/edit",
-  detail: "/category/detail",
+  list: "/categories",
+  create: "/categories",
+  update: (id: number) => `/categories/${encodeURIComponent(id)}`,
+  detail: (id: number) => `/categories/${encodeURIComponent(id)}`,
 };

@@ -1,3 +1,6 @@
 export const categoryRoute = {
-  getCategories: "/category/all",
+  list: "/categories",
+  detail: (id: number) => `/categories/${encodeURIComponent(id)}`,
+  create: "/categories",
+  update: (id: number) => `/categories/${encodeURIComponent(id)}`,
 };
