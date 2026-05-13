@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Car, Package, Wrench } from 'lucide-react'
+import { useBrandCarList } from '@/query/brand-car/useBrandCarQueries'
+import { useBodyTypeList } from '@/query/body-type/useBodyTypeQueries'
 
 export default function HomePage() {
+  const { data: brandCars = [] } = useBrandCarList()
+  const { data: bodyTypes = [] } = useBodyTypeList()
+  const visibleBrands = brandCars.slice(0, 6)
+  const visibleBodies = bodyTypes.slice(0, 6)
+
   return (
     <div>
       {/* Hero */}
@@ -39,6 +46,76 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {visibleBrands.length > 0 ? (
+        <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+          <div className="mb-8 flex items-end justify-between gap-4">
+            <h2 className="text-2xl font-bold text-slate-950">
+              Explore Our Premium Brands
+            </h2>
+            <Link
+              to="/cars"
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-900 hover:text-blue-700"
+            >
+              Show All Brands <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+            {visibleBrands.map((brand) => (
+              <Link
+                key={brand.brandCode}
+                to={`/cars?brandCode=${encodeURIComponent(brand.brandCode)}`}
+                className="flex min-h-36 flex-col items-center justify-center rounded-lg border border-slate-200 bg-white p-4 transition hover:border-blue-300 hover:shadow-sm"
+              >
+                {brand.logoPath ? (
+                  <img
+                    src={brand.logoPath}
+                    alt={brand.brandName}
+                    className="h-16 w-24 object-contain"
+                  />
+                ) : (
+                  <Car className="h-14 w-14 text-slate-300" />
+                )}
+                <span className="mt-4 text-center text-base font-semibold text-slate-950">
+                  {brand.brandName}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {visibleBodies.length > 0 ? (
+        <section className="bg-slate-50 py-14">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <h2 className="mb-8 text-center text-3xl font-bold text-slate-950">
+              Select a Body Styles
+            </h2>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+              {visibleBodies.map((body) => (
+                <Link
+                  key={body.bodyCode}
+                  to={`/cars?bodyCode=${encodeURIComponent(body.bodyCode)}`}
+                  className="flex flex-col items-center justify-end rounded-lg bg-white p-3 transition hover:shadow-sm"
+                >
+                  {body.imagePath ? (
+                    <img
+                      src={body.imagePath}
+                      alt={body.bodyName}
+                      className="h-24 w-full object-contain"
+                    />
+                  ) : (
+                    <Car className="h-20 w-20 text-slate-300" />
+                  )}
+                  <span className="mt-3 text-center text-base font-semibold text-slate-950">
+                    {body.bodyName}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* CTA */}
       <section className="bg-blue-600 py-16 text-center text-white">

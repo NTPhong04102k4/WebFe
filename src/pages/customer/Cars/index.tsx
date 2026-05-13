@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { carRouteFn } from '@/services/api/functions/Cars/Routes.Fn'
 import { useCartStore } from '@/stores/cartStore'
 import { formatCurrency } from '@/common/utils/formatCurrency'
 import type { CarResponse, CarResponseItem } from '@/shared/types/Reponse/Car'
+import { useBrandCarList } from '@/query/brand-car/useBrandCarQueries'
+import { useBodyTypeList } from '@/query/body-type/useBodyTypeQueries'
+import { SelectField } from '@/shared/components/Form/SelectField'
 
 function getImageSrc(car: CarResponseItem): string | undefined {
   const primary = car.primaryImagePath
@@ -18,12 +21,16 @@ function getImageSrc(car: CarResponseItem): string | undefined {
 
 export default function CustomerCarsPage() {
   const addItem = useCartStore((s) => s.addItem)
+  const [searchParams] = useSearchParams()
+  const { data: brandCars = [], isLoading: brandsLoading } = useBrandCarList()
+  const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList()
 
   const [page, setPage] = useState(1)
   const pageSize = 12
 
-  const [brandCode, setBrandCode] = useState('')
-  const [bodyCode, setBodyCode] = useState('')
+  const [brandCode, setBrandCode] = useState(() => searchParams.get('brandCode') ?? '')
+  const [bodyCode, setBodyCode] = useState(() => searchParams.get('bodyCode') ?? '')
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? searchParams.get('carName') ?? '')
   const [priceFrom, setPriceFrom] = useState<string>('')
   const [priceTo, setPriceTo] = useState<string>('')
 
@@ -44,12 +51,23 @@ export default function CustomerCarsPage() {
       'customer-cars',
       page,
       pageSize,
+      search,
       brandCode,
       bodyCode,
       priceFromNum,
       priceToNum,
     ],
-    [page, pageSize, brandCode, bodyCode, priceFromNum, priceToNum]
+    [page, pageSize, search, brandCode, bodyCode, priceFromNum, priceToNum]
+  )
+
+  const brandOptions = useMemo(
+    () => brandCars.map((brand) => ({ value: brand.brandCode, label: brand.brandName })),
+    [brandCars]
+  )
+
+  const bodyOptions = useMemo(
+    () => bodyTypes.map((body) => ({ value: body.bodyCode, label: body.bodyName })),
+    [bodyTypes]
   )
 
   const { data, isLoading, error } = useQuery<CarResponse, Error>({
@@ -57,16 +75,17 @@ export default function CustomerCarsPage() {
     placeholderData: keepPreviousData,
     queryFn: () =>
       carRouteFn.getPaging({
-        page,
+        pageIndex: page,
         pageSize,
+        search: search.trim(),
         brandCode: brandCode.trim(),
         bodyCode: bodyCode.trim(),
-        ...(priceFromNum !== undefined ? { PriceFrom: priceFromNum } : {}),
-        ...(priceToNum !== undefined ? { PriceTo: priceToNum } : {}),
+        ...(priceFromNum !== undefined ? { priceFrom: priceFromNum } : {}),
+        ...(priceToNum !== undefined ? { priceTo: priceToNum } : {}),
       }),
   })
 
-  const total = data?.total ?? 0
+  const total = data?.totalCount ?? 0
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   return (
@@ -81,32 +100,41 @@ export default function CustomerCarsPage() {
       </div>
 
       <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Brand code</span>
+            <span className="text-sm font-medium text-slate-700">Tên xe</span>
             <input
               className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              value={brandCode}
+              value={search}
               onChange={(e) => {
                 setPage(1)
-                setBrandCode(e.target.value)
+                setSearch(e.target.value)
               }}
-              placeholder="VD: TOYOTA"
+              placeholder="VD: Camry"
             />
           </label>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Body code</span>
-            <input
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-              value={bodyCode}
-              onChange={(e) => {
-                setPage(1)
-                setBodyCode(e.target.value)
-              }}
-              placeholder="VD: SEDAN"
-            />
-          </label>
+          <SelectField
+            label="Hãng xe"
+            value={brandCode}
+            options={brandOptions}
+            disabled={brandsLoading}
+            onChange={(e) => {
+              setPage(1)
+              setBrandCode(e.target.value)
+            }}
+          />
+
+          <SelectField
+            label="Kiểu thân xe"
+            value={bodyCode}
+            options={bodyOptions}
+            disabled={bodiesLoading}
+            onChange={(e) => {
+              setPage(1)
+              setBodyCode(e.target.value)
+            }}
+          />
 
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-slate-700">Giá từ</span>
@@ -143,6 +171,7 @@ export default function CustomerCarsPage() {
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             onClick={() => {
               setPage(1)
+              setSearch('')
               setBrandCode('')
               setBodyCode('')
               setPriceFrom('')

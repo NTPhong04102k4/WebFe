@@ -178,7 +178,7 @@ const mapCarToCarDetail = (car: CarResponseItem): CarDetail => {
 const Home = React.memo(() => {
   // Fetch cars from API
   const { data: carResponse, isLoading } = useCarList({
-    page: 1,
+    pageIndex: 1,
     pageSize: 100, // Get more cars for home page
     brandCode: "",
     bodyCode: "",
