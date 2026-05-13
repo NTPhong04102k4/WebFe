@@ -1,14 +1,8 @@
-import React, { useState } from "react";
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
+import { useMemo, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+import toast from "react-hot-toast";
 
+import { DataTable, EmptyState, Input, Modal, SelectField } from "src/components/common";
 import {
   useInsuranceCompanies,
   useInsuranceCompanyMutations,
@@ -18,385 +12,156 @@ import type {
   InsuranceCompanyViewModel,
 } from "src/services/api/functions/insurance/insurance.types";
 
-// ─── Schema ──────────────────────────────────────────────────────────────────
-
-const companySchema = yup.object({
-  companyCode: yup.string().required("Bắt buộc").max(20, "Tối đa 20 ký tự"),
-  companyName: yup.string().required("Bắt buộc").max(200, "Tối đa 200 ký tự"),
-  hotline: yup.string().nullable().optional(),
-  email: yup.string().email("Email không hợp lệ").nullable().optional(),
-  address: yup.string().nullable().optional(),
-  isActive: yup.boolean().required(),
-});
-
-type CompanyFormValues = yup.InferType<typeof companySchema>;
-
-// ─── Column helper ───────────────────────────────────────────────────────────
-
-const col = createColumnHelper<InsuranceCompanyViewModel>();
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function StatusBadge({ active }: { active: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-        active
-          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-          : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
-      }`}
-    >
-      {active ? "Hoạt động" : "Tạm dừng"}
-    </span>
-  );
-}
-
-interface CompanyDialogProps {
-  open: boolean;
-  editing: InsuranceCompanyViewModel | null;
-  onClose: () => void;
-}
-
-function CompanyDialog({ open, editing, onClose }: CompanyDialogProps) {
-  const { createCompany, updateCompany } = useInsuranceCompanyMutations();
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<CompanyFormValues>({
-    resolver: yupResolver(companySchema),
-    defaultValues: editing
-      ? {
-          companyCode: editing.companyCode,
-          companyName: editing.companyName,
-          hotline: editing.hotline ?? "",
-          email: editing.email ?? "",
-          address: editing.address ?? "",
-          isActive: editing.isActive,
-        }
-      : { companyCode: "", companyName: "", hotline: "", email: "", address: "", isActive: true },
-  });
-
-  React.useEffect(() => {
-    if (open) {
-      reset(
-        editing
-          ? {
-              companyCode: editing.companyCode,
-              companyName: editing.companyName,
-              hotline: editing.hotline ?? "",
-              email: editing.email ?? "",
-              address: editing.address ?? "",
-              isActive: editing.isActive,
-            }
-          : { companyCode: "", companyName: "", hotline: "", email: "", address: "", isActive: true }
-      );
-    }
-  }, [open, editing, reset]);
-
-  const onSubmit = handleSubmit(async (values) => {
-    const body: InsuranceCompanyRequest = {
-      companyCode: values.companyCode,
-      companyName: values.companyName,
-      hotline: values.hotline || null,
-      email: values.email || null,
-      address: values.address || null,
-      isActive: values.isActive,
-    };
-    if (editing) {
-      await updateCompany.mutateAsync({ id: editing.companyID, body });
-    } else {
-      await createCompany.mutateAsync(body);
-    }
-    onClose();
-  });
-
-  if (!open) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label={editing ? "Chỉnh sửa công ty bảo hiểm" : "Thêm công ty bảo hiểm"}
-    >
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-800">
-        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">
-          {editing ? "Chỉnh sửa công ty BH" : "Thêm công ty BH"}
-        </h2>
-
-        <form onSubmit={onSubmit} noValidate className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Mã công ty <span className="text-red-500">*</span>
-              </label>
-              <input
-                {...register("companyCode")}
-                disabled={!!editing}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-              />
-              {errors.companyCode && (
-                <p className="mt-1 text-xs text-red-500">{errors.companyCode.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Tên công ty <span className="text-red-500">*</span>
-              </label>
-              <input
-                {...register("companyName")}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-              />
-              {errors.companyName && (
-                <p className="mt-1 text-xs text-red-500">{errors.companyName.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Hotline
-              </label>
-              <input
-                {...register("hotline")}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Email
-              </label>
-              <input
-                {...register("email")}
-                type="email"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-              />
-              {errors.email && (
-                <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div className="col-span-2">
-              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Địa chỉ
-              </label>
-              <input
-                {...register("address")}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-              />
-            </div>
-
-            <div className="col-span-2 flex items-center gap-2">
-              <input
-                {...register("isActive")}
-                id="isActive"
-                type="checkbox"
-                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="isActive" className="text-sm text-slate-700 dark:text-slate-300">
-                Đang hoạt động
-              </label>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
-            >
-              Huỷ
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-            >
-              {isSubmitting ? "Đang lưu…" : editing ? "Cập nhật" : "Thêm mới"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// ─── Main page ────────────────────────────────────────────────────────────────
+const emptyForm: InsuranceCompanyRequest = {
+  companyCode: "",
+  companyName: "",
+  hotline: "",
+  email: "",
+  address: "",
+  logo: null,
+  isActive: true,
+};
 
 export default function AdminInsuranceCompaniesPage() {
-  const [filterActive, setFilterActive] = useState<"" | "true" | "false">("");
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const { data: companies = [], isLoading, error } = useInsuranceCompanies();
+  const { createCompany, updateCompany, deleteCompany } = useInsuranceCompanyMutations();
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<InsuranceCompanyViewModel | null>(null);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [form, setForm] = useState<InsuranceCompanyRequest>(emptyForm);
 
-  const { data: companies = [], isLoading } = useInsuranceCompanies();
-  const { deleteCompany } = useInsuranceCompanyMutations();
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return companies;
+    return companies.filter((company) =>
+      [company.companyCode, company.companyName, company.hotline, company.email]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q))
+    );
+  }, [companies, search]);
 
-  const filtered =
-    filterActive === ""
-      ? companies
-      : companies.filter((c) => String(c.isActive) === filterActive);
+  const columns = useMemo<ColumnDef<InsuranceCompanyViewModel>[]>(
+    () => [
+      {
+        accessorKey: "companyName",
+        header: "Cong ty",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+              {row.original.logoPath ? <img src={row.original.logoPath} alt={row.original.companyName} className="h-full w-full object-contain" /> : null}
+            </div>
+            <div>
+              <div className="font-semibold">{row.original.companyName}</div>
+              <div className="text-xs text-slate-500">Code: {row.original.companyCode}</div>
+            </div>
+          </div>
+        ),
+      },
+      { accessorKey: "hotline", header: "Hotline", cell: ({ getValue }) => String(getValue() || "-") },
+      { accessorKey: "email", header: "Email", cell: ({ getValue }) => String(getValue() || "-") },
+      { accessorKey: "isActive", header: "Trang thai", cell: ({ row }) => row.original.isActive ? "Dang dung" : "Tam dung" },
+      {
+        id: "actions",
+        header: "Hanh dong",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <div className="flex justify-end gap-2">
+            <button className="rounded-lg border px-3 py-1.5 text-sm" onClick={() => openEdit(row.original)}>Sua</button>
+            <button className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600" onClick={() => remove(row.original)}>Xoa</button>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
 
-  const columns = [
-    col.accessor("companyID", { header: "ID" }),
-    col.accessor("companyCode", { header: "Mã" }),
-    col.accessor("companyName", { header: "Tên công ty" }),
-    col.accessor("hotline", {
-      header: "Hotline",
-      cell: (ctx) => ctx.getValue() ?? "—",
-    }),
-    col.accessor("isActive", {
-      header: "Trạng thái",
-      cell: (ctx) => <StatusBadge active={ctx.getValue()} />,
-    }),
-    col.display({
-      id: "actions",
-      header: "Thao tác",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => { setEditing(row.original); setDialogOpen(true); }}
-            className="rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-          >
-            Sửa
-          </button>
-          <button
-            type="button"
-            onClick={() => setDeleteId(row.original.companyID)}
-            className="rounded px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-          >
-            Xóa
-          </button>
-        </div>
-      ),
-    }),
-  ];
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setOpen(true);
+  };
 
-  const table = useReactTable({
-    data: filtered,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
+  const openEdit = (company: InsuranceCompanyViewModel) => {
+    setEditing(company);
+    setForm({
+      companyCode: company.companyCode,
+      companyName: company.companyName,
+      hotline: company.hotline ?? "",
+      email: company.email ?? "",
+      address: company.address ?? "",
+      logo: null,
+      isActive: company.isActive,
+    });
+    setOpen(true);
+  };
 
-  const openCreate = () => { setEditing(null); setDialogOpen(true); };
-  const closeDialog = () => { setDialogOpen(false); setEditing(null); };
+  const save = async () => {
+    try {
+      if (editing) {
+        await updateCompany.mutateAsync({ id: editing.companyID, body: form });
+        toast.success("Cap nhat cong ty bao hiem thanh cong");
+      } else {
+        await createCompany.mutateAsync(form);
+        toast.success("Tao cong ty bao hiem thanh cong");
+      }
+      setOpen(false);
+    } catch {
+      toast.error("Luu cong ty bao hiem that bai");
+    }
+  };
 
-  const confirmDelete = async () => {
-    if (deleteId == null) return;
-    await deleteCompany.mutateAsync(deleteId);
-    setDeleteId(null);
+  const remove = async (company: InsuranceCompanyViewModel) => {
+    if (!window.confirm(`Xoa cong ty ${company.companyName}?`)) return;
+    try {
+      await deleteCompany.mutateAsync(company.companyID);
+      toast.success("Da xoa cong ty bao hiem");
+    } catch {
+      toast.error("Xoa cong ty bao hiem that bai");
+    }
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-          Công ty bảo hiểm
-        </h1>
-
-        <div className="flex items-center gap-2">
-          <select
-            aria-label="Lọc trạng thái"
-            value={filterActive}
-            onChange={(e) => setFilterActive(e.target.value as "" | "true" | "false")}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-          >
-            <option value="">Tất cả</option>
-            <option value="true">Hoạt động</option>
-            <option value="false">Tạm dừng</option>
-          </select>
-
-          <button
-            type="button"
-            onClick={openCreate}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            + Thêm
-          </button>
+    <div className="space-y-6">
+      <div className="rounded-xl border border-slate-300 bg-white p-4 dark:border-slate-600 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Cong ty bao hiem</h1>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Quan ly nha cung cap bao hiem</p>
+          </div>
+          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white" onClick={openCreate}>Tao cong ty</button>
         </div>
+        <Input className="mt-4 sm:max-w-sm" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tim ma, ten, hotline, email..." />
       </div>
 
-      {isLoading && (
-        <p className="py-8 text-center text-sm text-slate-500">Đang tải…</p>
-      )}
-
-      {!isLoading && filtered.length === 0 && (
-        <p className="py-8 text-center text-sm text-slate-400">Chưa có công ty nào.</p>
-      )}
-
-      {!isLoading && filtered.length > 0 && (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800">
-              {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id}>
-                  {hg.headers.map((h) => (
-                    <th
-                      key={h.id}
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"
-                    >
-                      {h.isPlaceholder
-                        ? null
-                        : flexRender(h.column.columnDef.header, h.getContext())}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-900">
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3 text-slate-700 dark:text-slate-300">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {error ? (
+        <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">Khong lay duoc danh sach cong ty bao hiem.</div>
+      ) : filtered.length === 0 && !isLoading ? (
+        <div className="rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900">
+          <EmptyState title="Khong co cong ty" description="Chua co cong ty bao hiem phu hop." />
         </div>
+      ) : (
+        <DataTable data={filtered} columns={columns} loading={isLoading} getRowId={(row) => String(row.companyID)} />
       )}
 
-      <CompanyDialog open={dialogOpen} editing={editing} onClose={closeDialog} />
-
-      {/* Confirm delete */}
-      {deleteId != null && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Xác nhận xóa"
-        >
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-800">
-            <p className="mb-4 text-sm text-slate-700 dark:text-slate-300">
-              Xóa công ty này? Hành động không thể hoàn tác.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setDeleteId(null)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm dark:border-slate-600"
-              >
-                Huỷ
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={deleteCompany.isPending}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
-              >
-                {deleteCompany.isPending ? "Đang xóa…" : "Xóa"}
-              </button>
-            </div>
-          </div>
+      <Modal open={open} onClose={() => setOpen(false)} title={editing ? "Sua cong ty bao hiem" : "Tao cong ty bao hiem"} footer={
+        <div className="flex justify-end gap-2">
+          <button className="rounded-lg border px-4 py-2 text-sm" onClick={() => setOpen(false)}>Huy</button>
+          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white" onClick={save} disabled={createCompany.isPending || updateCompany.isPending}>Luu</button>
         </div>
-      )}
+      }>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Input label="Ma cong ty" value={form.companyCode} disabled={Boolean(editing)} onChange={(event) => setForm({ ...form, companyCode: event.target.value })} />
+          <Input label="Ten cong ty" value={form.companyName} onChange={(event) => setForm({ ...form, companyName: event.target.value })} />
+          <Input label="Hotline" value={form.hotline ?? ""} onChange={(event) => setForm({ ...form, hotline: event.target.value })} />
+          <Input label="Email" type="email" value={form.email ?? ""} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+          <Input className="md:col-span-2" label="Dia chi" value={form.address ?? ""} onChange={(event) => setForm({ ...form, address: event.target.value })} />
+          <SelectField label="Trang thai" value={form.isActive ? "true" : "false"} options={[{ label: "Dang dung", value: "true" }, { label: "Tam dung", value: "false" }]} onChange={(event) => setForm({ ...form, isActive: event.target.value !== "false" })} />
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-slate-700">Logo</span>
+            <input type="file" accept="image/*" className="text-sm" onChange={(event) => setForm({ ...form, logo: event.target.files?.[0] ?? null })} />
+          </label>
+        </div>
+      </Modal>
     </div>
   );
 }

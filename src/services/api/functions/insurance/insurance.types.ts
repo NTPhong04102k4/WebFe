@@ -8,6 +8,7 @@ export interface InsuranceCompanyRequest {
   hotline?: string | null;
   email?: string | null;
   address?: string | null;
+  logo?: File | null;
   isActive: boolean;
 }
 
@@ -56,7 +57,7 @@ export interface InsurancePolicyViewModel {
   packageID: number;
   packageName?: string | null;
   companyName?: string | null;
-  userID: number;
+  userID: string;
   ownerFullName?: string | null;
   startDate: string;
   endDate: string;
@@ -68,6 +69,17 @@ export interface InsurancePolicyViewModel {
   soldByStaffName?: string | null;
   createdDate: string;
   daysToExpire: number;
+}
+
+export interface InsurancePolicyRequest {
+  customerVehicleID: number;
+  packageID: number;
+  userID: string;
+  startDate: string;
+  endDate: string;
+  premiumAmount: number;
+  soldByStaffID?: number | null;
+  document?: File | null;
 }
 
 export interface InsuranceClaimRequest {

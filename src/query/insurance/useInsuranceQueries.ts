@@ -7,6 +7,7 @@ import type {
   InsuranceClaimStatusRequest,
   InsuranceCompanyRequest,
   InsurancePackageRequest,
+  InsurancePolicyRequest,
 } from "src/services/api/functions/insurance/insurance.types";
 
 import { insuranceKeys } from "./keys";
@@ -31,7 +32,7 @@ export function useInsurancePackages(companyId?: number) {
   });
 }
 
-export function useMyPolicies(userId: number | undefined, page = 1, pageSize = 20) {
+export function useMyPolicies(userId: string | undefined, page = 1, pageSize = 20) {
   return useQuery({
     queryKey: insuranceKeys.policies(userId),
     queryFn: ({ signal }) =>
@@ -40,6 +41,20 @@ export function useMyPolicies(userId: number | undefined, page = 1, pageSize = 2
         { signal }
       ),
     enabled: userId != null,
+    staleTime: SEARCH_STALE_MS,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useInsurancePolicies(params: {
+  page?: number;
+  pageSize?: number;
+  userId?: string;
+  status?: string;
+}) {
+  return useQuery({
+    queryKey: insuranceKeys.policies(params),
+    queryFn: ({ signal }) => insuranceApi.listPolicies(params, { signal }),
     staleTime: SEARCH_STALE_MS,
     placeholderData: keepPreviousData,
   });
@@ -56,8 +71,9 @@ export function useExpiringPolicies(withinDays: number, enabled = true) {
 }
 
 export function useClaimsList(page = 1, pageSize = 20, status?: string) {
+  const params = { page, pageSize, status };
   return useQuery({
-    queryKey: insuranceKeys.claims(status),
+    queryKey: insuranceKeys.claims(params),
     queryFn: ({ signal }) =>
       insuranceApi.listClaims({ page, pageSize, status }, { signal }),
     staleTime: SEARCH_STALE_MS,
@@ -95,7 +111,7 @@ export function useInsuranceMutations() {
 
   return {
     createPolicy: useMutation({
-      mutationFn: insuranceApi.createPolicy,
+      mutationFn: (body: InsurancePolicyRequest) => insuranceApi.createPolicy(body),
       onSuccess: invalidate,
     }),
     cancelPolicy: useMutation({
@@ -120,6 +136,15 @@ export function useInsuranceMutations() {
     createPackage: useMutation({
       mutationFn: (body: InsurancePackageRequest) =>
         insuranceApi.createPackage(body),
+      onSuccess: invalidate,
+    }),
+    updatePackage: useMutation({
+      mutationFn: ({ id, body }: { id: number; body: InsurancePackageRequest }) =>
+        insuranceApi.updatePackage(id, body),
+      onSuccess: invalidate,
+    }),
+    deletePackage: useMutation({
+      mutationFn: (id: number) => insuranceApi.deletePackage(id),
       onSuccess: invalidate,
     }),
   };

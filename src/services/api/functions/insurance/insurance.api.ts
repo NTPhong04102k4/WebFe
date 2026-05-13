@@ -1,4 +1,4 @@
-import apiClient from "../..";
+import apiClient from "@/services/api/axiosInstance";
 import { API } from "../../endpoints";
 import type { ApiRequestOptions } from "../../requestOptions";
 import { withSignal } from "../../requestOptions";
@@ -12,20 +12,32 @@ import type {
   InsuranceCompanyViewModel,
   InsurancePackageRequest,
   InsurancePackageViewModel,
+  InsurancePolicyRequest,
   InsurancePolicyViewModel,
   PolicyListResult,
 } from "./insurance.types";
+import type { OperationResult } from "src/services/types/common.types";
 
-function policyFormData(fields: {
-  customerVehicleID: number;
-  packageID: number;
-  userID: number;
-  startDate: string;
-  endDate: string;
-  premiumAmount: number;
-  soldByStaffID?: number | null;
-  document?: File | null;
-}): FormData {
+function unwrapOperation<T>(payload: T | OperationResult<T>): T {
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return (payload as OperationResult<T>).data as T;
+  }
+  return payload as T;
+}
+
+function companyFormData(body: InsuranceCompanyRequest): FormData {
+  const fd = new FormData();
+  fd.append("companyCode", body.companyCode);
+  fd.append("companyName", body.companyName);
+  fd.append("hotline", body.hotline ?? "");
+  fd.append("email", body.email ?? "");
+  fd.append("address", body.address ?? "");
+  fd.append("isActive", String(body.isActive));
+  if (body.logo) fd.append("logo", body.logo);
+  return fd;
+}
+
+function policyFormData(fields: InsurancePolicyRequest): FormData {
   const fd = new FormData();
   fd.append("customerVehicleID", String(fields.customerVehicleID));
   fd.append("packageID", String(fields.packageID));
@@ -60,12 +72,12 @@ export const insuranceApi = {
   },
 
   createCompany: async (body: InsuranceCompanyRequest, options?: ApiRequestOptions) => {
-    const res = await apiClient.post<InsuranceCompanyViewModel>(
+    const res = await apiClient.post<InsuranceCompanyViewModel | OperationResult<number>>(
       API.insurance.companies,
-      body,
+      companyFormData(body),
       withSignal({}, options)
     );
-    return res.data;
+    return unwrapOperation(res.data);
   },
 
   updateCompany: async (
@@ -73,16 +85,17 @@ export const insuranceApi = {
     body: InsuranceCompanyRequest,
     options?: ApiRequestOptions
   ) => {
-    const res = await apiClient.put<InsuranceCompanyViewModel>(
+    const res = await apiClient.put<InsuranceCompanyViewModel | OperationResult>(
       API.insurance.company(id),
-      body,
+      companyFormData(body),
       withSignal({}, options)
     );
-    return res.data;
+    return unwrapOperation(res.data);
   },
 
   deleteCompany: async (id: number, options?: ApiRequestOptions) => {
-    await apiClient.delete(API.insurance.company(id), withSignal({}, options));
+    const res = await apiClient.delete<OperationResult>(API.insurance.company(id), withSignal({}, options));
+    return res.data;
   },
 
   listPackages: async (
@@ -105,30 +118,31 @@ export const insuranceApi = {
   },
 
   createPackage: async (body: InsurancePackageRequest) => {
-    const res = await apiClient.post<InsurancePackageViewModel>(
+    const res = await apiClient.post<InsurancePackageViewModel | OperationResult<number>>(
       API.insurance.packages,
       body
     );
-    return res.data;
+    return unwrapOperation(res.data);
   },
 
   updatePackage: async (id: number, body: InsurancePackageRequest) => {
-    const res = await apiClient.put<InsurancePackageViewModel>(
+    const res = await apiClient.put<InsurancePackageViewModel | OperationResult>(
       API.insurance.package(id),
       body
     );
-    return res.data;
+    return unwrapOperation(res.data);
   },
 
   deletePackage: async (id: number) => {
-    await apiClient.delete(API.insurance.package(id));
+    const res = await apiClient.delete<OperationResult>(API.insurance.package(id));
+    return res.data;
   },
 
   listPolicies: async (
     params: {
       page?: number;
       pageSize?: number;
-      userId?: number;
+      userId?: string;
       status?: string;
     },
     options?: ApiRequestOptions
@@ -159,22 +173,13 @@ export const insuranceApi = {
     return res.data;
   },
 
-  createPolicy: async (fields: {
-    customerVehicleID: number;
-    packageID: number;
-    userID: number;
-    startDate: string;
-    endDate: string;
-    premiumAmount: number;
-    soldByStaffID?: number | null;
-    document?: File | null;
-  }) => {
+  createPolicy: async (fields: InsurancePolicyRequest) => {
     const fd = policyFormData(fields);
-    const res = await apiClient.post<InsurancePolicyViewModel>(
+    const res = await apiClient.post<InsurancePolicyViewModel | OperationResult<{ policyID: number; policyNumber: string }>>(
       API.insurance.policies,
       fd
     );
-    return res.data;
+    return unwrapOperation(res.data);
   },
 
   cancelPolicy: async (id: number) => {
@@ -205,11 +210,11 @@ export const insuranceApi = {
   },
 
   createClaim: async (body: InsuranceClaimRequest) => {
-    const res = await apiClient.post<InsuranceClaimViewModel>(
+    const res = await apiClient.post<InsuranceClaimViewModel | OperationResult<{ claimID: number; claimNumber: string }>>(
       API.insurance.claims,
       body
     );
-    return res.data;
+    return unwrapOperation(res.data);
   },
 
   patchClaimStatus: async (id: number, body: InsuranceClaimStatusRequest) => {

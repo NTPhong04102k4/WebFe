@@ -3,10 +3,10 @@ export const insuranceKeys = {
   companies: () => [...insuranceKeys.all, "companies"] as const,
   packages: (companyId?: number) =>
     [...insuranceKeys.all, "packages", { companyId }] as const,
-  policies: (userId?: number) =>
-    [...insuranceKeys.all, "policies", { userId }] as const,
+  policies: (params?: { page?: number; pageSize?: number; userId?: string; status?: string }) =>
+    [...insuranceKeys.all, "policies", params ?? {}] as const,
   expiring: (withinDays: number) =>
     [...insuranceKeys.all, "expiring", withinDays] as const,
-  claims: (status?: string) =>
-    [...insuranceKeys.all, "claims", { status }] as const,
+  claims: (params?: { page?: number; pageSize?: number; status?: string }) =>
+    [...insuranceKeys.all, "claims", params ?? {}] as const,
 };
