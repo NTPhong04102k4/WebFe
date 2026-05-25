@@ -34,10 +34,13 @@ export default function LoginPage() {
   const onSubmit = async (values: FormData) => {
     try {
       const { data } = await loginAsync(values)
-      const token = data.token
+      // Backend TokenResponse: { accessToken, refreshToken, ... }
+      // Fallback về `token` cho compat với phiên bản API cũ
+      const token = data.accessToken ?? data.token ?? ''
+      const rToken = data.refreshToken ?? ''
       const decoded = decodeToken(token)
       if (decoded) {
-        setTokens(token, '')
+        setTokens(token, rToken)
         setUser(decoded)
       }
       notify.success('Đăng nhập thành công!')
@@ -51,6 +54,7 @@ export default function LoginPage() {
       notify.error(extractError(err))
     }
   }
+
 
   const handleSocialLogin = async (provider: SocialAuthProvider) => {
     try {

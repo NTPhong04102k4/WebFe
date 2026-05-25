@@ -1,18 +1,30 @@
 import { ENV } from "./environment";
 
-// OAuth Configuration
+/**
+ * Cấu hình OAuth — chỉ dùng làm reference/documentation.
+ *
+ * Flow thực tế: Frontend mở popup đến backend `/auth/login/google` hoặc
+ * `/auth/login/facebook`. Backend xử lý toàn bộ Challenge → Callback → JWT,
+ * rồi postMessage token về window.opener (frontend).
+ *
+ * Không dùng authUrl hay redirectUri này để tự build URL OAuth từ frontend.
+ */
 export const OAUTH_CONFIG = {
   google: {
     clientId: ENV.GOOGLE_CLIENT_ID,
-    redirectUri: `${ENV.API_URL}/signin-google`,
+    /**
+     * Đây là URL BACKEND khởi động luồng OAuth (không phải Google callback).
+     * Frontend popup sẽ mở URL này.
+     */
+    loginUrl: `${ENV.API_URL}/auth/login/google`,
     scope: "openid email profile",
-    authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
   },
   facebook: {
     clientId: ENV.FACEBOOK_APP_ID,
-    redirectUri: `${ENV.API_URL}/signin-facebook`,
-    scope:
-      "email,public_profile,user_birthday,user_gender,user_location,user_hometown",
-    authUrl: "https://www.facebook.com/v18.0/dialog/oauth",
+    /**
+     * Đây là URL BACKEND khởi động luồng OAuth.
+     */
+    loginUrl: `${ENV.API_URL}/auth/login/facebook`,
+    scope: "email,public_profile",
   },
-};
+} as const;

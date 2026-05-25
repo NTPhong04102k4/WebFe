@@ -47,27 +47,35 @@ function mapVerifyOtpUser(
 export const useAuthQuery = () => {
   const queryClient = useQueryClient();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
   const currentUser = useAuthStore((s) => s.user);
   const setTokens = useAuthStore((s) => s.setTokens);
   const setUser = useAuthStore((s) => s.setUser);
   const clearUser = useAuthStore((s) => s.clearUser);
   const logoutStore = useAuthStore((s) => s.logout);
-  const userName = getTokenClaims(accessToken);
-  logger.log("🔍 userName:", userName);
 
+  // ─── Login mutation ────────────────────────────────────────────────────────
   const loginMutation = useMutation({
     mutationFn: authAPI.login,
     onSuccess: async (response) => {
-      const token = response.data.token ?? "";
-      setTokens(token, "");
+      // Backend trả TokenResponse: { accessToken, refreshToken, expiresIn, ... }
+      // Một số version cũ có thể vẫn trả `token` — dùng cả hai
+      const token = response.data.accessToken ?? response.data.token ?? "";
+      const rToken = response.data.refreshToken ?? "";
+
+      setTokens(token, rToken);
       clearUser();
 
       try {
         const claims = getTokenClaims(token);
-        const profileResponse = await authAPI.getProfile(claims?.sub ?? "");
-        if (profileResponse?.data) {
-          setUser(mapProfileToAuthUser(profileResponse.data, token));
-          queryClient.setQueryData(["profile"], profileResponse);
+        // Sub claim chứa userUUID (string) hoặc username
+        const userUUID = claims?.sub ?? "";
+        if (userUUID) {
+          const profileResponse = await authAPI.getProfile(userUUID);
+          if (profileResponse?.data) {
+            setUser(mapProfileToAuthUser(profileResponse.data, token));
+            queryClient.setQueryData(["profile"], profileResponse);
+          }
         }
       } catch (error) {
         logger.error("Failed to fetch profile after login:", error);
@@ -75,19 +83,22 @@ export const useAuthQuery = () => {
     },
   });
 
+  // ─── Register mutation ─────────────────────────────────────────────────────
   const registerMutation = useMutation({
     mutationFn: authAPI.register,
     onSuccess: () => {},
   });
 
+  // ─── Admin login mutation ──────────────────────────────────────────────────
   const adminLoginMutation = useMutation({
     mutationFn: authAPI.adminLogin,
     onSuccess: (response) => {
       const token = response.data.token ?? "";
+      const rToken = response.data.refreshToken ?? "";
       const claims = getTokenClaims(token);
       const roles = getRolesFromToken(token);
 
-      setTokens(token, "");
+      setTokens(token, rToken);
       setUser({
         id: Number(claims?.sub ?? 0) || 0,
         userID: Number(claims?.sub ?? 0) || 0,
@@ -102,6 +113,7 @@ export const useAuthQuery = () => {
     },
   });
 
+  // ─── Verify OTP mutation ───────────────────────────────────────────────────
   const verifyOtpMutation = useMutation({
     mutationFn: authAPI.verifyOtp,
     onSuccess: (response) => {
@@ -112,20 +124,26 @@ export const useAuthQuery = () => {
     },
   });
 
+  // ─── Resend OTP mutation ───────────────────────────────────────────────────
   const resendOtpMutation = useMutation({
     mutationFn: authAPI.resendOtp,
   });
 
+  // ─── Logout mutation ───────────────────────────────────────────────────────
   const logoutMutation = useMutation({
-    mutationFn: authAPI.logout,
+    mutationFn: () => authAPI.logout(refreshToken ?? undefined),
     onSuccess: () => {
       logoutStore();
       queryClient.clear();
-      // Don't redirect here - let the component handle navigation
-      // This prevents page reload
+    },
+    onError: () => {
+      // Dù API lỗi vẫn clear local state
+      logoutStore();
+      queryClient.clear();
     },
   });
 
+  // ─── Profile query ─────────────────────────────────────────────────────────
   const profileQuery = useQuery({
     queryKey: ["profile"],
     queryFn: () =>
@@ -155,28 +173,35 @@ export const useAuthQuery = () => {
     loginAsync: loginMutation.mutateAsync,
     isLoginLoading: loginMutation.isPending,
     loginError: loginMutation.error,
+
     adminLogin: adminLoginMutation.mutate,
     adminLoginAsync: adminLoginMutation.mutateAsync,
     isAdminLoginLoading: adminLoginMutation.isPending,
     adminLoginError: adminLoginMutation.error,
+
     register: registerMutation.mutate,
     registerAsync: registerMutation.mutateAsync,
     isRegisterLoading: registerMutation.isPending,
     registerError: registerMutation.error,
+
     verifyOtp: verifyOtpMutation.mutate,
     verifyOtpAsync: verifyOtpMutation.mutateAsync,
     isVerifyOtpLoading: verifyOtpMutation.isPending,
     verifyOtpError: verifyOtpMutation.error,
+
     resendOtp: resendOtpMutation.mutate,
     resendOtpAsync: resendOtpMutation.mutateAsync,
     isResendOtpLoading: resendOtpMutation.isPending,
     resendOtpError: resendOtpMutation.error,
+
     logout: logoutMutation.mutate,
     isLogoutLoading: logoutMutation.isPending,
+
     profile: profileQuery.data?.data,
     isProfileLoading: profileQuery.isLoading,
     profileError: profileQuery.error,
     refetchProfile: profileQuery.refetch,
+
     isLoading:
       loginMutation.isPending ||
       adminLoginMutation.isPending ||
@@ -184,6 +209,7 @@ export const useAuthQuery = () => {
       verifyOtpMutation.isPending ||
       resendOtpMutation.isPending ||
       logoutMutation.isPending,
+
     error:
       loginMutation.error ||
       adminLoginMutation.error ||

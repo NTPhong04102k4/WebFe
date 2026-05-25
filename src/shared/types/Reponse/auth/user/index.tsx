@@ -1,6 +1,13 @@
 export interface LoginResponse {
-  token: string;
-  message: string;
+  /** Primary access token (camelCase từ backend TokenResponse) */
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: string;
+  scope: string;
+  /** Backward-compat: một số endpoint trả `token` thay vì `accessToken` */
+  token?: string;
+  message?: string;
 }
 export interface RegisterResponse {
   success: boolean;

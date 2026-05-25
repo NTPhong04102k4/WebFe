@@ -32,45 +32,48 @@ export const useSocialLogin = ({
   const { loginWithFacebook: facebookLogin } = useFacebookAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  const saveCredentialsAndLog = (
+  /**
+   * Lưu token + user vào store và điều hướng theo role.
+   */
+  const saveAndNavigate = (
     token: string,
     user: ReturnType<typeof useAuthStore.getState>["user"],
-    type: "GOOGLE" | "FACEBOOK"
+    provider: "GOOGLE" | "FACEBOOK"
   ) => {
     const roles = getRolesFromToken(token);
-    logger.log("🔍 [Social Login] Token roles:", roles, "User:", user);
-
-    // Zustand migration: lưu access/refresh + user vào store
     const refreshToken = useAuthStore.getState().refreshToken ?? "";
+
     useAuthStore.getState().setTokens(token, refreshToken);
     if (user) {
       useAuthStore.getState().setUser(user);
     }
 
+    const label = provider === "GOOGLE" ? "Google" : "Facebook";
     const message = isLogin
-      ? `Đăng nhập ${type === "GOOGLE" ? "Google" : "Facebook"} thành công!`
-      : `Đăng ký ${type === "GOOGLE" ? "Google" : "Facebook"} thành công!`;
+      ? `Đăng nhập ${label} thành công!`
+      : `Đăng ký ${label} thành công!`;
 
     onSuccess?.(message);
+    logger.log(`✅ [Social Login] ${label} — roles:`, roles);
 
-    const isSuperAdmin = roles.some((r) => r.toLowerCase() === "superadmin");
-    logger.log("🔍 [Social Login] Is SuperAdmin:", isSuperAdmin);
+    const isAdmin = roles.some((r) =>
+      ["admin", "superadmin", "staff"].includes(r.toLowerCase())
+    );
 
-    setTimeout(() => {
-      if (isSuperAdmin) {
-        navigate("/admin/dashboard", { replace: true });
-      } else {
-        logger.log("Regular user, navigating to home");
-        navigate("/", { replace: true });
-      }
-    }, 3000);
+    // Navigate ngay — không cần setTimeout
+    if (isAdmin) {
+      navigate("/admin/dashboard", { replace: true });
+    } else {
+      navigate("/", { replace: true });
+    }
   };
 
+  // ─── Google ────────────────────────────────────────────────────────────────
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
       const googleUser = await googleLogin();
-      const token = googleUser.tokens?.access_token || "";
+      const token = googleUser.tokens?.access_token ?? "";
 
       if (!token) {
         throw new Error("Không nhận được token từ Google");
@@ -82,25 +85,26 @@ export const useSocialLogin = ({
           ? toAuthUserFromGoogle(googleUser, token)
           : mapGoogleUser(googleUser, token);
 
-      saveCredentialsAndLog(token, user, "GOOGLE");
+      saveAndNavigate(token, user, "GOOGLE");
     } catch (error: any) {
       const errorMessage =
-        error?.message ||
+        error?.message ??
         (isLogin
           ? "Đăng nhập Google thất bại. Vui lòng thử lại."
           : "Đăng ký Google thất bại. Vui lòng thử lại.");
+      logger.error("[Social Login] Google error:", errorMessage);
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ─── Facebook ──────────────────────────────────────────────────────────────
   const handleFacebookLogin = async () => {
     setIsLoading(true);
     try {
       const facebookUser = await facebookLogin();
-
-      const token = facebookUser.tokens?.access_token || "";
+      const token = facebookUser.tokens?.access_token ?? "";
 
       if (!token) {
         throw new Error("Không nhận được token từ Facebook");
@@ -112,13 +116,14 @@ export const useSocialLogin = ({
           ? toAuthUserFromFacebook(facebookUser, token)
           : mapFacebookUser(facebookUser, token);
 
-      saveCredentialsAndLog(token, user, "FACEBOOK");
+      saveAndNavigate(token, user, "FACEBOOK");
     } catch (error: any) {
       const errorMessage =
-        error?.message ||
+        error?.message ??
         (isLogin
           ? "Đăng nhập Facebook thất bại. Vui lòng thử lại."
           : "Đăng ký Facebook thất bại. Vui lòng thử lại.");
+      logger.error("[Social Login] Facebook error:", errorMessage);
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
