@@ -78,6 +78,11 @@ export const aiApi = {
     return unwrap(res.data);
   },
 
+  deleteSession: async (sessionId: number) => {
+    const res = await apiClient.delete(API.ai.session(sessionId));
+    return res.data;
+  },
+
   feedback: async (messageId: number, body: { rating: number; feedback?: string | null }) => {
     const res = await apiClient.post(API.ai.feedback(messageId), body);
     return res.data;
