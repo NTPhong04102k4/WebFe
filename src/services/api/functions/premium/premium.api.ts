@@ -1,0 +1,51 @@
+import apiClient from "@/services/api/axiosInstance";
+import { API } from "../../endpoints";
+import type { ApiRequestOptions } from "../../requestOptions";
+import { withSignal } from "../../requestOptions";
+import type { OperationResult } from "src/services/types/common.types";
+import type {
+  PremiumPlan,
+  SubscribeRequest,
+  UserPremiumResponse,
+} from "./premium.types";
+
+export const premiumApi = {
+  getAllPlans: async (options?: ApiRequestOptions) => {
+    const res = await apiClient.get<PremiumPlan[] | OperationResult<PremiumPlan[]>>(
+      API.premium.plans,
+      withSignal({}, options)
+    );
+    const d = res.data;
+    if (d && typeof d === "object" && "data" in d) {
+      return (d as OperationResult<PremiumPlan[]>).data ?? [];
+    }
+    return d as PremiumPlan[];
+  },
+
+  getMySubscription: async (options?: ApiRequestOptions) => {
+    const res = await apiClient.get<UserPremiumResponse | OperationResult<UserPremiumResponse>>(
+      API.premium.mySubscription,
+      withSignal({}, options)
+    );
+    const d = res.data;
+    if (d && typeof d === "object" && "data" in d && !("hasActiveSubscription" in d)) {
+      return (d as OperationResult<UserPremiumResponse>).data ?? { subscription: null, hasActiveSubscription: false };
+    }
+    return d as UserPremiumResponse;
+  },
+
+  subscribe: async (req: SubscribeRequest) => {
+    const res = await apiClient.post<OperationResult>(API.premium.subscribe, req);
+    return res.data;
+  },
+
+  cancelSubscription: async () => {
+    const res = await apiClient.post<OperationResult>(API.premium.cancel, {});
+    return res.data;
+  },
+
+  renewSubscription: async () => {
+    const res = await apiClient.post<OperationResult>(API.premium.renew, {});
+    return res.data;
+  },
+};

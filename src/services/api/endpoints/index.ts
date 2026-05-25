@@ -189,6 +189,13 @@ export const API = {
     detail: (id: string | number) => `/services/${id}`,
     status: (id: string | number) => `/services/${id}/status`,
   },
+  premium: {
+    plans: "/premium-plans",
+    mySubscription: "/premium-plans/my-subscription",
+    subscribe: "/premium-plans/subscribe",
+    cancel: "/premium-plans/cancel",
+    renew: "/premium-plans/renew",
+  },
   review: {
     carList: (carId: string | number) => `/reviews/cars/${carId}`,
     carStats: (carId: string | number) => `/reviews/cars/${carId}/stats`,

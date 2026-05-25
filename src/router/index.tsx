@@ -21,6 +21,7 @@ const ProfilePage         = lazy(() => import('@/pages/customer/Profile'))
 const ReviewsPage         = lazy(() => import('@/pages/customer/Reviews'))
 const ChatPage            = lazy(() => import('@/pages/customer/Chat'))
 const AiChatPage          = lazy(() => import('@/pages/customer/AiChat'))
+const PremiumPlansPage    = lazy(() => import('@/pages/customer/Premium'))
 
 // ── Auth pages ────────────────────────────────────────────────────────────────
 const LoginPage           = lazy(() => import('@/pages/auth/Login'))
@@ -75,6 +76,7 @@ export default function AppRouter() {
           <Route path="accessories/:id" element={<AccessoryDetailPage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="ai-chat" element={<AiChatPage />} />
+          <Route path="premium" element={<PremiumPlansPage />} />
 
           {/* Cần đăng nhập */}
           <Route path="orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
