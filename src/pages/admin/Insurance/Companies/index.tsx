@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { DataTable, EmptyState, Input, Modal, SelectField } from "src/components/common";
 import {
@@ -99,14 +99,14 @@ export default function AdminInsuranceCompaniesPage() {
     try {
       if (editing) {
         await updateCompany.mutateAsync({ id: editing.companyID, body: form });
-        toast.success("Cap nhat cong ty bao hiem thanh cong");
+        notify.success("Cap nhat cong ty bao hiem thanh cong");
       } else {
         await createCompany.mutateAsync(form);
-        toast.success("Tao cong ty bao hiem thanh cong");
+        notify.success("Tao cong ty bao hiem thanh cong");
       }
       setOpen(false);
     } catch {
-      toast.error("Luu cong ty bao hiem that bai");
+      notify.error("Luu cong ty bao hiem that bai");
     }
   };
 
@@ -114,9 +114,9 @@ export default function AdminInsuranceCompaniesPage() {
     if (!window.confirm(`Xoa cong ty ${company.companyName}?`)) return;
     try {
       await deleteCompany.mutateAsync(company.companyID);
-      toast.success("Da xoa cong ty bao hiem");
+      notify.success("Da xoa cong ty bao hiem");
     } catch {
-      toast.error("Xoa cong ty bao hiem that bai");
+      notify.error("Xoa cong ty bao hiem that bai");
     }
   };
 

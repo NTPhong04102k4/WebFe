@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { DataTable, EmptyState, Input, Modal, SelectField } from "src/components/common";
 import {
@@ -86,14 +86,14 @@ export default function AdminTechniciansPage() {
       const payload = { ...form, hireDate: new Date(form.hireDate).toISOString() };
       if (editing) {
         await updateTechnician.mutateAsync({ id: editing.technicianID, body: payload });
-        toast.success("Cap nhat ky thuat vien thanh cong");
+        notify.success("Cap nhat ky thuat vien thanh cong");
       } else {
         await createTechnician.mutateAsync(payload);
-        toast.success("Tao ky thuat vien thanh cong");
+        notify.success("Tao ky thuat vien thanh cong");
       }
       setOpen(false);
     } catch {
-      toast.error("Luu ky thuat vien that bai");
+      notify.error("Luu ky thuat vien that bai");
     }
   };
 
@@ -101,9 +101,9 @@ export default function AdminTechniciansPage() {
     if (!window.confirm(`Xoa ky thuat vien ${tech.staffFullName || tech.staffID}?`)) return;
     try {
       await deleteTechnician.mutateAsync(tech.technicianID);
-      toast.success("Da xoa ky thuat vien");
+      notify.success("Da xoa ky thuat vien");
     } catch {
-      toast.error("Xoa ky thuat vien that bai");
+      notify.error("Xoa ky thuat vien that bai");
     }
   };
 

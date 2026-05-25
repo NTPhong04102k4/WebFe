@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { formatCurrency } from "@/common/utils/formatCurrency";
@@ -67,7 +67,7 @@ export default function CustomerAccessoryDetailPage() {
                   price: data.price,
                   imagePath: data.imagePath,
                 });
-                toast.success("Đã thêm vào giỏ hàng");
+                notify.success("Đã thêm vào giỏ hàng");
               }}
             >
               Thêm vào giỏ

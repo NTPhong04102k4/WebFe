@@ -246,7 +246,7 @@ export default function StaffPage() {
     const locationID = Number(values.locationID);
     const roleID = Number(values.roleID);
     if (!locationID || !roleID) {
-      notify.error("Chon location va role hop le");
+      notify.info("Chọn location và role hợp lệ");
       return;
     }
 
@@ -323,7 +323,7 @@ export default function StaffPage() {
 
   const recoverSuperAdmin = async (values: RecoveryForm) => {
     if (values.newPassword !== values.confirmPassword) {
-      notify.error("Mat khau xac nhan khong khop");
+      notify.info("Mật khẩu xác nhận không khớp");
       return;
     }
 

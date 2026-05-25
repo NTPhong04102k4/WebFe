@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { notify } from "@/components/core/Feedback/toast"
 import { useAuthQuery } from '@/query/auth/useAuthQuery'
 import { extractError } from '@/common/utils/errorMessage'
 import { canAccessStaffBackend } from '@/common/utils/roles'
@@ -36,13 +36,13 @@ export default function AdminLoginPage() {
       const roles = getRolesFromToken(data.token)
       if (!canAccessStaffBackend(roles)) {
         logout()
-        toast.error('Tai khoan nay khong co quyen vao khu quan tri')
+        notify.info('Tài khoản này không có quyền vào khu quản trị')
         return
       }
-      toast.success(`Chào mừng, ${data.fullName}!`)
+      notify.success(`Chào mừng, ${data.fullName}!`)
       navigate('/admin/dashboard', { replace: true })
     } catch (err) {
-      toast.error(extractError(err))
+      notify.error(extractError(err))
     }
   }
 

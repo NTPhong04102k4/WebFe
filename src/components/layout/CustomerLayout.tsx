@@ -3,7 +3,7 @@ import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { Car, ShoppingCart, User, LogOut, Menu, X, MessageCircle, Bot } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useCartStore } from '@/stores/cartStore'
-import toast from 'react-hot-toast'
+import { notify } from "@/components/core/Feedback/toast"
 import api from '@/services/api/axiosInstance'
 import { canAccessStaffBackend, getUserRoles } from '@/common/utils/roles'
 
@@ -29,7 +29,7 @@ export default function CustomerLayout() {
       // ignore
     } finally {
       logout()
-      toast.success('Đã đăng xuất')
+      notify.success('Đã đăng xuất')
       navigate('/')
     }
   }

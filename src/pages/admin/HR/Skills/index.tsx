@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { DataTable, EmptyState, Input, Modal, SelectField } from "src/components/common";
 import {
@@ -96,14 +96,14 @@ export default function AdminHrSkillsPage() {
       };
       if (editing) {
         await updateSkill.mutateAsync({ id: editing.skillID, body: payload });
-        toast.success("Cap nhat ky nang thanh cong");
+        notify.success("Cap nhat ky nang thanh cong");
       } else {
         await createSkill.mutateAsync(payload);
-        toast.success("Tao ky nang thanh cong");
+        notify.success("Tao ky nang thanh cong");
       }
       close();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Luu ky nang that bai");
+      notify.error(err instanceof Error ? err.message : "Luu ky nang that bai");
     }
   };
 
@@ -111,9 +111,9 @@ export default function AdminHrSkillsPage() {
     if (!window.confirm(`Xoa ky nang ${skill.skillName}?`)) return;
     try {
       await deleteSkill.mutateAsync(skill.skillID);
-      toast.success("Da xoa ky nang");
+      notify.success("Da xoa ky nang");
     } catch {
-      toast.error("Xoa ky nang that bai");
+      notify.error("Xoa ky nang that bai");
     }
   };
 

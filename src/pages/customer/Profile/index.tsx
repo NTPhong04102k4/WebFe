@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 import { useMySubscription, usePremiumMutations } from "@/query/premium/usePremiumQueries";
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
@@ -19,15 +19,15 @@ function SubscriptionSection() {
 
   const handleCancel = () => {
     cancel.mutate(undefined, {
-      onSuccess: () => toast.success("Đã hủy gia hạn tự động."),
-      onError: () => toast.error("Hủy thất bại. Vui lòng thử lại."),
+      onSuccess: () => notify.success("Đã hủy gia hạn tự động."),
+      onError: () => notify.error("Hủy thất bại. Vui lòng thử lại."),
     });
   };
 
   const handleRenew = () => {
     renew.mutate(undefined, {
-      onSuccess: () => toast.success("Gia hạn thành công!"),
-      onError: () => toast.error("Gia hạn thất bại. Vui lòng thử lại."),
+      onSuccess: () => notify.success("Gia hạn thành công!"),
+      onError: () => notify.error("Gia hạn thất bại. Vui lòng thử lại."),
     });
   };
 

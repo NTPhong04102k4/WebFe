@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { chatApi } from "@/services/api/functions/chat/chat.api";
 
@@ -38,9 +38,9 @@ export default function CustomerChatPage() {
       setSubject("");
       setInitialMessage("");
       qc.invalidateQueries({ queryKey: ["chat-conversations"] });
-      toast.success("Đã tạo cuộc trò chuyện");
+      notify.success("Đã tạo cuộc trò chuyện");
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => notify.error(error.message),
   });
 
   const sendMessage = useMutation({
@@ -55,7 +55,7 @@ export default function CustomerChatPage() {
       qc.invalidateQueries({ queryKey: ["chat-conversation", selectedId] });
       qc.invalidateQueries({ queryKey: ["chat-conversations"] });
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => notify.error(error.message),
   });
 
   const messages = detail.data?.messages ?? [];

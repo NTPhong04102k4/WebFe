@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import toast from 'react-hot-toast'
+import { notify } from "@/components/core/Feedback/toast"
 
 import { carRouteFn } from '@/services/api/functions/Cars/Routes.Fn'
 import { useAuthStore } from '@/stores/authStore'
@@ -298,23 +298,23 @@ export default function AdminCarsPage() {
   const createMutation = useMutation({
     mutationFn: async (fd: FormData) => carRouteFn.create(fd),
     onSuccess: () => {
-      toast.success('Tạo xe thành công')
+      notify.success('Tạo xe thành công')
       setModalOpen(false)
       queryClient.invalidateQueries({ queryKey: ['admin-cars'] })
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Tạo xe thất bại'),
+    onError: (e: any) => notify.error(e?.message ?? 'Tạo xe thất bại'),
   })
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, fd }: { id: number; fd: FormData }) =>
       carRouteFn.update(id, fd),
     onSuccess: () => {
-      toast.success('Cập nhật xe thành công')
+      notify.success('Cập nhật xe thành công')
       setModalOpen(false)
       setEditingCar(null)
       queryClient.invalidateQueries({ queryKey: ['admin-cars'] })
     },
-    onError: (e: any) => toast.error(e?.message ?? 'Cập nhật xe thất bại'),
+    onError: (e: any) => notify.error(e?.message ?? 'Cập nhật xe thất bại'),
   })
 
   return (
@@ -823,7 +823,7 @@ export default function AdminCarsPage() {
                       await updateMutation.mutateAsync({ id: editingCar.carID, fd })
                     }
                   } catch (e: any) {
-                    toast.error(e?.message ?? 'Có lỗi xảy ra')
+                    notify.error(e?.message ?? 'Có lỗi xảy ra')
                   }
                 })}
               >

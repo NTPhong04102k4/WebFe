@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 import { aiApi } from "@/services/api/functions/ai/ai.api";
 import type { AiMessageViewModel, AiSessionViewModel } from "@/services/api/functions/ai/ai.api";
 
@@ -329,12 +329,12 @@ export default function AiChatPage() {
       ]);
       qc.invalidateQueries({ queryKey: ["ai-sessions"] });
       if (res.wasEscalated) {
-        toast.success("AI đã chuyển cuộc trò chuyện sang nhân viên hỗ trợ");
+        notify.success("AI đã chuyển cuộc trò chuyện sang nhân viên hỗ trợ");
       }
     },
     onError: (err: Error) => {
       setMessages((prev) => prev.filter((m) => !m.id.startsWith("opt-")));
-      toast.error(err.message || "Gửi thất bại. Thử lại.");
+      notify.error(err.message || "Gửi thất bại. Thử lại.");
     },
     onSettled: () => setIsSending(false),
   });
@@ -347,9 +347,9 @@ export default function AiChatPage() {
         setSessionId(null);
         setMessages([]);
       }
-      toast.success("Đã xóa phiên chat.");
+      notify.success("Đã xóa phiên chat.");
     },
-    onError: () => toast.error("Xóa thất bại."),
+    onError: () => notify.error("Xóa thất bại."),
   });
 
   const feedbackMutation = useMutation({
@@ -364,7 +364,7 @@ export default function AiChatPage() {
         delete next[messageID];
         return next;
       });
-      toast.error("Gửi đánh giá thất bại.");
+      notify.error("Gửi đánh giá thất bại.");
     },
   });
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { DataTable, EmptyState, Input, Modal, SelectField } from "src/components/common";
 import {
@@ -67,10 +67,10 @@ export default function AdminInsurancePoliciesPage() {
         startDate: new Date(form.startDate).toISOString(),
         endDate: new Date(form.endDate).toISOString(),
       });
-      toast.success("Tao hop dong bao hiem thanh cong");
+      notify.success("Tao hop dong bao hiem thanh cong");
       setOpen(false);
     } catch {
-      toast.error("Tao hop dong bao hiem that bai");
+      notify.error("Tao hop dong bao hiem that bai");
     }
   };
 
@@ -78,9 +78,9 @@ export default function AdminInsurancePoliciesPage() {
     if (!window.confirm(`Huy hop dong ${policy.policyNumber}?`)) return;
     try {
       await cancelPolicy.mutateAsync(policy.policyID);
-      toast.success("Da huy hop dong");
+      notify.success("Da huy hop dong");
     } catch {
-      toast.error("Huy hop dong that bai");
+      notify.error("Huy hop dong that bai");
     }
   };
 

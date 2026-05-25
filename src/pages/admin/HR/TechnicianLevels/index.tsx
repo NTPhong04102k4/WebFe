@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { DataTable, EmptyState, Input, Modal } from "src/components/common";
 import {
@@ -75,14 +75,14 @@ export default function AdminTechnicianLevelsPage() {
     try {
       if (editing) {
         await updateLevel.mutateAsync({ id: editing.levelID, body: form });
-        toast.success("Cap nhat cap bac thanh cong");
+        notify.success("Cap nhat cap bac thanh cong");
       } else {
         await createLevel.mutateAsync(form);
-        toast.success("Tao cap bac thanh cong");
+        notify.success("Tao cap bac thanh cong");
       }
       setOpen(false);
     } catch {
-      toast.error("Luu cap bac that bai");
+      notify.error("Luu cap bac that bai");
     }
   };
 
@@ -90,9 +90,9 @@ export default function AdminTechnicianLevelsPage() {
     if (!window.confirm(`Xoa cap bac ${level.levelName}?`)) return;
     try {
       await deleteLevel.mutateAsync(level.levelID);
-      toast.success("Da xoa cap bac");
+      notify.success("Da xoa cap bac");
     } catch {
-      toast.error("Xoa cap bac that bai");
+      notify.error("Xoa cap bac that bai");
     }
   };
 

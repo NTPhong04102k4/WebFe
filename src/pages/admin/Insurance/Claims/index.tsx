@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { DataTable, EmptyState, Input, Modal, SelectField } from "src/components/common";
 import { useClaimsList, useInsuranceMutations } from "src/query/insurance/useInsuranceQueries";
@@ -69,10 +69,10 @@ export default function AdminInsuranceClaimsPage() {
         incidentDate: new Date(claimForm.incidentDate).toISOString(),
         reportedDate: new Date(claimForm.reportedDate).toISOString(),
       });
-      toast.success("Tao yeu cau boi thuong thanh cong");
+      notify.success("Tao yeu cau boi thuong thanh cong");
       setOpen(false);
     } catch {
-      toast.error("Tao yeu cau boi thuong that bai");
+      notify.error("Tao yeu cau boi thuong that bai");
     }
   };
 
@@ -80,10 +80,10 @@ export default function AdminInsuranceClaimsPage() {
     if (!statusOpen) return;
     try {
       await patchClaimStatus.mutateAsync({ id: statusOpen.claimID, body: statusForm });
-      toast.success("Cap nhat trang thai boi thuong thanh cong");
+      notify.success("Cap nhat trang thai boi thuong thanh cong");
       setStatusOpen(null);
     } catch {
-      toast.error("Cap nhat trang thai that bai");
+      notify.error("Cap nhat trang thai that bai");
     }
   };
 

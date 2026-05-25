@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { formatCurrency } from "@/common/utils/formatCurrency";
 import { createOrderInputFromCart, orderApi } from "@/services/api/functions/orders/order.api";
@@ -29,11 +29,11 @@ export default function CustomerCartPage() {
       ),
     onSuccess: (result) => {
       clearCart();
-      toast.success("Đã tạo đơn hàng");
+      notify.success("Đã tạo đơn hàng");
       if (result?.order?.orderNumber) navigate(`/orders/${result.order.orderNumber}`);
       else navigate("/orders");
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => notify.error(error.message),
   });
 
   return (

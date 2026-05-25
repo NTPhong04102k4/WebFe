@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { notify } from "@/components/core/Feedback/toast"
 import { useAuthQuery } from '@/query/auth/useAuthQuery'
 import { useAuthStore } from '@/stores/authStore'
 import { decodeToken } from '@/common/utils/jwtDecode'
@@ -40,7 +40,7 @@ export default function LoginPage() {
         setTokens(token, '')
         setUser(decoded)
       }
-      toast.success('Đăng nhập thành công!')
+      notify.success('Đăng nhập thành công!')
       const role = decoded?.role ?? 'Customer'
       if (role === 'Admin' || role === 'SuperAdmin' || role === 'Staff') {
         navigate('/admin/dashboard', { replace: true })
@@ -48,7 +48,7 @@ export default function LoginPage() {
         navigate('/', { replace: true })
       }
     } catch (err) {
-      toast.error(extractError(err))
+      notify.error(extractError(err))
     }
   }
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
       setTokens(token, result.refreshToken ?? '')
       if (decoded) setUser(decoded)
 
-      toast.success('Đăng nhập thành công!')
+      notify.success('Đăng nhập thành công!')
       const role = decoded?.role ?? 'Customer'
       if (role === 'Admin' || role === 'SuperAdmin' || role === 'Staff') {
         navigate('/admin/dashboard', { replace: true })
@@ -69,7 +69,7 @@ export default function LoginPage() {
         navigate('/', { replace: true })
       }
     } catch (err) {
-      toast.error(extractError(err))
+      notify.error(extractError(err))
     }
   }
 

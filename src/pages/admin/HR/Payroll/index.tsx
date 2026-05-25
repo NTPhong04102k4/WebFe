@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { DataTable, EmptyState, Input, Modal, SelectField } from "src/components/common";
 import { usePayrolls, usePayrollMutations } from "src/query/hr/useHrQueries";
@@ -93,14 +93,14 @@ export default function AdminPayrollPage() {
       const payload = { ...form, payPeriod: new Date(form.payPeriod).toISOString() };
       if (editing) {
         await updatePayroll.mutateAsync({ id: editing.payrollID, body: payload });
-        toast.success("Cap nhat bang luong thanh cong");
+        notify.success("Cap nhat bang luong thanh cong");
       } else {
         await createPayroll.mutateAsync(payload);
-        toast.success("Tao bang luong thanh cong");
+        notify.success("Tao bang luong thanh cong");
       }
       setOpen(false);
     } catch {
-      toast.error("Luu bang luong that bai");
+      notify.error("Luu bang luong that bai");
     }
   };
 
@@ -108,9 +108,9 @@ export default function AdminPayrollPage() {
     if (!window.confirm(`Xoa bang luong ${payroll.staffFullName || payroll.staffID}?`)) return;
     try {
       await deletePayroll.mutateAsync(payroll.payrollID);
-      toast.success("Da xoa bang luong");
+      notify.success("Da xoa bang luong");
     } catch {
-      toast.error("Xoa bang luong that bai");
+      notify.error("Xoa bang luong that bai");
     }
   };
 
@@ -121,10 +121,10 @@ export default function AdminPayrollPage() {
         id: payOpen.payrollID,
         body: { paymentStatus: "Paid", paidDate: new Date().toISOString() },
       });
-      toast.success("Da danh dau da thanh toan");
+      notify.success("Da danh dau da thanh toan");
       setPayOpen(null);
     } catch {
-      toast.error("Cap nhat thanh toan that bai");
+      notify.error("Cap nhat thanh toan that bai");
     }
   };
 

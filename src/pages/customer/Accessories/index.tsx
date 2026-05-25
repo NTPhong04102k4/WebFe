@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { useAccessoryList } from "@/query/accessory/useAccessoryQueries";
 import { useCategoryList } from "@/query/category/useCategoryQueries";
@@ -146,7 +146,7 @@ export default function CustomerAccessoriesPage() {
                             price: item.price,
                             imagePath: item.imagePath,
                           });
-                          toast.success("Đã thêm vào giỏ hàng");
+                          notify.success("Đã thêm vào giỏ hàng");
                         }}
                       >
                         Thêm

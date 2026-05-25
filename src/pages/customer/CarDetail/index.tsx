@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+import { notify } from "@/components/core/Feedback/toast"
 
 import { carRouteFn } from '@/services/api/functions/Cars/Routes.Fn'
 import { useCartStore } from '@/stores/cartStore'
@@ -88,7 +88,7 @@ export default function CustomerCarDetailPage() {
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                 onClick={() => {
                   if (!carId) {
-                    toast.error('Không tìm thấy mã xe')
+                    notify.error('Không tìm thấy mã xe')
                     return
                   }
                   addItem({
@@ -98,7 +98,7 @@ export default function CustomerCarDetailPage() {
                     price,
                     imagePath: typeof img === 'string' ? img : undefined,
                   })
-                  toast.success('Đã thêm vào giỏ hàng')
+                  notify.success('Đã thêm vào giỏ hàng')
                 }}
               >
                 Thêm vào giỏ

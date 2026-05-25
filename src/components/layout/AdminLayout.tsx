@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { resolveAppTheme, useUiPreferenceStore } from '@/stores/uiStore'
-import toast from 'react-hot-toast'
+import { notify } from "@/components/core/Feedback/toast"
 import api from '@/services/api/axiosInstance'
 
 interface NavItem {
@@ -165,7 +165,7 @@ export default function AdminLayout() {
       // ignore
     } finally {
       logout()
-      toast.success('Đã đăng xuất')
+      notify.success('Đã đăng xuất')
       navigate('/auth/admin/login')
     }
   }

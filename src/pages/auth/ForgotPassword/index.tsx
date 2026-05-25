@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, ArrowLeft } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { notify } from "@/components/core/Feedback/toast"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -16,9 +16,9 @@ export default function ForgotPasswordPage() {
       // Backend chưa có endpoint reset-password, hiển thị thông báo chung
       await new Promise((r) => setTimeout(r, 800))
       setSent(true)
-      toast.success('Hướng dẫn đặt lại mật khẩu đã được gửi!')
+      notify.success('Hướng dẫn đặt lại mật khẩu đã được gửi!')
     } catch {
-      toast.error('Gửi yêu cầu thất bại, vui lòng thử lại')
+      notify.error('Gửi yêu cầu thất bại, vui lòng thử lại')
     } finally {
       setLoading(false)
     }

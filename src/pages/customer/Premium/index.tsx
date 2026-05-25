@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 import { usePremiumPlans, useMySubscription, usePremiumMutations } from "@/query/premium/usePremiumQueries";
 import { formatCurrency } from "@/common/utils/formatCurrency";
 import type { PremiumPlan, SubscriptionType } from "@/services/api/functions/premium/premium.types";
@@ -156,15 +156,15 @@ export default function PremiumPlansPage() {
 
   const handleCancel = () => {
     cancel.mutate(undefined, {
-      onSuccess: () => toast.success("Đã hủy gia hạn tự động."),
-      onError: () => toast.error("Hủy thất bại. Vui lòng thử lại."),
+      onSuccess: () => notify.success("Đã hủy gia hạn tự động."),
+      onError: () => notify.error("Hủy thất bại. Vui lòng thử lại."),
     });
   };
 
   const handleRenew = () => {
     renew.mutate(undefined, {
-      onSuccess: () => toast.success("Gia hạn thành công!"),
-      onError: () => toast.error("Gia hạn thất bại. Vui lòng thử lại."),
+      onSuccess: () => notify.success("Gia hạn thành công!"),
+      onError: () => notify.error("Gia hạn thất bại. Vui lòng thử lại."),
     });
   };
 

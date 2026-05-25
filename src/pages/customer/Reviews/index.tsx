@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { carRouteFn } from "@/services/api/functions/Cars/Routes.Fn";
 import { useCarReviews, useCarReviewStats, useReviewMutations } from "@/query/review/useReviewQueries";
@@ -27,7 +27,7 @@ export default function CustomerReviewsPage() {
 
   const submit = () => {
     if (!selectedCarId || !content.trim()) {
-      toast.error("Vui lòng chọn xe và nhập nội dung đánh giá");
+      notify.info("Vui lòng chọn xe và nhập nội dung đánh giá");
       return;
     }
     createCarReview.mutate(
@@ -45,9 +45,9 @@ export default function CustomerReviewsPage() {
           setContent("");
           setPros("");
           setCons("");
-          toast.success("Đã gửi đánh giá, vui lòng chờ duyệt");
+          notify.success("Đã gửi đánh giá, vui lòng chờ duyệt");
         },
-        onError: (error: Error) => toast.error(error.message),
+        onError: (error: Error) => notify.error(error.message),
       }
     );
   };

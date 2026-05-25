@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { formatCurrency } from "@/common/utils/formatCurrency";
 import { useLocationList } from "@/query/location/useLocationQueries";
@@ -27,7 +27,7 @@ export default function CustomerAppointmentsPage() {
 
   const submit = () => {
     if (!customerVehicleID || !locationID || !serviceID || !scheduledDateTime) {
-      toast.error("Vui lòng chọn xe, chi nhánh, dịch vụ và thời gian");
+      notify.info("Vui lòng chọn xe, chi nhánh, dịch vụ và thời gian");
       return;
     }
     createAppointment.mutate(
@@ -45,7 +45,7 @@ export default function CustomerAppointmentsPage() {
           },
         ],
       },
-      { onSuccess: () => toast.success("Đã đặt lịch dịch vụ"), onError: (error: Error) => toast.error(error.message) }
+      { onSuccess: () => notify.success("Đã đặt lịch dịch vụ"), onError: (error: Error) => notify.error(error.message) }
     );
   };
 

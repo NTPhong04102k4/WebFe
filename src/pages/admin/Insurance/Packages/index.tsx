@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 
 import { DataTable, EmptyState, Input, Modal, SelectField } from "src/components/common";
 import {
@@ -87,14 +87,14 @@ export default function AdminInsurancePackagesPage() {
     try {
       if (editing) {
         await updatePackage.mutateAsync({ id: editing.packageID, body: form });
-        toast.success("Cap nhat goi bao hiem thanh cong");
+        notify.success("Cap nhat goi bao hiem thanh cong");
       } else {
         await createPackage.mutateAsync(form);
-        toast.success("Tao goi bao hiem thanh cong");
+        notify.success("Tao goi bao hiem thanh cong");
       }
       setOpen(false);
     } catch {
-      toast.error("Luu goi bao hiem that bai");
+      notify.error("Luu goi bao hiem that bai");
     }
   };
 
@@ -102,9 +102,9 @@ export default function AdminInsurancePackagesPage() {
     if (!window.confirm(`Xoa goi ${item.packageName}?`)) return;
     try {
       await deletePackage.mutateAsync(item.packageID);
-      toast.success("Da xoa goi bao hiem");
+      notify.success("Da xoa goi bao hiem");
     } catch {
-      toast.error("Xoa goi bao hiem that bai");
+      notify.error("Xoa goi bao hiem that bai");
     }
   };
 

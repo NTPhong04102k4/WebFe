@@ -1,5 +1,5 @@
 import { useState } from "react";
-import toast from "react-hot-toast";
+import { notify } from "@/components/core/Feedback/toast";
 import { usePremiumMutations } from "@/query/premium/usePremiumQueries";
 import type { PaymentMethod, PremiumPlan, SubscriptionType } from "@/services/api/functions/premium/premium.types";
 import { formatCurrency } from "@/common/utils/formatCurrency";
@@ -41,10 +41,10 @@ export default function SubscribeModal({ plan, onClose }: Props) {
       },
       {
         onSuccess: () => {
-          toast.success(`Đăng ký ${plan.planName} thành công!`);
+          notify.success(`Đăng ký ${plan.planName} thành công!`);
           onClose();
         },
-        onError: () => toast.error("Đăng ký thất bại. Vui lòng thử lại."),
+        onError: () => notify.error("Đăng ký thất bại. Vui lòng thử lại."),
       }
     );
   };

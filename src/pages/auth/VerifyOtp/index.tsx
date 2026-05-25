@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ShieldCheck, RotateCcw } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { notify } from "@/components/core/Feedback/toast"
 import { useAuthQuery } from '@/query/auth/useAuthQuery'
 import { extractError } from '@/common/utils/errorMessage'
 
@@ -60,15 +60,15 @@ export default function VerifyOtpPage() {
       const res = await verifyOtpAsync({ email, otpCode: code })
       const d = res.data?.data
       if (d?.token) {
-        toast.success('Xác thực thành công! Chào mừng bạn.')
+        notify.success('Xác thực thành công! Chào mừng bạn.')
         navigate('/', { replace: true })
       } else {
-        toast.error(res.data?.message ?? 'Xác thực thất bại')
+        notify.error(res.data?.message ?? 'Xác thực thất bại')
         setDigits(Array(OTP_LENGTH).fill(''))
         inputRefs.current[0]?.focus()
       }
     } catch (err) {
-      toast.error(extractError(err))
+      notify.error(extractError(err))
       setDigits(Array(OTP_LENGTH).fill(''))
       inputRefs.current[0]?.focus()
     } finally {
@@ -80,10 +80,10 @@ export default function VerifyOtpPage() {
     if (countdown > 0) return
     try {
       await resendOtpAsync({ email })
-      toast.success('Đã gửi lại OTP!')
+      notify.success('Đã gửi lại OTP!')
       setCountdown(RESEND_COOLDOWN)
     } catch (err) {
-      toast.error(extractError(err))
+      notify.error(extractError(err))
     }
   }
 

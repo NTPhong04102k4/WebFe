@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { notify } from "@/components/core/Feedback/toast"
 import { useAuthQuery } from '@/query/auth/useAuthQuery'
 import { extractError } from '@/common/utils/errorMessage'
 
@@ -46,10 +46,10 @@ export default function RegisterPage() {
         email: values.email,
         password: values.password,
       })
-      toast.success('Đăng ký thành công! Vui lòng xác thực OTP.')
+      notify.success('Đăng ký thành công! Vui lòng xác thực OTP.')
       navigate(`/auth/verify-otp?email=${encodeURIComponent(values.email)}`)
     } catch (err) {
-      toast.error(extractError(err))
+      notify.error(extractError(err))
     }
   }
 
