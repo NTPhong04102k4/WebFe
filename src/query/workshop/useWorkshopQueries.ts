@@ -88,6 +88,18 @@ export function useWorkOrderDetail(id: number | null) {
   });
 }
 
+export function useWorkOrderPaymentInfo(id: number | null) {
+  return useQuery({
+    queryKey:
+      id != null
+        ? workshopKeys.workOrderPaymentInfo(id)
+        : ["workshop", "workOrderPaymentInfo", "none"],
+    queryFn: ({ signal }) =>
+      workshopApi.getWorkOrderPaymentInfo(id!, { signal }),
+    enabled: id != null,
+  });
+}
+
 export function useWorkshopMutations() {
   const qc = useQueryClient();
 

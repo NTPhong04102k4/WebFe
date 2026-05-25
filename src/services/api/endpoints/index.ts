@@ -16,6 +16,14 @@ export const API = {
     facebookCallback: "/auth/callback/facebook",
     adminLogin: "/auth/admin/login",
     adminStaffCreate: "/auth/admin/staff/create",
+    adminStaff: "/auth/admin/staff",
+    adminStaffDetail: (staffId: string | number) =>
+      `/auth/admin/staff/${staffId}`,
+    adminStaffPassword: (staffId: string | number) =>
+      `/auth/admin/staff/${staffId}/password`,
+    adminStaffStatus: (staffId: string | number) =>
+      `/auth/admin/staff/${staffId}/status`,
+    superAdminRecoverPassword: "/auth/admin/superadmin/recover-password",
   },
   user: {
     detail: "/user/detail",
@@ -36,6 +44,26 @@ export const API = {
     sepayIpn: "/orders/payment/sepay-ipn",
     orderStatus: (id: string | number) =>
       `/orders/payment/order/${id}/status`,
+  },
+  chat: {
+    conversations: "/chat/conversations",
+    staffConversations: "/chat/conversations/staff",
+    conversation: (id: string | number) => `/chat/conversations/${id}`,
+    messages: (id: string | number) => `/chat/conversations/${id}/messages`,
+    createMessage: "/chat/messages",
+    assign: (id: string | number) => `/chat/conversations/${id}/assign`,
+    close: (id: string | number) => `/chat/conversations/${id}/close`,
+    read: (id: string | number) => `/chat/conversations/${id}/read`,
+  },
+  ai: {
+    sessions: "/ai/sessions",
+    session: (id: string | number) => `/ai/sessions/${id}`,
+    messages: (id: string | number) => `/ai/sessions/${id}/messages`,
+    rename: (id: string | number) => `/ai/sessions/${id}/rename`,
+    chat: "/ai/chat",
+    feedback: (id: string | number) => `/ai/messages/${id}/feedback`,
+    kb: "/ai/kb",
+    kbItem: (id: string | number) => `/ai/kb/${id}`,
   },
   car: {
     detail: "/car/detail",
@@ -142,6 +170,8 @@ export const API = {
       `/workshop/work-orders/${id}/parts`,
     workOrderPay: (id: string | number) =>
       `/workshop/work-orders/${id}/pay`,
+    workOrderPaymentInfo: (id: string | number) =>
+      `/workshop/work-orders/${id}/payment-info`,
     workOrderFeedback: (id: string | number) =>
       `/workshop/work-orders/${id}/feedback`,
     workOrderServiceItem: (
@@ -160,12 +190,22 @@ export const API = {
     status: (id: string | number) => `/services/${id}/status`,
   },
   review: {
-    carList: "/review/car",
-    car: (id: string | number) => `/review/car/${id}`,
-    serviceList: "/review/service",
-    service: (id: string | number) => `/review/service/${id}`,
-    adminPending: "/review/pending",
-    adminModerate: (id: string | number) => `/review/${id}/moderate`,
+    carList: (carId: string | number) => `/reviews/cars/${carId}`,
+    carStats: (carId: string | number) => `/reviews/cars/${carId}/stats`,
+    carDetail: (id: string | number) => `/reviews/cars/detail/${id}`,
+    carCreate: "/reviews/cars",
+    car: (id: string | number) => `/reviews/cars/${id}`,
+    carHelpful: (id: string | number) => `/reviews/cars/${id}/helpful`,
+    carReport: (id: string | number) => `/reviews/cars/${id}/report`,
+    serviceByTechnician: (technicianId: string | number) =>
+      `/reviews/services/technician/${technicianId}`,
+    serviceByLocation: (locationId: string | number) =>
+      `/reviews/services/location/${locationId}`,
+    service: (id: string | number) => `/reviews/services/${id}`,
+    serviceCreate: "/reviews/services",
+    serviceRespond: (id: string | number) => `/reviews/services/${id}/respond`,
+    adminPending: "/reviews/admin/pending",
+    adminModerate: (id: string | number) => `/reviews/admin/${id}/moderate`,
   },
 } as const;
 

@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { DataTable, Input, Modal } from "@/components/common";
 import {
   useWorkOrderDetail,
+  useWorkOrderPaymentInfo,
   useWorkOrders,
   useWorkshopMutations,
 } from "src/query/workshop/useWorkshopQueries";
@@ -67,10 +68,12 @@ export default function WorkOrdersPage() {
   const [draft, setDraft] = useState({ status: "", technicianID: "", customerVehicleID: "", fromDate: "", toDate: "" });
   const [createOpen, setCreateOpen] = useState(false);
   const [detailId, setDetailId] = useState<number | null>(null);
+  const [paymentInfoId, setPaymentInfoId] = useState<number | null>(null);
   const [action, setAction] = useState<{ type: "status" | "assign" | "service" | "part" | "pay"; workOrder: WorkOrderViewModel } | null>(null);
 
   const { data, isLoading } = useWorkOrders(query);
   const detail = useWorkOrderDetail(detailId);
+  const paymentInfo = useWorkOrderPaymentInfo(paymentInfoId);
   const mutations = useWorkshopMutations();
   const { data: techRes } = useHrTechniciansSearch({ page: 1, pageSize: 200 });
   const { data: serviceRes } = useServiceCatalog({ page: 1, pageSize: 200, isActive: true });
@@ -148,6 +151,7 @@ export default function WorkOrdersPage() {
             <ActionButton onClick={() => setAction({ type: "service", workOrder: row.original })}>Dich vu</ActionButton>
             <ActionButton onClick={() => setAction({ type: "part", workOrder: row.original })}>Phu tung</ActionButton>
             <ActionButton onClick={() => setAction({ type: "pay", workOrder: row.original })}>Pay</ActionButton>
+            <ActionButton onClick={() => setPaymentInfoId(row.original.workOrderID)}>QR</ActionButton>
           </div>
         ),
       },
@@ -203,6 +207,31 @@ export default function WorkOrdersPage() {
 
       <Modal open={detailId !== null} onClose={() => setDetailId(null)} title="Chi tiet phieu cong viec" size="xl">
         {detail.isLoading ? <p>Dang tai...</p> : detail.data ? <WorkOrderDetail workOrder={detail.data} /> : null}
+      </Modal>
+
+      <Modal open={paymentInfoId !== null} onClose={() => setPaymentInfoId(null)} title="Thong tin thanh toan" size="lg">
+        {paymentInfo.isLoading ? <p>Dang tai...</p> : paymentInfo.data ? (
+          <div className="space-y-3 text-sm">
+            <Info label="Ma phieu" value={paymentInfo.data.workOrderNumber ?? paymentInfoId} />
+            <Info label="So tien" value={formatMoney(paymentInfo.data.amountDue ?? paymentInfo.data.amount)} />
+            <Info label="Ngan hang" value={paymentInfo.data.bankName ?? "-"} />
+            <Info label="So tai khoan" value={paymentInfo.data.accountNumber ?? "-"} />
+            <Info label="Chu tai khoan" value={paymentInfo.data.accountName ?? "-"} />
+            <Info label="Noi dung CK" value={paymentInfo.data.transferContent ?? "-"} />
+            {paymentInfo.data.qrCodeUrl || paymentInfo.data.qrCode ? (
+              <img
+                src={(paymentInfo.data.qrCodeUrl ?? paymentInfo.data.qrCode) || undefined}
+                alt="QR thanh toan work order"
+                className="max-h-72 rounded-lg border border-slate-200 bg-white p-2"
+              />
+            ) : null}
+            {paymentInfo.data.paymentUrl ? (
+              <a className="text-blue-600 underline" href={paymentInfo.data.paymentUrl} target="_blank" rel="noreferrer">
+                Mo lien ket thanh toan
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </Modal>
 
       {action ? (

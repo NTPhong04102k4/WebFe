@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 import { useAuthStore } from '@/stores/authStore'
+import { isTokenExpired } from '@/services/decode'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'https://web-7012.onrender.com',
@@ -19,8 +20,19 @@ api.interceptors.response.use(
     const original = error.config
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true
+      const currentPath = window.location.pathname
+      const loginPath = currentPath.startsWith('/admin')
+        ? '/auth/admin/login'
+        : '/auth/login'
       try {
+        const accessToken = useAuthStore.getState().accessToken
         const refreshToken = useAuthStore.getState().refreshToken
+        if (!refreshToken) {
+          if (accessToken && isTokenExpired(accessToken)) {
+            throw new Error('Expired access token')
+          }
+          return Promise.reject(error)
+        }
         const { data } = await axios.post(
           `${import.meta.env.VITE_API_BASE_URL ?? 'https://web-7012.onrender.com'}/auth/refresh-token`,
           { refreshToken }
@@ -30,7 +42,7 @@ api.interceptors.response.use(
         return api(original)
       } catch {
         useAuthStore.getState().logout()
-        window.location.href = '/auth/login'
+        window.location.href = loginPath
       }
     }
     return Promise.reject(error)

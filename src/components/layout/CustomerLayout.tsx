@@ -38,6 +38,8 @@ export default function CustomerLayout() {
     { to: '/', label: 'Trang chủ' },
     { to: '/cars', label: 'Xe hơi' },
     { to: '/accessories', label: 'Phụ kiện' },
+    { to: '/appointments', label: 'Dịch vụ' },
+    { to: '/reviews', label: 'Review' },
   ]
 
   return (

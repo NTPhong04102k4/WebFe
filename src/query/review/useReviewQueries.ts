@@ -2,7 +2,12 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 
 import { SEARCH_STALE_MS } from "src/query/queryClient";
 import { reviewApi } from "src/services/api/functions/review/review.api";
-import type { ReviewListParams, ReviewModerateRequest } from "src/services/api/functions/review/review.types";
+import type {
+  CarReviewRequest,
+  ReviewListParams,
+  ReviewModerateRequest,
+  ServiceReviewRequest,
+} from "src/services/api/functions/review/review.types";
 
 import { reviewKeys } from "./keys";
 
@@ -12,6 +17,7 @@ export function useCarReviews(params: ReviewListParams) {
   return useQuery({
     queryKey: reviewKeys.carReviews(params),
     queryFn: ({ signal }) => reviewApi.listCarReviews(params, { signal }),
+    enabled: Boolean(params.carId),
     staleTime: SEARCH_STALE_MS,
     placeholderData: keepPreviousData,
   });
@@ -22,6 +28,14 @@ export function useCarReview(id: number | null) {
     queryKey: id != null ? reviewKeys.carReview(id) : ["review", "car", "none"],
     queryFn: ({ signal }) => reviewApi.getCarReview(id!, { signal }),
     enabled: id != null,
+  });
+}
+
+export function useCarReviewStats(carId: number | null) {
+  return useQuery({
+    queryKey: carId != null ? [...reviewKeys.carReviews({ carId }), "stats"] : ["review", "car", "stats", "none"],
+    queryFn: ({ signal }) => reviewApi.getCarReviewStats(carId!, { signal }),
+    enabled: carId != null,
   });
 }
 
@@ -62,6 +76,14 @@ export function useReviewMutations() {
   const invalidate = () => qc.invalidateQueries({ queryKey: reviewKeys.all });
 
   return {
+    createCarReview: useMutation({
+      mutationFn: (body: CarReviewRequest) => reviewApi.createCarReview(body),
+      onSuccess: invalidate,
+    }),
+    createServiceReview: useMutation({
+      mutationFn: (body: ServiceReviewRequest) => reviewApi.createServiceReview(body),
+      onSuccess: invalidate,
+    }),
     deleteCarReview: useMutation({
       mutationFn: (id: number) => reviewApi.deleteCarReview(id),
       onSuccess: invalidate,

@@ -30,7 +30,7 @@ const ForgotPasswordPage  = lazy(() => import('@/pages/auth/ForgotPassword'))
 const AdminLoginPage      = lazy(() => import('@/pages/auth/AdminLogin'))
 
 // ── Admin pages ───────────────────────────────────────────────────────────────
-const DashboardPage              = lazy(() => import('@/pages/admin/dashboard'))
+const DashboardPage              = lazy(() => import('@/pages/admin/dashboard/index'))
 const AdminCarsPage              = lazy(() => import('@/pages/admin/Cars'))
 const AdminBrandsPage            = lazy(() => import('@/pages/admin/Brands'))
 const AdminBodyTypesPage         = lazy(() => import('@/pages/admin/BodyTypes'))
@@ -52,7 +52,7 @@ const CustomerVehiclesPage       = lazy(() => import('@/pages/admin/Workshop/Cus
 const WorkOrdersPage             = lazy(() => import('@/pages/admin/Workshop/WorkOrders'))
 const ServiceCatalogPage          = lazy(() => import('@/pages/admin/Workshop/Services'))
 const AdminReviewsPage           = lazy(() => import('@/pages/admin/Reviews'))
-const StaffPage                  = lazy(() => import('@/pages/admin/Staff'))
+const StaffPage                  = lazy(() => import('@/pages/admin/Staff/index'))
 
 function Fallback() {
   return (

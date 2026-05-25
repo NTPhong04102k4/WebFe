@@ -165,6 +165,21 @@ export interface WorkOrderPaymentRequest {
   discountAmount?: number | null;
 }
 
+export interface WorkOrderPaymentInfoViewModel {
+  workOrderID?: number;
+  workOrderNumber?: string;
+  amount?: number;
+  amountDue?: number;
+  bankName?: string | null;
+  accountNumber?: string | null;
+  accountName?: string | null;
+  transferContent?: string | null;
+  qrCodeUrl?: string | null;
+  qrCode?: string | null;
+  paymentUrl?: string | null;
+  expiresAt?: string | null;
+}
+
 export interface WorkOrderFeedbackRequest {
   rating: number;
   feedback?: string | null;

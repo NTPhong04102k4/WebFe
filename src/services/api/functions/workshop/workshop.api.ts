@@ -18,6 +18,7 @@ import type {
   WorkOrderFeedbackRequest,
   WorkOrderListResult,
   WorkOrderPartItemRequest,
+  WorkOrderPaymentInfoViewModel,
   WorkOrderPaymentRequest,
   WorkOrderQueryRequest,
   WorkOrderRequest,
@@ -248,6 +249,14 @@ export const workshopApi = {
     const res = await apiClient.post<WorkshopOperationResult>(
       API.workshop.workOrderPay(id),
       body
+    );
+    return res.data;
+  },
+
+  getWorkOrderPaymentInfo: async (id: number, options?: ApiRequestOptions) => {
+    const res = await apiClient.get<WorkOrderPaymentInfoViewModel>(
+      API.workshop.workOrderPaymentInfo(id),
+      withSignal({}, options)
     );
     return res.data;
   },

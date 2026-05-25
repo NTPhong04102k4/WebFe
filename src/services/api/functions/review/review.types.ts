@@ -1,5 +1,3 @@
-import type { PagedResult } from "../hr/hr.types";
-
 export type { PagedResult } from "../hr/hr.types";
 
 // ─── Car Review ──────────────────────────────────────────────────────────────
@@ -16,6 +14,7 @@ export interface CarReviewRequest {
   content: string;
   pros?: string | null;
   cons?: string | null;
+  imagePaths?: string[] | null;
 }
 
 export interface CarReviewViewModel {
@@ -84,9 +83,27 @@ export interface ReviewListParams {
   page?: number;
   pageSize?: number;
   status?: string;
+  carId?: number;
+  technicianId?: number;
+  locationId?: number;
 }
 
 export interface ReviewModerateRequest {
-  action: "Approve" | "Reject";
+  status?: "Approved" | "Rejected";
+  rejectReason?: string | null;
+  action?: "Approve" | "Reject";
   reason?: string | null;
+}
+
+export interface ReviewHelpfulRequest {
+  isHelpful: boolean;
+}
+
+export interface ReviewReportRequest {
+  reason: string;
+  description?: string | null;
+}
+
+export interface ServiceReviewRespondRequest {
+  response: string;
 }

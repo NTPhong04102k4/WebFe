@@ -13,4 +13,6 @@ export const workshopKeys = {
   workOrders: (q: WorkOrderQueryRequest) =>
     [...workshopKeys.all, "workOrders", q] as const,
   workOrder: (id: number) => [...workshopKeys.all, "workOrder", id] as const,
+  workOrderPaymentInfo: (id: number) =>
+    [...workshopKeys.all, "workOrderPaymentInfo", id] as const,
 };
