@@ -1,5 +1,5 @@
 import React from "react";
-import { useCarList } from "src/query/car/useCarQueries";
+import { useCarList, useCarMutations } from "src/query/car/useCarQueries";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
 import { CarFilters } from "./Components/CarFilters";
 import { CarList } from "./Components/CarList";
@@ -28,6 +28,8 @@ export const Cars: React.FC = () => {
   });
   const [viewMode, setViewMode] = React.useState<ViewMode>("list");
   const [selectedCarId, setSelectedCarId] = React.useState<number | null>(null);
+
+  const { deleteCar } = useCarMutations();
 
   const { data: allCarsData, refetch: refetchCarList } = useCarList({
     pageIndex: query.page,
@@ -99,6 +101,14 @@ export const Cars: React.FC = () => {
     handleBackToList();
   };
 
+  const handleDeleteCar = (id: string, name: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa xe "${name}" không? Hành động này không thể hoàn tác.`)) return;
+    deleteCar.mutate(Number(id), {
+      onSuccess: () => refetchCarList(),
+      onError: () => alert("Có lỗi xảy ra khi xóa xe"),
+    });
+  };
+
   return (
     <div>
       {viewMode === "list" && (
@@ -124,6 +134,7 @@ export const Cars: React.FC = () => {
             isLoading={!allCarsData}
             onSelectCar={handleEditClick}
             onViewDetail={handleViewDetailClick}
+            onDeleteCar={handleDeleteCar}
             onPageChange={(page) => setQuery((prev) => ({ ...prev, page }))}
             onPageSizeChange={(pageSize) =>
               setQuery((prev) => ({ ...prev, pageSize, page: 1 }))

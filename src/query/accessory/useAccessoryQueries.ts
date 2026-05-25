@@ -43,5 +43,9 @@ export function useAccessoryMutations() {
         accessoryRouteFn.update(id, body),
       onSuccess: invalidate,
     }),
+    deleteAccessory: useMutation({
+      mutationFn: (id: number) => accessoryRouteFn.delete(id),
+      onSuccess: invalidate,
+    }),
   };
 }

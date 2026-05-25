@@ -153,7 +153,7 @@ export const EditCarForm: React.FC<EditCarFormProps> = ({
 
     const updateData: CarDetailUpdateRequest = {
       userUUID: user?.userUUID || "",
-      roles: "", // TODO: Get roles from user or API
+      roles: user?.role || "",
       carCode: car.carCode,
       vin: car.vin,
       carName: form.carName,
@@ -181,9 +181,9 @@ export const EditCarForm: React.FC<EditCarFormProps> = ({
       shortDescription: form.shortDescription,
       isFeature: form.isFeature,
       viewCount: car.viewCount,
-      soldDate: "", // TODO: Get from car data if available
-      createdBy: 0, // TODO: Get from car data if available
-      isActive: true, // TODO: Get from car data if available
+      soldDate: car.soldDate || "",
+      createdBy: car.createdBy || 0,
+      isActive: car.isActive ?? true,
     };
 
     // Create FormData for multipart/form-data

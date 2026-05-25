@@ -59,6 +59,10 @@ export function useCarMutations() {
         qc.invalidateQueries({ queryKey: carKeys.lists() });
       },
     }),
+    deleteCar: useMutation({
+      mutationFn: (id: number) => carRouteFn.delete(id),
+      onSuccess: () => qc.invalidateQueries({ queryKey: carKeys.lists() }),
+    }),
   };
 }
 

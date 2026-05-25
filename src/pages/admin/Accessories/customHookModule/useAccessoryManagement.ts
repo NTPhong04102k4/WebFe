@@ -79,7 +79,7 @@ export function useAccessoryManagement() {
   const categoryQuery = useServiceCategoryList();
   const brandQuery = useBrandAccessoryList();
   const detailQuery = useAccessoryDetail(editingId);
-  const { createAccessory, updateAccessory } = useAccessoryMutations();
+  const { createAccessory, updateAccessory, deleteAccessory } = useAccessoryMutations();
 
   const form = useForm<AccessoryFormValues>({
     defaultValues: emptyForm,
@@ -161,6 +161,14 @@ export function useAccessoryManagement() {
     }
   });
 
+  const handleDelete = (item: AccessoriesListItem) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa phụ kiện "${item.accessoryName}" không? Hành động này không thể hoàn tác.`)) return;
+    deleteAccessory.mutate(item.accessoryID, {
+      onSuccess: () => notify.success("Xóa phụ kiện thành công"),
+      onError: () => notify.error("Có lỗi xảy ra khi xóa phụ kiện"),
+    });
+  };
+
   return {
     accessories,
     brands: brandQuery.data ?? [],
@@ -170,6 +178,7 @@ export function useAccessoryManagement() {
     form,
     isLoading: accessoryQuery.isLoading || categoryQuery.isLoading || brandQuery.isLoading,
     isSaving: createAccessory.isPending || updateAccessory.isPending,
+    isDeleting: deleteAccessory.isPending,
     isSyncing: accessoryQuery.isFetching && !accessoryQuery.isLoading,
     modalOpen,
     page,
@@ -183,6 +192,7 @@ export function useAccessoryManagement() {
     closeModal,
     openCreate,
     openEdit,
+    handleDelete,
     setPage,
     setSearch,
     setSelectedBrand: (value: string) => {

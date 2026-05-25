@@ -1,4 +1,5 @@
 import React from "react";
+import { Trash2 } from "lucide-react";
 import type { CarFiltersValue } from "./CarFilters";
 import { CarResponseItem } from "src/shared/types/Reponse/Car";
 const BRAND_CAR = {
@@ -14,6 +15,7 @@ export const CarList: React.FC<{
   isLoading?: boolean;
   onSelectCar: (id: string) => void;
   onViewDetail: (id: string) => void;
+  onDeleteCar: (id: string, name: string) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
 }> = ({
@@ -22,6 +24,7 @@ export const CarList: React.FC<{
   isLoading = false,
   onSelectCar,
   onViewDetail,
+  onDeleteCar,
   onPageChange,
   onPageSizeChange,
 }) => {
@@ -171,6 +174,13 @@ export const CarList: React.FC<{
                           onClick={() => onViewDetail(String(c.carID))}
                         >
                           Chi tiết
+                        </button>
+                        <button
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700"
+                          onClick={() => onDeleteCar(String(c.carID), c.carName)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Xóa
                         </button>
                       </div>
                     </td>

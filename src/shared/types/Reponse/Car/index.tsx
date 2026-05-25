@@ -75,6 +75,9 @@ export interface CarResponseItem {
   shortDescription: string | null;
   isFeature: boolean;
   viewCount: number;
+  soldDate?: string | null;
+  createdBy?: number | null;
+  isActive?: boolean;
 }
 export interface CarResponse {
   data: CarResponseItem[];

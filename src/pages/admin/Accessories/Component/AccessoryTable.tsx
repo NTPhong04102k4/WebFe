@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Edit } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { DataTable, HoverInfo } from "src/components/core";
@@ -8,6 +8,7 @@ import type { AccessoriesListItem } from "src/shared/types/Reponse/accessories/a
 type AccessoryTableProps = {
   accessories: AccessoriesListItem[];
   onEdit: (item: AccessoriesListItem) => void;
+  onDelete: (item: AccessoriesListItem) => void;
 };
 
 const formatCurrency = (value: unknown) => {
@@ -19,7 +20,7 @@ const formatCurrency = (value: unknown) => {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 };
 
-export function AccessoryTable({ accessories, onEdit }: AccessoryTableProps) {
+export function AccessoryTable({ accessories, onEdit, onDelete }: AccessoryTableProps) {
   const columns = useMemo<ColumnDef<AccessoriesListItem>[]>(
     () => [
       {
@@ -70,7 +71,7 @@ export function AccessoryTable({ accessories, onEdit }: AccessoryTableProps) {
         header: "Hanh dong",
         enableSorting: false,
         cell: ({ row }) => (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
             <HoverInfo content="Chinh sua phu kien">
               <button
                 type="button"
@@ -81,11 +82,21 @@ export function AccessoryTable({ accessories, onEdit }: AccessoryTableProps) {
                 <Edit className="h-4 w-4" />
               </button>
             </HoverInfo>
+            <HoverInfo content="Xoa phu kien">
+              <button
+                type="button"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-red-400 bg-white text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400/30 dark:border-red-500 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-slate-800"
+                onClick={() => onDelete(row.original)}
+                aria-label="Xoa phu kien"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </HoverInfo>
           </div>
         ),
       },
     ],
-    [onEdit]
+    [onEdit, onDelete]
   );
 
   return (

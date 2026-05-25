@@ -51,7 +51,7 @@ export default function AdminAccessoriesPage() {
           <EmptyState title="Khong co phu kien" description="Chua co phu kien phu hop voi bo loc." />
         </div>
       ) : (
-        <AccessoryTable accessories={accessoryManager.accessories} onEdit={accessoryManager.openEdit} />
+        <AccessoryTable accessories={accessoryManager.accessories} onEdit={accessoryManager.openEdit} onDelete={accessoryManager.handleDelete} />
       )}
 
       <AccessoryPagination

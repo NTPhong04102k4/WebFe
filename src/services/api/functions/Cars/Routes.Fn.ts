@@ -189,6 +189,13 @@ export const carRouteFn = {
       throw error;
     }
   },
+  delete: async (id: number, options?: ApiRequestOptions) => {
+    const response = await apiClient.delete<OperationResult>(
+      carRoute.delete(id),
+      withSignal({}, options)
+    );
+    return response.data;
+  },
   updateTechSpec: async (
     id: number,
     data: TechSpecDetailUpdateRequest,

@@ -70,6 +70,7 @@ export const API = {
     paging: "/cars",
     create: "/car/create",
     edit: "/car/edit",
+    delete: (id: string | number) => `/cars/${id}`,
     /** Backend route currently used by app (see Swagger if 404). */
     techSpecDetailItem: "/car/techSpec/DetailItem",
     techSpecCreate: "/car/techSpec/create",
@@ -191,10 +192,13 @@ export const API = {
   },
   premium: {
     plans: "/premium-plans",
+    plan: (id: string | number) => `/premium-plans/${id}`,
     mySubscription: "/premium-plans/my-subscription",
     subscribe: "/premium-plans/subscribe",
     cancel: "/premium-plans/cancel",
     renew: "/premium-plans/renew",
+    adminSubscriptions: "/premium-plans/admin/subscriptions",
+    adminUserSubscription: (userId: string | number) => `/premium-plans/admin/users/${userId}/subscription`,
   },
   review: {
     carList: (carId: string | number) => `/reviews/cars/${carId}`,

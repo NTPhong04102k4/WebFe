@@ -85,4 +85,9 @@ export const accessoryRouteFn = {
     );
     return response.data;
   },
+
+  delete: async (id: number) => {
+    const response = await apiClient.delete(accessoryRoute.delete(id));
+    return response.data;
+  },
 };
