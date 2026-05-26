@@ -1,88 +1,85 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, LogIn } from 'lucide-react'
-import { notify } from "@/components/core/Feedback/toast"
-import { useAuthQuery } from '@/query/auth/useAuthQuery'
-import { useAuthStore } from '@/stores/authStore'
-import { decodeToken } from '@/common/utils/jwtDecode'
-import { extractError } from '@/common/utils/errorMessage'
-import { openSocialAuthPopup } from '@/shared/hooks/auth/socialPopup'
-import type { SocialAuthProvider } from '@/shared/hooks/auth/socialPopup.types'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff, LogIn } from "lucide-react";
+import { notify } from "@/components/core/Feedback/toast";
+import { useAuthQuery } from "@/query/auth/useAuthQuery";
+import { useAuthStore } from "@/stores/authStore";
+import { decodeToken } from "@/common/utils/jwtDecode";
+import { extractError } from "@/common/utils/errorMessage";
+import { openSocialAuthPopup } from "@/shared/hooks/auth/socialPopup";
+import type { SocialAuthProvider } from "@/shared/hooks/auth/socialPopup.types";
 
 const schema = z.object({
-  usernameOrPhoneOrEmail: z.string().min(1, 'Vui lòng nhập tài khoản'),
-  password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
-})
+  usernameOrPhoneOrEmail: z.string().min(1, "Vui lòng nhập tài khoản"),
+  password: z.string().min(1, "Vui lòng nhập mật khẩu"),
+});
 
-type FormData = z.infer<typeof schema>
+type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const [showPwd, setShowPwd] = useState(false)
-  const { setTokens, setUser } = useAuthStore()
-  const { loginAsync, isLoginLoading } = useAuthQuery()
-  const navigate = useNavigate()
+  const [showPwd, setShowPwd] = useState(false);
+  const { setTokens, setUser } = useAuthStore();
+  const { loginAsync, isLoginLoading } = useAuthQuery();
+  const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(schema) })
+  } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (values: FormData) => {
     try {
-      const { data } = await loginAsync(values)
-      // Backend TokenResponse: { accessToken, refreshToken, ... }
-      // Fallback về `token` cho compat với phiên bản API cũ
-      const token = data.accessToken ?? data.token ?? ''
-      const rToken = data.refreshToken ?? ''
-      const decoded = decodeToken(token)
-      if (decoded) {
-        setTokens(token, rToken)
-        setUser(decoded)
-      }
-      notify.success('Đăng nhập thành công!')
-      const role = decoded?.role ?? 'Customer'
-      if (role === 'Admin' || role === 'SuperAdmin' || role === 'Staff') {
-        navigate('/admin/dashboard', { replace: true })
+      const { data } = await loginAsync(values);
+      // useAuthQuery.loginMutation.onSuccess đã set tokens + fetch profile + setUser
+      // Chỉ cần navigate đúng role
+      const token = data.access_token ?? data.token ?? "";
+      const decoded = decodeToken(token);
+      notify.success("Đăng nhập thành công!");
+      const role = decoded?.role ?? "Customer";
+      if (role === "Admin" || role === "SuperAdmin" || role === "Staff") {
+        navigate("/admin/dashboard", { replace: true });
       } else {
-        navigate('/', { replace: true })
+        navigate("/", { replace: true });
       }
     } catch (err) {
-      notify.error(extractError(err))
+      notify.error(extractError(err));
     }
-  }
-
+  };
 
   const handleSocialLogin = async (provider: SocialAuthProvider) => {
     try {
-      const result = await openSocialAuthPopup(provider)
-      const token = result.tokens.access_token
-      const decoded = decodeToken(token)
+      const result = await openSocialAuthPopup(provider);
+      const token = result.tokens.access_token;
+      const decoded = decodeToken(token);
 
-      setTokens(token, result.refreshToken ?? '')
-      if (decoded) setUser(decoded)
+      setTokens(token, result.refreshToken ?? "");
+      if (decoded) setUser(decoded);
 
-      notify.success('Đăng nhập thành công!')
-      const role = decoded?.role ?? 'Customer'
-      if (role === 'Admin' || role === 'SuperAdmin' || role === 'Staff') {
-        navigate('/admin/dashboard', { replace: true })
+      notify.success("Đăng nhập thành công!");
+      const role = decoded?.role ?? "Customer";
+      if (role === "Admin" || role === "SuperAdmin" || role === "Staff") {
+        navigate("/admin/dashboard", { replace: true });
       } else {
-        navigate('/', { replace: true })
+        navigate("/", { replace: true });
       }
     } catch (err) {
-      notify.error(extractError(err))
+      notify.error(extractError(err));
     }
-  }
+  };
 
   return (
     <div>
       <h2 className="mb-1 text-2xl font-bold text-slate-800">Đăng nhập</h2>
       <p className="mb-6 text-sm text-slate-500">
-        Chưa có tài khoản?{' '}
-        <Link to="/auth/register" className="font-medium text-blue-600 hover:underline">
+        Chưa có tài khoản?{" "}
+        <Link
+          to="/auth/register"
+          className="font-medium text-blue-600 hover:underline"
+        >
           Đăng ký ngay
         </Link>
       </p>
@@ -94,22 +91,26 @@ export default function LoginPage() {
             Tài khoản / Email / SĐT
           </label>
           <input
-            {...register('usernameOrPhoneOrEmail')}
+            {...register("usernameOrPhoneOrEmail")}
             className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             placeholder="Nhập tài khoản, email hoặc số điện thoại"
           />
           {errors.usernameOrPhoneOrEmail && (
-            <p className="mt-1 text-xs text-red-500">{errors.usernameOrPhoneOrEmail.message}</p>
+            <p className="mt-1 text-xs text-red-500">
+              {errors.usernameOrPhoneOrEmail.message}
+            </p>
           )}
         </div>
 
         {/* Password */}
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Mật khẩu</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Mật khẩu
+          </label>
           <div className="relative">
             <input
-              {...register('password')}
-              type={showPwd ? 'text' : 'password'}
+              {...register("password")}
+              type={showPwd ? "text" : "password"}
               className="w-full rounded-lg border border-slate-300 px-3 py-2.5 pr-10 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               placeholder="Nhập mật khẩu"
             />
@@ -118,16 +119,25 @@ export default function LoginPage() {
               onClick={() => setShowPwd(!showPwd)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
-              {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPwd ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
+            <p className="mt-1 text-xs text-red-500">
+              {errors.password.message}
+            </p>
           )}
         </div>
 
         <div className="flex items-center justify-end">
-          <Link to="/auth/forgot-password" className="text-xs text-blue-600 hover:underline">
+          <Link
+            to="/auth/forgot-password"
+            className="text-xs text-blue-600 hover:underline"
+          >
             Quên mật khẩu?
           </Link>
         </div>
@@ -159,7 +169,7 @@ export default function LoginPage() {
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => handleSocialLogin('google')}
+            onClick={() => handleSocialLogin("google")}
             className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -184,10 +194,14 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
-            onClick={() => handleSocialLogin('facebook')}
+            onClick={() => handleSocialLogin("facebook")}
             className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
-            <svg className="h-4 w-4 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="h-4 w-4 text-[#1877F2]"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
             </svg>
             Facebook
@@ -196,11 +210,11 @@ export default function LoginPage() {
       </div>
 
       <p className="mt-4 text-center text-xs text-slate-500">
-        Là quản trị viên?{' '}
+        Là quản trị viên?{" "}
         <Link to="/auth/admin/login" className="text-blue-600 hover:underline">
           Đăng nhập Admin
         </Link>
       </p>
     </div>
-  )
+  );
 }

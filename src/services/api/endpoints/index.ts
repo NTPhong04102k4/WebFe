@@ -27,7 +27,7 @@ export const API = {
   },
   user: {
     detail: "/user/detail",
-    updateProfile: "/user/update-profile",
+    updateProfile: "/user/profile",
     changePassword: "/user/changepassword",
     forgetPassword: "/user/forgetPassword",
     verifyOtpForPassword: "/user/verifyOtpForPassword",
@@ -42,8 +42,7 @@ export const API = {
       `/orders/payment/order/${orderNumber}/payment-info`,
     createOrder: "/orders/payment/order",
     sepayIpn: "/orders/payment/sepay-ipn",
-    orderStatus: (id: string | number) =>
-      `/orders/payment/order/${id}/status`,
+    orderStatus: (id: string | number) => `/orders/payment/order/${id}/status`,
   },
   chat: {
     conversations: "/chat/conversations",
@@ -94,7 +93,8 @@ export const API = {
     brandCreate: "/common/brand/create",
     brandEdit: "/common/brand/edit",
     brandAccessoryCreate: "/common/brand-accessories",
-    brandAccessoryEdit: (name: string) => `/common/brand-accessories/${encodeURIComponent(name)}`,
+    brandAccessoryEdit: (name: string) =>
+      `/common/brand-accessories/${encodeURIComponent(name)}`,
     bodytypes: "/common/bodytypes",
     bodytypeCreate: "/common/bodytype/create",
     bodytypeUpdate: "/common/bodytype/update",
@@ -118,10 +118,8 @@ export const API = {
       available: "/hr/technicians/available",
       detail: (id: string | number) => `/hr/technicians/${id}`,
       skills: (id: string | number) => `/hr/technicians/${id}/skills`,
-      performance: (id: string | number) =>
-        `/hr/technicians/${id}/performance`,
-      assignSkill: (id: string | number) =>
-        `/hr/technicians/${id}/skills`,
+      performance: (id: string | number) => `/hr/technicians/${id}/performance`,
+      assignSkill: (id: string | number) => `/hr/technicians/${id}/skills`,
       removeSkill: (technicianId: string | number, skillId: string | number) =>
         `/hr/technicians/${technicianId}/skills/${skillId}`,
     },
@@ -134,12 +132,10 @@ export const API = {
     policies: "/insurance/policies",
     policiesExpiring: "/insurance/policies/expiring",
     policy: (id: string | number) => `/insurance/policies/${id}`,
-    policyCancel: (id: string | number) =>
-      `/insurance/policies/${id}/cancel`,
+    policyCancel: (id: string | number) => `/insurance/policies/${id}/cancel`,
     claims: "/insurance/claims",
     claim: (id: string | number) => `/insurance/claims/${id}`,
-    claimStatus: (id: string | number) =>
-      `/insurance/claims/${id}/status`,
+    claimStatus: (id: string | number) => `/insurance/claims/${id}/status`,
   },
   workshop: {
     customerVehicles: "/workshop/customer-vehicles",
@@ -169,20 +165,18 @@ export const API = {
       `/workshop/work-orders/${id}/services`,
     workOrderParts: (id: string | number) =>
       `/workshop/work-orders/${id}/parts`,
-    workOrderPay: (id: string | number) =>
-      `/workshop/work-orders/${id}/pay`,
+    workOrderPay: (id: string | number) => `/workshop/work-orders/${id}/pay`,
     workOrderPaymentInfo: (id: string | number) =>
       `/workshop/work-orders/${id}/payment-info`,
     workOrderFeedback: (id: string | number) =>
       `/workshop/work-orders/${id}/feedback`,
     workOrderServiceItem: (
       workOrderId: string | number,
-      workOrderServiceId: string | number
-    ) =>
-      `/workshop/work-orders/${workOrderId}/services/${workOrderServiceId}`,
+      workOrderServiceId: string | number,
+    ) => `/workshop/work-orders/${workOrderId}/services/${workOrderServiceId}`,
     workOrderPartItem: (
       workOrderId: string | number,
-      workOrderPartId: string | number
+      workOrderPartId: string | number,
     ) => `/workshop/work-orders/${workOrderId}/parts/${workOrderPartId}`,
   },
   serviceCatalog: {
@@ -198,7 +192,8 @@ export const API = {
     cancel: "/premium-plans/cancel",
     renew: "/premium-plans/renew",
     adminSubscriptions: "/premium-plans/admin/subscriptions",
-    adminUserSubscription: (userId: string | number) => `/premium-plans/admin/users/${userId}/subscription`,
+    adminUserSubscription: (userId: string | number) =>
+      `/premium-plans/admin/users/${userId}/subscription`,
   },
   review: {
     carList: (carId: string | number) => `/reviews/cars/${carId}`,

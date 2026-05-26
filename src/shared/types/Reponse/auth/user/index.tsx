@@ -1,9 +1,9 @@
 export interface LoginResponse {
   /** Primary access token (camelCase từ backend TokenResponse) */
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  tokenType: string;
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  token_type: string;
   scope: string;
   /** Backward-compat: một số endpoint trả `token` thay vì `accessToken` */
   token?: string;

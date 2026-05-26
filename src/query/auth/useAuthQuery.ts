@@ -1,37 +1,21 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getRolesFromToken, getTokenClaims } from "src/services/decode";
+import { getRolesFromToken } from "src/services/decode";
 import { authAPI } from "src/services/api/functions/auth/authFn";
-import {
-  RegisterVerifyResponse,
-  UserResponse,
-} from "src/shared/types/Reponse/auth/user";
+import { RegisterVerifyResponse } from "src/shared/types/Reponse/auth/user";
 
 import { logger } from "@/common/utils/logger";
 import { useAuthStore, type AuthUser } from "@/stores/authStore";
+import { decodeToken } from "@/common/utils/jwtDecode";
 
-function mapProfileToAuthUser(profile: UserResponse, token: string): AuthUser {
-  const roles = getRolesFromToken(token);
-  return {
-    id: profile.userID,
-    userID: profile.userID,
-    userUUID: profile.userUUID,
-    userCode: profile.userCode,
-    username: profile.username,
-    email: profile.email,
-    fullName: profile.fullName,
-    firstName: profile.firstName,
-    lastName: profile.lastName,
-    phone: profile.phone,
-    address: profile.address,
-    image: profile.image,
-    role: roles[0] ?? "Customer",
-  };
-}
+// Query key factory — dùng username làm discriminator để tránh cache cross-user
+export const profileQueryKey = (username: string) =>
+  ["profile", username] as const;
 
 function mapVerifyOtpUser(
   user: RegisterVerifyResponse["data"]["user"],
-  token: string
+  token: string,
 ): AuthUser {
   const roles = getRolesFromToken(token);
   return {
@@ -51,34 +35,19 @@ export const useAuthQuery = () => {
   const currentUser = useAuthStore((s) => s.user);
   const setTokens = useAuthStore((s) => s.setTokens);
   const setUser = useAuthStore((s) => s.setUser);
-  const clearUser = useAuthStore((s) => s.clearUser);
   const logoutStore = useAuthStore((s) => s.logout);
 
   // ─── Login mutation ────────────────────────────────────────────────────────
   const loginMutation = useMutation({
     mutationFn: authAPI.login,
-    onSuccess: async (response) => {
-      // Backend trả TokenResponse: { accessToken, refreshToken, expiresIn, ... }
-      // Một số version cũ có thể vẫn trả `token` — dùng cả hai
-      const token = response.data.accessToken ?? response.data.token ?? "";
-      const rToken = response.data.refreshToken ?? "";
-
+    onSuccess: (response) => {
+      const token = response.data.access_token ?? response.data.token ?? "";
+      const rToken = response.data.refresh_token ?? "";
       setTokens(token, rToken);
-      clearUser();
 
-      try {
-        const claims = getTokenClaims(token);
-        // Sub claim chứa userUUID (string) hoặc username
-        const userUUID = claims?.sub ?? "";
-        if (userUUID) {
-          const profileResponse = await authAPI.getProfile(userUUID);
-          if (profileResponse?.data) {
-            setUser(mapProfileToAuthUser(profileResponse.data, token));
-            queryClient.setQueryData(["profile"], profileResponse);
-          }
-        }
-      } catch (error) {
-        logger.error("Failed to fetch profile after login:", error);
+      const decoded = decodeToken(token);
+      if (decoded) {
+        setUser(decoded);
       }
     },
   });
@@ -95,19 +64,21 @@ export const useAuthQuery = () => {
     onSuccess: (response) => {
       const token = response.data.token ?? "";
       const rToken = response.data.refreshToken ?? "";
-      const claims = getTokenClaims(token);
+
+      // decodeToken trả về AuthUser đầy đủ — không manual parse claim
+      const decoded = decodeToken(token);
       const roles = getRolesFromToken(token);
 
       setTokens(token, rToken);
       setUser({
-        id: Number(claims?.sub ?? 0) || 0,
-        userID: Number(claims?.sub ?? 0) || 0,
-        userUUID: typeof claims?.sub === "string" ? claims.sub : undefined,
-        username: String(claims?.unique_name ?? claims?.name ?? ""),
-        email: String(claims?.email ?? ""),
-        fullName:
-          response.data.fullName ??
-          String(claims?.name ?? claims?.unique_name ?? ""),
+        id: decoded?.id ?? 0,
+        userID: decoded?.userID ?? 0,
+        userUUID: decoded?.userUUID,
+        userCode: decoded?.userCode,
+        username: decoded?.username ?? "",
+        email: decoded?.email ?? "",
+        // fullName từ response body ưu tiên hơn JWT vì backend trả đúng tên
+        fullName: response.data.fullName || decoded?.fullName || "",
         role: roles[0] ?? "Admin",
       });
     },
@@ -137,36 +108,54 @@ export const useAuthQuery = () => {
       queryClient.clear();
     },
     onError: () => {
-      // Dù API lỗi vẫn clear local state
+      // Dù API lỗi vẫn clear local state để user không bị kẹt
       logoutStore();
       queryClient.clear();
     },
   });
 
   // ─── Profile query ─────────────────────────────────────────────────────────
+  // Chỉ fetch khi user là Customer — Admin/Staff không có endpoint /user/{username}
+  const profileUsername = currentUser?.username ?? currentUser?.email ?? "";
+
   const profileQuery = useQuery({
-    queryKey: ["profile"],
-    queryFn: () =>
-      authAPI.getProfile(String(currentUser?.userUUID ?? currentUser?.id ?? "")),
+    queryKey: profileQueryKey(profileUsername),
+    queryFn: () => authAPI.getProfile(profileUsername),
     enabled:
-      !!accessToken && !!(currentUser?.userUUID ?? currentUser?.id),
+      !!accessToken &&
+      !!profileUsername &&
+      currentUser?.role === "Customer",
     staleTime: 5 * 60 * 1000,
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 401) {
-        logger.warn("⚠️ Profile query returned 401 - clearing credentials");
-        logoutStore();
-        return false;
-      }
-      if (error?.response?.status === 400) {
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: (failureCount, error: unknown) => {
+      const status = (error as { response?: { status?: number } })?.response
+        ?.status;
+      if (status === 401 || status === 400) {
         logger.warn(
-          "⚠️ Profile query returned 400 - skipping retry but keeping auth state:",
-          error?.response?.data
+          `Profile query returned ${status} - skipping retry, keeping auth state`,
         );
         return false;
       }
       return failureCount < 1;
     },
+    select: (res) => res.data,
   });
+
+  // Merge profile API data vào Zustand — chỉ overwrite field user có thể cập nhật
+  // Giữ nguyên: role, userUUID, userCode (source of truth là JWT)
+  useEffect(() => {
+    if (profileQuery.data && currentUser) {
+      setUser({
+        ...currentUser,
+        fullName: profileQuery.data.fullName || currentUser.fullName,
+        phone: profileQuery.data.phone ?? currentUser.phone,
+        address: profileQuery.data.address ?? currentUser.address,
+        image: profileQuery.data.image ?? currentUser.image,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileQuery.data]);
 
   return {
     login: loginMutation.mutate,
@@ -197,7 +186,7 @@ export const useAuthQuery = () => {
     logout: logoutMutation.mutate,
     isLogoutLoading: logoutMutation.isPending,
 
-    profile: profileQuery.data?.data,
+    profile: profileQuery.data,
     isProfileLoading: profileQuery.isLoading,
     profileError: profileQuery.error,
     refetchProfile: profileQuery.refetch,

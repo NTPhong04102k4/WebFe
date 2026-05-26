@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosResponse } from "axios";
 
 import { ENV } from "../../config/environment";
 import { logger } from "@/common/utils/logger";
-import { storage } from "../storage";
+import { useAuthStore } from "@/stores/authStore";
 
 const API_BASE_URL = ENV.API_URL;
 
@@ -16,16 +16,14 @@ const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = storage.getToken();
+    // Đọc token từ Zustand store — single source of truth
+    // (Zustand persist lưu vào localStorage key "soldcars-auth")
+    const token = useAuthStore.getState().accessToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      // Log for debugging (only in development)
-      logger.log("🔐 Adding Authorization header to request:", config.url);
+      logger.log("🔐 Bearer token attached:", config.url);
     } else {
-      logger.warn(
-        "⚠️ No auth token found in localStorage for request:",
-        config.url
-      );
+      logger.warn("⚠️ No auth token in store for:", config.url);
     }
 
     if (config.data instanceof FormData) {

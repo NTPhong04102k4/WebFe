@@ -25,13 +25,12 @@ export const authAPI = {
     apiClient.post<RegisterResponse>(AUTH_ROUTES.REGISTER, data),
 
   /**
-   * Lấy thông tin profile theo userUUID (sub claim trong JWT).
-   * Backend endpoint: GET /user/detail?userUUID=<uuid>
+   * Lấy thông tin profile theo username hoặc email.
+   * Backend endpoint: GET /user/{gmailOrUserName}
+   * Yêu cầu role: Customer (Bearer token)
    */
-  getProfile: (userUUID: string) =>
-    apiClient.get<UserResponse>("/user/detail", {
-      params: { userUUID },
-    }),
+  getProfile: (usernameOrEmail: string) =>
+    apiClient.get<UserResponse>(`/user/${encodeURIComponent(usernameOrEmail)}`),
 
   verifyOtp: (data: VerifyOtpRequest) =>
     apiClient.post<RegisterVerifyResponse>(AUTH_ROUTES.VERIFY_OTP, data),
@@ -40,7 +39,7 @@ export const authAPI = {
     apiClient.post<ResendOtpResponse>(AUTH_ROUTES.RESEND_OTP, data),
 
   updateProfile: (data: FormData) =>
-    apiClient.post(AUTH_ROUTES.UPDATE_PROFILE, data),
+    apiClient.patch(AUTH_ROUTES.UPDATE_PROFILE, data),
 
   /**
    * Logout: revoke cả access token (JTI blacklist) + refresh token.

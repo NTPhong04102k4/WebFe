@@ -1,46 +1,100 @@
-import { useEffect, useState } from 'react'
-import { Link, Outlet, useNavigate } from 'react-router-dom'
-import { Car, ShoppingCart, User, LogOut, Menu, X, MessageCircle, Bot } from 'lucide-react'
-import { useAuthStore } from '@/stores/authStore'
-import { useCartStore } from '@/stores/cartStore'
-import { notify } from "@/components/core/Feedback/toast"
-import api from '@/services/api/axiosInstance'
-import { canAccessStaffBackend, getUserRoles } from '@/common/utils/roles'
+import { useEffect, useRef, useState } from "react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
+import {
+  Car,
+  ShoppingCart,
+  User,
+  LogOut,
+  Menu,
+  X,
+  MessageCircle,
+  Bot,
+} from "lucide-react";
+import { useAuthStore } from "@/stores/authStore";
+import { useCartStore } from "@/stores/cartStore";
+import { notify } from "@/components/core/Feedback/toast";
+import api from "@/services/api/axiosInstance";
+import { canAccessStaffBackend, getUserRoles } from "@/common/utils/roles";
+import { isTokenExpired } from "@/services/decode";
+import { API } from "@/services/api/endpoints";
 
 export default function CustomerLayout() {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const { user, logout, accessToken } = useAuthStore()
-  const cartCount = useCartStore((s) => s.totalCount())
-  const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { user, logout, accessToken } = useAuthStore();
+  const refreshToken = useAuthStore((s) => s.refreshToken);
+  const setTokens = useAuthStore((s) => s.setTokens);
 
+  const cartCount = useCartStore((s) => s.totalCount());
+  const navigate = useNavigate();
+
+  // Chạy một lần khi layout mount — nếu access token đã expire thì thử refresh
+  // ngay, không đợi request đầu tiên bị 401
+  const refreshAttempted = useRef(false);
+  useEffect(() => {
+    if (refreshAttempted.current) return;
+    refreshAttempted.current = true;
+
+    if (!accessToken || !isTokenExpired(accessToken)) return;
+
+    if (!refreshToken) {
+      logout();
+      navigate("/auth/login", { replace: true });
+      return;
+    }
+
+    api
+      .post<{ access_token?: string; token?: string; refresh_token?: string }>(
+        API.auth.refreshToken,
+        { refreshToken },
+      )
+      .then((res) => {
+        const newAccess = res.data.access_token ?? res.data.token ?? "";
+        const newRefresh = res.data.refresh_token ?? refreshToken;
+        if (newAccess) {
+          setTokens(newAccess, newRefresh);
+        } else {
+          logout();
+          navigate("/auth/login", { replace: true });
+        }
+      })
+      .catch(() => {
+        // Refresh thất bại — buộc đăng xuất để tránh dùng token cũ
+        logout();
+        notify.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        navigate("/auth/login", { replace: true });
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Redirect staff/admin về backend của họ ngay sau login
   useEffect(() => {
     if (canAccessStaffBackend(getUserRoles(user))) {
-      navigate('/admin/dashboard', { replace: true })
+      navigate("/admin/dashboard", { replace: true });
     }
-  }, [navigate, user])
+  }, [navigate, user]);
 
   const handleLogout = async () => {
     try {
       if (accessToken) {
-        const refreshToken = useAuthStore.getState().refreshToken
-        await api.post('/auth/logout', { refreshToken })
+        const rToken = useAuthStore.getState().refreshToken;
+        await api.post(API.auth.logout, { refreshToken: rToken });
       }
     } catch {
-      // ignore
+      // bỏ qua lỗi API — local state luôn được clear
     } finally {
-      logout()
-      notify.success('Đã đăng xuất')
-      navigate('/')
+      logout();
+      notify.success("Đã đăng xuất");
+      navigate("/");
     }
-  }
+  };
 
   const navLinks = [
-    { to: '/', label: 'Trang chủ' },
-    { to: '/cars', label: 'Xe hơi' },
-    { to: '/accessories', label: 'Phụ kiện' },
-    { to: '/appointments', label: 'Dịch vụ' },
-    { to: '/reviews', label: 'Review' },
-  ]
+    { to: "/", label: "Trang chủ" },
+    { to: "/cars", label: "Xe hơi" },
+    { to: "/accessories", label: "Phụ kiện" },
+    { to: "/appointments", label: "Dịch vụ" },
+    { to: "/reviews", label: "Review" },
+  ];
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
@@ -48,7 +102,10 @@ export default function CustomerLayout() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 font-bold text-blue-700">
+          <Link
+            to="/"
+            className="flex items-center gap-2 font-bold text-blue-700"
+          >
             <Car className="h-6 w-6" />
             <span className="text-lg">SoldCars</span>
           </Link>
@@ -85,7 +142,7 @@ export default function CustomerLayout() {
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
-                  {cartCount > 9 ? '9+' : cartCount}
+                  {cartCount > 9 ? "9+" : cartCount}
                 </span>
               )}
             </Link>
@@ -94,7 +151,9 @@ export default function CustomerLayout() {
               <div className="group relative">
                 <button className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:block">{user.fullName || user.username}</span>
+                  <span className="hidden sm:block">
+                    {user.fullName || user.username}
+                  </span>
                 </button>
                 {/* Dropdown */}
                 <div className="absolute right-0 top-full mt-1 hidden w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg group-hover:block">
@@ -122,7 +181,7 @@ export default function CustomerLayout() {
                   >
                     <MessageCircle className="h-4 w-4" /> Chat
                   </Link>
-                  {(user.role === 'Admin' || user.role === 'SuperAdmin') && (
+                  {(user.role === "Admin" || user.role === "SuperAdmin") && (
                     <Link
                       to="/admin/dashboard"
                       className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-slate-50"
@@ -153,7 +212,11 @@ export default function CustomerLayout() {
               className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden"
               onClick={() => setMenuOpen(!menuOpen)}
             >
-              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {menuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </button>
           </div>
         </div>
@@ -196,16 +259,36 @@ export default function CustomerLayout() {
             <div>
               <h4 className="mb-3 font-semibold text-white">Liên kết nhanh</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/cars" className="hover:text-white">Xe hơi</Link></li>
-                <li><Link to="/accessories" className="hover:text-white">Phụ kiện</Link></li>
-                <li><Link to="/appointments" className="hover:text-white">Đặt lịch hẹn</Link></li>
+                <li>
+                  <Link to="/cars" className="hover:text-white">
+                    Xe hơi
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/accessories" className="hover:text-white">
+                    Phụ kiện
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/appointments" className="hover:text-white">
+                    Đặt lịch hẹn
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
               <h4 className="mb-3 font-semibold text-white">Hỗ trợ</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/ai-chat" className="hover:text-white">AI Chatbot</Link></li>
-                <li><Link to="/chat" className="hover:text-white">Chat trực tiếp</Link></li>
+                <li>
+                  <Link to="/ai-chat" className="hover:text-white">
+                    AI Chatbot
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/chat" className="hover:text-white">
+                    Chat trực tiếp
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
@@ -215,5 +298,5 @@ export default function CustomerLayout() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
