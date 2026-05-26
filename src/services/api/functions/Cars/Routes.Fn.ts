@@ -15,10 +15,17 @@ import {
 export const carRouteFn = {
   getDetail: async (id: number, options?: ApiRequestOptions) => {
     const response = await apiClient.get<CarDetailResponse>(
-      carRoute.detail,
-      withSignal({ params: { id } }, options)
+      carRoute.detail(id),
+      withSignal({}, options)
     );
     return response.data;
+  },
+  getTechSpec: async (id: number, options?: ApiRequestOptions) => {
+    const response = await apiClient.get<{ success: boolean; data: CarDetailResponse }>(
+      carRoute.techSpecGet(id),
+      withSignal({}, options)
+    );
+    return response.data.data;
   },
   getPaging: async (params: CarPagingRequest, options?: ApiRequestOptions) => {
     const response = await apiClient.get<OperationResult<PagedResponse<CarResponse["data"][number]>>>(

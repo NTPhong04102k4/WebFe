@@ -77,12 +77,12 @@ export const API = {
     kbItem: (id: string | number) => `/ai/kb/${id}`,
   },
   car: {
-    detail: "/car/detail",
+    detail: (id: string | number) => `/cars/${id}`,
+    techSpecGet: (id: string | number) => `/cars/${id}/tech-spec`,
     paging: "/cars",
     create: "/car/create",
     edit: "/car/edit",
     delete: (id: string | number) => `/cars/${id}`,
-    /** Backend route currently used by app (see Swagger if 404). */
     techSpecDetailItem: "/car/techSpec/DetailItem",
     techSpecCreate: "/car/techSpec/create",
     techSpecEdit: "/car/techSpec/edit",

@@ -4,6 +4,27 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notify } from "@/components/core/Feedback/toast";
 import { aiApi } from "@/services/api/functions/ai/ai.api";
 import type { AiMessageViewModel, AiSessionViewModel } from "@/services/api/functions/ai/ai.api";
+import { useAuthStore } from "@/stores/authStore";
+import { useMySubscription } from "@/query/premium/usePremiumQueries";
+import PremiumGateModal from "@/pages/customer/Premium/components/PremiumGateModal";
+
+const FREE_AI_LIMIT = 3;
+const AI_COUNT_KEY = "ai-free-count";
+
+function getFreeMsgCount(): number {
+  try {
+    const stored = JSON.parse(localStorage.getItem(AI_COUNT_KEY) ?? "null") as { date: string; count: number } | null;
+    const today = new Date().toISOString().slice(0, 10);
+    if (stored?.date === today) return stored.count;
+  } catch {}
+  return 0;
+}
+
+function incrementFreeMsgCount(): void {
+  const count = getFreeMsgCount();
+  const today = new Date().toISOString().slice(0, 10);
+  localStorage.setItem(AI_COUNT_KEY, JSON.stringify({ date: today, count: count + 1 }));
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -282,12 +303,18 @@ function EmptyState() {
 export default function AiChatPage() {
   const qc = useQueryClient();
 
+  // ── Auth & premium ─────────────────────────────────────────────────────────
+  const isLoggedIn = useAuthStore((s) => !!s.accessToken);
+  const subQuery = useMySubscription(isLoggedIn);
+  const isPremium = subQuery.data?.subscription?.status === "Active";
+
   // ── State (all useState/useRef before queries/mutations) ──────────────────
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState("");
   const [feedbackMap, setFeedbackMap] = useState<FeedbackMap>({});
   const [isSending, setIsSending] = useState(false);
+  const [premiumGateOpen, setPremiumGateOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -410,8 +437,15 @@ export default function AiChatPage() {
   const handleSend = () => {
     const text = input.trim();
     if (!text || isSending) return;
+
+    if (!isPremium && getFreeMsgCount() >= FREE_AI_LIMIT) {
+      setPremiumGateOpen(true);
+      return;
+    }
+
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
+    if (!isPremium) incrementFreeMsgCount();
     sendMutation.mutate(text);
   };
 
@@ -545,6 +579,19 @@ export default function AiChatPage() {
 
         {/* Input area */}
         <div className="border-t border-slate-200 bg-white px-4 py-4">
+          {!isPremium && (
+            <div className="mx-auto mb-2 flex max-w-4xl items-center justify-between rounded-lg bg-amber-50 px-3 py-1.5">
+              <span className="text-xs text-amber-700">
+                Tin nhắn miễn phí hôm nay: <strong>{getFreeMsgCount()}/{FREE_AI_LIMIT}</strong>
+              </span>
+              <button
+                onClick={() => setPremiumGateOpen(true)}
+                className="text-xs font-semibold text-amber-700 hover:underline"
+              >
+                Nâng cấp Premium →
+              </button>
+            </div>
+          )}
           <div className="mx-auto flex max-w-4xl items-end gap-3">
             <div className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 transition-all focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-400/20">
               <textarea
@@ -552,7 +599,11 @@ export default function AiChatPage() {
                 value={input}
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Nhập câu hỏi... (Enter gửi · Shift+Enter xuống dòng)"
+                placeholder={
+                  !isPremium && getFreeMsgCount() >= FREE_AI_LIMIT
+                    ? "Đã hết lượt miễn phí hôm nay — nâng cấp Premium để tiếp tục"
+                    : "Nhập câu hỏi... (Enter gửi · Shift+Enter xuống dòng)"
+                }
                 rows={1}
                 disabled={isSending}
                 className="block w-full resize-none bg-transparent px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none disabled:opacity-60"
@@ -577,6 +628,14 @@ export default function AiChatPage() {
           </p>
         </div>
       </main>
+
+      {premiumGateOpen && (
+        <PremiumGateModal
+          featureTitle="Chat AI không giới hạn"
+          featureDescription={`Tài khoản miễn phí chỉ được ${FREE_AI_LIMIT} tin nhắn/ngày. Nâng cấp Premium để chat không giới hạn.`}
+          onClose={() => setPremiumGateOpen(false)}
+        />
+      )}
     </div>
   );
 }

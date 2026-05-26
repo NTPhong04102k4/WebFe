@@ -30,15 +30,20 @@ export function useCarDetail(id: number | null) {
   });
 }
 
-export function useCarTechSpec(carId: number | null) {
+export function useCarTechSpec(carId: number | null, enabled = true) {
   return useQuery({
     queryKey: carId != null ? carKeys.techSpec(carId) : ["cars", "tech-spec", "none"],
     queryFn: ({ signal }) => {
       if (!carId) throw new Error("Car ID is required");
-      return carRouteFn.getDetail(carId, { signal });
+      return carRouteFn.getTechSpec(carId, { signal });
     },
-    enabled: carId != null,
+    enabled: carId != null && enabled,
     staleTime: 5 * 60_000,
+    retry: (count, error: unknown) => {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 403 || status === 401) return false;
+      return count < 1;
+    },
   });
 }
 
