@@ -1,18 +1,103 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, CheckCircle, XCircle, Sparkles } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { notify } from "src/components/core/Feedback/toast";
 import { usePremiumPlans, useAdminPremiumMutations } from "src/query/premium/usePremiumQueries";
 import type { PremiumPlan } from "src/services/api/functions/premium/premium.types";
 import { PremiumPlanFormModal } from "./PremiumPlanFormModal";
+import { PlanCard } from "./PlanCard";
+import { PlanStats } from "./PlanStats";
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
+const MOCK_SUBSCRIPTION_DATA = [
+  { month: "T1", count: 12 },
+  { month: "T2", count: 18 },
+  { month: "T3", count: 14 },
+  { month: "T4", count: 22 },
+  { month: "T5", count: 30 },
+  { month: "T6", count: 27 },
+];
+
+const MOCK_TOP_PLANS = [
+  { name: "Gold Plan", tier: "Gold", count: 42 },
+  { name: "Silver Plan", tier: "Silver", count: 35 },
+  { name: "Platinum Plan", tier: "Platinum", count: 18 },
+  { name: "Bronze Plan", tier: "Bronze", count: 12 },
+];
+
+function SubscriptionOverview() {
+  const maxCount = Math.max(...MOCK_SUBSCRIPTION_DATA.map((d) => d.count));
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Line chart (bars) */}
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <h3 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
+            Đăng ký theo tháng (6 tháng gần nhất)
+          </h3>
+          <div className="flex h-40 items-end gap-2">
+            {MOCK_SUBSCRIPTION_DATA.map((d) => {
+              const pct = (d.count / maxCount) * 100;
+              return (
+                <div key={d.month} className="group relative flex flex-1 flex-col items-center justify-end">
+                  <span className="mb-1 text-xs font-medium text-slate-500">{d.count}</span>
+                  <div
+                    className="w-full rounded-t-md bg-yellow-400 transition-all group-hover:bg-yellow-500"
+                    style={{ height: `${Math.max(pct, 4)}%` }}
+                  />
+                  <span className="mt-1 text-xs text-slate-400">{d.month}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Top plans */}
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <h3 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
+            Gói đăng ký nhiều nhất
+          </h3>
+          <div className="space-y-3">
+            {MOCK_TOP_PLANS.map((p, i) => {
+              const maxCnt = Math.max(...MOCK_TOP_PLANS.map((x) => x.count));
+              const pct = (p.count / maxCnt) * 100;
+              const tierColors: Record<string, string> = {
+                Bronze: "bg-amber-400",
+                Silver: "bg-slate-400",
+                Gold: "bg-yellow-400",
+                Platinum: "bg-blue-500",
+              };
+              return (
+                <div key={p.name}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                      <span className="text-xs font-bold text-slate-400">#{i + 1}</span>
+                      {p.name}
+                    </span>
+                    <span className="font-medium text-slate-800 dark:text-slate-100">{p.count}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className={`h-full rounded-full ${tierColors[p.tier] ?? "bg-blue-400"}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-4 text-xs text-slate-400">* Dữ liệu mô phỏng — cần endpoint /premium-plans/admin/subscriptions</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminPremiumPlansPage() {
   const { data: plans = [], isLoading } = usePremiumPlans();
   const { deletePlan } = useAdminPremiumMutations();
   const [editingPlan, setEditingPlan] = useState<PremiumPlan | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [tab, setTab] = useState<"plans" | "stats">("plans");
 
   const openCreate = () => {
     setEditingPlan(null);
@@ -25,7 +110,7 @@ export default function AdminPremiumPlansPage() {
   };
 
   const handleDelete = (plan: PremiumPlan) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa gói "${plan.planName}" không?`)) return;
+    if (!window.confirm(`Xóa gói "${plan.planName}"?`)) return;
     deletePlan.mutate(plan.planID, {
       onSuccess: () => notify.success("Đã xóa gói Premium"),
       onError: () => notify.error("Có lỗi xảy ra khi xóa gói"),
@@ -33,7 +118,8 @@ export default function AdminPremiumPlansPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-6 w-6 text-yellow-500" />
@@ -48,104 +134,54 @@ export default function AdminPremiumPlansPage() {
         </button>
       </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12 text-slate-500 dark:text-slate-400">Đang tải...</div>
-      ) : plans.length === 0 ? (
-        <div className="rounded-xl border border-slate-300 bg-white p-12 text-center dark:border-slate-600 dark:bg-slate-900">
-          <Sparkles className="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
-          <p className="text-slate-500 dark:text-slate-400">Chưa có gói Premium nào. Hãy tạo gói đầu tiên.</p>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.planID}
-              className="relative rounded-xl border border-slate-300 bg-white p-5 shadow-sm dark:border-slate-600 dark:bg-slate-900"
-            >
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <div>
-                  <h2 className="font-bold text-slate-800 dark:text-slate-100">{plan.planName}</h2>
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                    {plan.tier}
-                  </span>
-                </div>
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                    plan.isActive
-                      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                      : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                  }`}
-                >
-                  {plan.isActive ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                  {plan.isActive ? "Đang hoạt động" : "Tắt"}
-                </span>
-              </div>
+      {/* Stats cards */}
+      {!isLoading && <PlanStats plans={plans} />}
 
-              {plan.description && (
-                <p className="mb-3 text-sm text-slate-600 dark:text-slate-300">{plan.description}</p>
-              )}
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 w-fit dark:border-slate-700 dark:bg-slate-800">
+        {(["plans", "stats"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === t
+                ? "bg-white text-slate-800 shadow-sm dark:bg-slate-700 dark:text-slate-100"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+            }`}
+          >
+            {t === "plans" ? "Gói Premium" : "Thống kê & Subscriptions"}
+          </button>
+        ))}
+      </div>
 
-              <div className="mb-3 grid grid-cols-2 gap-2 text-sm">
-                <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-800">
-                  <div className="text-xs text-slate-500 dark:text-slate-400">Giá tháng</div>
-                  <div className="font-semibold text-slate-800 dark:text-slate-100">{formatCurrency(plan.monthlyPrice)}</div>
-                </div>
-                <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-800">
-                  <div className="text-xs text-slate-500 dark:text-slate-400">Giá năm</div>
-                  <div className="font-semibold text-slate-800 dark:text-slate-100">{formatCurrency(plan.yearlyPrice)}</div>
-                </div>
-              </div>
-
-              <div className="mb-3 flex flex-wrap gap-2 text-xs">
-                {plan.maxListings != null && (
-                  <span className="rounded bg-slate-100 px-2 py-1 dark:bg-slate-800">
-                    Tối đa {plan.maxListings} tin đăng
-                  </span>
-                )}
-                {plan.aiChatAccess && (
-                  <span className="rounded bg-purple-100 px-2 py-1 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                    Truy cập AI
-                  </span>
-                )}
-                {plan.prioritySupport && (
-                  <span className="rounded bg-orange-100 px-2 py-1 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
-                    Hỗ trợ ưu tiên
-                  </span>
-                )}
-              </div>
-
-              {plan.features.length > 0 && (
-                <ul className="mb-4 space-y-1">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
-                      <CheckCircle className="h-3 w-3 flex-shrink-0 text-green-500" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <div className="flex justify-end gap-2 border-t border-slate-200 pt-3 dark:border-slate-700">
-                <button
-                  onClick={() => openEdit(plan)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-slate-400 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-500 dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  <Edit className="h-3.5 w-3.5" />
-                  Sửa
-                </button>
-                <button
-                  onClick={() => handleDelete(plan)}
-                  disabled={deletePlan.isPending}
-                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-red-400 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-500 dark:text-red-400 dark:hover:bg-slate-800"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Xóa
-                </button>
-              </div>
+      {/* Tab 1: Plans grid */}
+      {tab === "plans" && (
+        <>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 text-slate-400">Đang tải...</div>
+          ) : plans.length === 0 ? (
+            <div className="rounded-xl border border-slate-300 bg-white p-12 text-center dark:border-slate-600 dark:bg-slate-900">
+              <Sparkles className="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
+              <p className="text-slate-500 dark:text-slate-400">Chưa có gói Premium nào. Hãy tạo gói đầu tiên.</p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {plans.map((plan) => (
+                <PlanCard
+                  key={plan.planID}
+                  plan={plan}
+                  onEdit={openEdit}
+                  onDelete={handleDelete}
+                  isDeleting={deletePlan.isPending}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
+
+      {/* Tab 2: Stats & subscriptions */}
+      {tab === "stats" && <SubscriptionOverview />}
 
       <PremiumPlanFormModal
         open={modalOpen}

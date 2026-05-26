@@ -97,5 +97,10 @@ export function useReviewMutations() {
         reviewApi.moderateReview(id, body),
       onSuccess: invalidate,
     }),
+    respondToServiceReview: useMutation({
+      mutationFn: ({ id, response }: { id: number; response: string }) =>
+        reviewApi.respondToServiceReview(id, { response }),
+      onSuccess: invalidate,
+    }),
   };
 }

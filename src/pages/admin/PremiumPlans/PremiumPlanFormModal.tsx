@@ -3,6 +3,8 @@ import { X, Plus, Trash2 } from "lucide-react";
 import { notify } from "src/components/core/Feedback/toast";
 import { useAdminPremiumMutations } from "src/query/premium/usePremiumQueries";
 import type { PremiumPlan, PremiumPlanCreateRequest } from "src/services/api/functions/premium/premium.types";
+import { parsePlanFeatures } from "src/services/api/functions/premium/premium.types";
+
 
 type Props = {
   open: boolean;
@@ -10,38 +12,46 @@ type Props = {
   onClose: () => void;
 };
 
-const emptyForm = (): PremiumPlanCreateRequest => ({
+/** State nội bộ — features giữ dưới dạng string[] để UX form thuận tiện */
+type FormState = Omit<PremiumPlanCreateRequest, 'features'> & { featuresArr: string[] };
+
+const emptyForm = (): FormState => ({
+  planCode: "",
   planName: "",
-  tier: "",
   description: "",
   monthlyPrice: 0,
   yearlyPrice: 0,
-  features: [],
-  isActive: true,
-  maxListings: null,
+  discountPercent: 0,
+  maxCarsView: null,
+  maxOrdersPerMonth: null,
   prioritySupport: false,
-  aiChatAccess: false,
+  isActive: true,
+  featuresArr: [],
 });
+
 
 export function PremiumPlanFormModal({ open, editingPlan, onClose }: Props) {
   const { createPlan, updatePlan } = useAdminPremiumMutations();
-  const [form, setForm] = useState<PremiumPlanCreateRequest>(emptyForm());
+  const [form, setForm] = useState<FormState>(emptyForm());
   const [newFeature, setNewFeature] = useState("");
+
 
   useEffect(() => {
     if (!open) return;
     if (editingPlan) {
       setForm({
+        planCode: editingPlan.planCode ?? "",
         planName: editingPlan.planName,
-        tier: editingPlan.tier,
         description: editingPlan.description ?? "",
         monthlyPrice: editingPlan.monthlyPrice,
         yearlyPrice: editingPlan.yearlyPrice,
-        features: [...editingPlan.features],
-        isActive: editingPlan.isActive,
-        maxListings: editingPlan.maxListings ?? null,
+        discountPercent: editingPlan.discountPercent ?? 0,
+        maxCarsView: editingPlan.maxCarsView ?? null,
+        maxOrdersPerMonth: editingPlan.maxOrdersPerMonth ?? null,
         prioritySupport: editingPlan.prioritySupport,
-        aiChatAccess: editingPlan.aiChatAccess,
+        isActive: editingPlan.isActive,
+        // Parse JSON string thành array cho form UI
+        featuresArr: parsePlanFeatures(editingPlan.features),
       });
     } else {
       setForm(emptyForm());
@@ -49,35 +59,44 @@ export function PremiumPlanFormModal({ open, editingPlan, onClose }: Props) {
     setNewFeature("");
   }, [open, editingPlan]);
 
+
   if (!open) return null;
 
   const addFeature = () => {
     const trimmed = newFeature.trim();
     if (!trimmed) return;
-    setForm((f) => ({ ...f, features: [...f.features, trimmed] }));
+    setForm((f) => ({ ...f, featuresArr: [...f.featuresArr, trimmed] }));
     setNewFeature("");
   };
 
   const removeFeature = (idx: number) =>
-    setForm((f) => ({ ...f, features: f.features.filter((_, i) => i !== idx) }));
+    setForm((f) => ({ ...f, featuresArr: f.featuresArr.filter((_, i) => i !== idx) }));
+
 
   const isPending = createPlan.isPending || updatePlan.isPending;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Serialize features array sang JSON string trước gửi backend
+    const { featuresArr, ...rest } = form;
+    const payload: PremiumPlanCreateRequest = {
+      ...rest,
+      features: JSON.stringify(featuresArr),
+    };
     try {
       if (editingPlan) {
-        await updatePlan.mutateAsync({ id: editingPlan.planID, req: form });
-        notify.success("Cập nhật gói Premium thành công");
+        await updatePlan.mutateAsync({ id: editingPlan.planID, req: payload });
+        notify.success("Đã cập nhật gói Premium");
       } else {
-        await createPlan.mutateAsync(form);
-        notify.success("Tạo gói Premium thành công");
+        await createPlan.mutateAsync(payload);
+        notify.success("Đã tạo gói Premium mới");
       }
       onClose();
     } catch {
       notify.error("Có lỗi xảy ra, vui lòng thử lại");
     }
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -95,6 +114,17 @@ export function PremiumPlanFormModal({ open, editingPlan, onClose }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 sm:col-span-1">
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Mã gói *</label>
+              <input
+                required
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                value={form.planCode}
+                onChange={(e) => setForm((f) => ({ ...f, planCode: e.target.value }))}
+                placeholder="VD: GOLD_PLAN (duy nhất, không đổi sau khi tạo)"
+                disabled={!!editingPlan}  // planCode không đổi sau khi tạo
+              />
+            </div>
+            <div className="col-span-2 sm:col-span-1">
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tên gói *</label>
               <input
                 required
@@ -104,22 +134,9 @@ export function PremiumPlanFormModal({ open, editingPlan, onClose }: Props) {
                 placeholder="VD: Gói Vàng"
               />
             </div>
-            <div className="col-span-2 sm:col-span-1">
-              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Mã tier *</label>
-              <input
-                required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                value={form.tier}
-                onChange={(e) => setForm((f) => ({ ...f, tier: e.target.value }))}
-                placeholder="VD: Gold"
-              />
-            </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Giá tháng (VND) *</label>
-              <input
-                required
-                type="number"
-                min={0}
+              <input required type="number" min={0}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                 value={form.monthlyPrice}
                 onChange={(e) => setForm((f) => ({ ...f, monthlyPrice: Number(e.target.value) }))}
@@ -127,25 +144,27 @@ export function PremiumPlanFormModal({ open, editingPlan, onClose }: Props) {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Giá năm (VND) *</label>
-              <input
-                required
-                type="number"
-                min={0}
+              <input required type="number" min={0}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                 value={form.yearlyPrice}
                 onChange={(e) => setForm((f) => ({ ...f, yearlyPrice: Number(e.target.value) }))}
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Giới hạn tin đăng</label>
-              <input
-                type="number"
-                min={0}
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Giới hạn xe xem</label>
+              <input type="number" min={0}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                value={form.maxListings ?? ""}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, maxListings: e.target.value ? Number(e.target.value) : null }))
-                }
+                value={form.maxCarsView ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, maxCarsView: e.target.value ? Number(e.target.value) : null }))}
+                placeholder="Để trống = không giới hạn"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Giới hạn đơn/tháng</label>
+              <input type="number" min={0}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                value={form.maxOrdersPerMonth ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, maxOrdersPerMonth: e.target.value ? Number(e.target.value) : null }))}
                 placeholder="Để trống = không giới hạn"
               />
             </div>
@@ -165,20 +184,11 @@ export function PremiumPlanFormModal({ open, editingPlan, onClose }: Props) {
             <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input
                 type="checkbox"
-                checked={form.aiChatAccess}
-                onChange={(e) => setForm((f) => ({ ...f, aiChatAccess: e.target.checked }))}
-                className="h-4 w-4 rounded"
-              />
-              Quyền truy cập AI Chat
-            </label>
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-              <input
-                type="checkbox"
                 checked={form.prioritySupport}
                 onChange={(e) => setForm((f) => ({ ...f, prioritySupport: e.target.checked }))}
                 className="h-4 w-4 rounded"
               />
-              Hỗ trợ ưu tiên
+              Hỗ trợ ưu tiên (Priority Support)
             </label>
             <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input
@@ -191,6 +201,7 @@ export function PremiumPlanFormModal({ open, editingPlan, onClose }: Props) {
             </label>
           </div>
 
+
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tính năng</label>
             <div className="mb-2 flex gap-2">
@@ -201,24 +212,18 @@ export function PremiumPlanFormModal({ open, editingPlan, onClose }: Props) {
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addFeature(); } }}
                 placeholder="Nhập tính năng rồi nhấn Enter hoặc +"
               />
-              <button
-                type="button"
-                onClick={addFeature}
+              <button type="button" onClick={addFeature}
                 className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
-            {form.features.length > 0 && (
+            {form.featuresArr.length > 0 && (
               <ul className="space-y-1">
-                {form.features.map((f, i) => (
+                {form.featuresArr.map((f, i) => (
                   <li key={i} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5 text-sm dark:bg-slate-800">
                     <span className="text-slate-700 dark:text-slate-300">{f}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeFeature(i)}
-                      className="text-red-500 hover:text-red-700"
-                    >
+                    <button type="button" onClick={() => removeFeature(i)} className="text-red-500 hover:text-red-700">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </li>

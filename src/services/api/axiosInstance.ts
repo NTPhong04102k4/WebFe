@@ -27,6 +27,12 @@ api.interceptors.response.use(
       try {
         const accessToken = useAuthStore.getState().accessToken
         const refreshToken = useAuthStore.getState().refreshToken
+
+        // Token còn hạn nhưng endpoint từ chối (thiếu claim / permissions) — không refresh
+        if (accessToken && !isTokenExpired(accessToken)) {
+          return Promise.reject(error)
+        }
+
         if (!refreshToken) {
           if (accessToken && isTokenExpired(accessToken)) {
             throw new Error('Expired access token')

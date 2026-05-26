@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { notify } from "@/components/core/Feedback/toast";
+
+
 import { usePremiumPlans, useMySubscription, usePremiumMutations } from "@/query/premium/usePremiumQueries";
 import { formatCurrency } from "@/common/utils/formatCurrency";
 import type { PremiumPlan, SubscriptionType } from "@/services/api/functions/premium/premium.types";
+import { parsePlanFeatures } from "@/services/api/functions/premium/premium.types";
 import SubscribeModal from "./components/SubscribeModal";
+
 
 const TIER_STYLES: Record<string, { gradient: string; badge: string; ring: string }> = {
   Silver: {
@@ -24,9 +27,10 @@ const TIER_STYLES: Record<string, { gradient: string; badge: string; ring: strin
   },
 };
 
-function getStyle(tier: string) {
-  return TIER_STYLES[tier] ?? TIER_STYLES["Silver"];
+function getStyle(tier?: string) {
+  return TIER_STYLES[tier ?? "Silver"] ?? TIER_STYLES["Silver"];
 }
+
 
 function CheckIcon() {
   return (
@@ -95,12 +99,13 @@ function PlanCard({
 
       {/* Features */}
       <ul className="mb-6 flex-1 space-y-2.5">
-        {plan.features.map((feature, i) => (
+        {parsePlanFeatures(plan.features).map((feature, i) => (
           <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
             <CheckIcon />
             <span>{feature}</span>
           </li>
         ))}
+
         {plan.aiChatAccess && (
           <li className="flex items-start gap-2 text-sm text-slate-700">
             <CheckIcon />
@@ -142,8 +147,9 @@ export default function PremiumPlansPage() {
   const [billingCycle, setBillingCycle] = useState<SubscriptionType>("Monthly");
   const [selectedPlan, setSelectedPlan] = useState<PremiumPlan | null>(null);
 
-  const navigate = useNavigate();
   const plans = usePremiumPlans();
+
+
   const mySubscription = useMySubscription();
   const { renew, cancel } = usePremiumMutations();
 

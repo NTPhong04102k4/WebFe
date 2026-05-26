@@ -98,6 +98,19 @@ export const reviewApi = {
     return res.data;
   },
 
+  respondToServiceReview: async (
+    id: number,
+    body: { response: string },
+    options?: ApiRequestOptions
+  ) => {
+    const res = await apiClient.post<ServiceReviewViewModel>(
+      API.review.serviceRespond(id),
+      body,
+      withSignal({}, options)
+    );
+    return res.data;
+  },
+
   // ─── Admin ─────────────────────────────────────────────────────────────────
 
   listPendingReviews: async (params: ReviewListParams, options?: ApiRequestOptions) => {

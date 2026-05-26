@@ -77,7 +77,7 @@ export default function CustomerVehiclesPage() {
   const [mileage, setMileage] = useState("");
 
   const pageSize = 20;
-  const { data, isLoading } = useCustomerVehicles({
+  const { data, isLoading, isError, error } = useCustomerVehicles({
     page,
     pageSize,
     userId: appliedUserId,
@@ -229,6 +229,9 @@ export default function CustomerVehiclesPage() {
 
   const rows = data?.data ?? [];
   const totalPages = Math.max(1, Math.ceil((data?.totalCount ?? 0) / pageSize));
+
+  const is401 = isError && (error as any)?.response?.status === 401;
+
   return (
     <div>
       <PageHeader
@@ -265,6 +268,14 @@ export default function CustomerVehiclesPage() {
           }}>Xoa</ActionButton>
         </div>
       </div>
+
+      {isError && (
+        <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/20 dark:text-red-400">
+          {is401
+            ? "Không có quyền truy cập danh sách xe khách hàng. Backend yêu cầu claim đặc biệt — vui lòng liên hệ kỹ thuật để kiểm tra endpoint /workshop/customer-vehicles."
+            : `Lỗi tải dữ liệu: ${(error as any)?.message ?? "Unknown error"}`}
+        </div>
+      )}
 
       <DataTable
         data={rows}

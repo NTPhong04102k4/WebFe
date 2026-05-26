@@ -8,6 +8,7 @@ import type {
 } from "src/services/api/functions/premium/premium.types";
 import { premiumKeys } from "./keys";
 
+/** GET /premium-plans — Public */
 export function usePremiumPlans() {
   return useQuery({
     queryKey: premiumKeys.plans(),
@@ -16,15 +17,22 @@ export function usePremiumPlans() {
   });
 }
 
+/** GET /premium-plans/my-subscription — Customer only */
 export function useMySubscription(enabled = true) {
   return useQuery({
     queryKey: premiumKeys.mySubscription(),
     queryFn: ({ signal }) => premiumApi.getMySubscription({ signal }),
     enabled,
     staleTime: 30_000,
+    retry: (count, error: unknown) => {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 404 || status === 401) return false;
+      return count < 1;
+    },
   });
 }
 
+/** Mutations cho Customer: subscribe, cancel, renew */
 export function usePremiumMutations() {
   const qc = useQueryClient();
   const invalidate = () =>
@@ -46,6 +54,10 @@ export function usePremiumMutations() {
   };
 }
 
+/**
+ * GET /premium-plans/admin/subscriptions
+ * Restored: backend đã implement trong commit feat/manage revenue premium plans
+ */
 export function useAdminSubscriptions(query: AdminSubscriptionsQuery = {}) {
   return useQuery({
     queryKey: premiumKeys.adminSubscriptions(query),
@@ -55,15 +67,7 @@ export function useAdminSubscriptions(query: AdminSubscriptionsQuery = {}) {
   });
 }
 
-export function useAdminUserSubscription(userId: string | number | null) {
-  return useQuery({
-    queryKey: userId != null ? premiumKeys.adminUserSubscription(userId) : ["premium", "admin-user-subscription", "none"],
-    queryFn: ({ signal }) => premiumApi.adminGetUserSubscription(userId!, { signal }),
-    enabled: userId != null,
-    staleTime: 30_000,
-  });
-}
-
+/** Admin CRUD mutations */
 export function useAdminPremiumMutations() {
   const qc = useQueryClient();
   const invalidatePlans = () => qc.invalidateQueries({ queryKey: premiumKeys.plans() });

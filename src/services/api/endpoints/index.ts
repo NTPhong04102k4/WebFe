@@ -36,14 +36,26 @@ export const API = {
     filesUpload: "/user/files/upload",
   },
   ordersPayment: {
+    /** GET /orders/payment/orders — Admin,SuperAdmin,Staff */
     orders: "/orders/payment/orders",
+    /** GET /orders/payment/order/{orderNumber} — Authorized */
     order: (orderNumber: string) => `/orders/payment/order/${orderNumber}`,
+    /** GET /orders/payment/order/{orderNumber}/payment-info — Authorized */
     orderPaymentInfo: (orderNumber: string) =>
       `/orders/payment/order/${orderNumber}/payment-info`,
+    /** POST /orders/payment/order — Customer */
     createOrder: "/orders/payment/order",
+    /** POST /orders/payment/sepay-ipn — AllowAnonymous */
     sepayIpn: "/orders/payment/sepay-ipn",
+    /** PATCH /orders/payment/order/{id}/status — Admin,SuperAdmin,Staff */
     orderStatus: (id: string | number) => `/orders/payment/order/${id}/status`,
+    /**
+     * GET /orders/payment/revenue-report — Admin,SuperAdmin
+     * params: fromDate?, toDate?, groupBy? (Day|Month|Category)
+     */
+    revenueReport: "/orders/payment/revenue-report",
   },
+
   chat: {
     conversations: "/chat/conversations",
     staffConversations: "/chat/conversations/staff",
@@ -191,10 +203,10 @@ export const API = {
     subscribe: "/premium-plans/subscribe",
     cancel: "/premium-plans/cancel",
     renew: "/premium-plans/renew",
+    /** GET /premium-plans/admin/subscriptions — Added in commit feat/manage revenue premium plans */
     adminSubscriptions: "/premium-plans/admin/subscriptions",
-    adminUserSubscription: (userId: string | number) =>
-      `/premium-plans/admin/users/${userId}/subscription`,
   },
+
   review: {
     carList: (carId: string | number) => `/reviews/cars/${carId}`,
     carStats: (carId: string | number) => `/reviews/cars/${carId}/stats`,

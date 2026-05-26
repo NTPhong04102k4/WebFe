@@ -95,8 +95,32 @@ export function createOrderInputFromCart(
   };
 }
 
+export interface AdminOrderListParams {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  keyword?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface RevenueDataPoint {
+  label: string;
+  totalSales: number;
+  orderCount: number;
+}
+
+export interface RevenueReport {
+  fromDate?: string;
+  toDate?: string;
+  groupBy: string;
+  totalRevenue: number;
+  totalOrders: number;
+  data: RevenueDataPoint[];
+}
+
 export const orderApi = {
-  list: async (params: { page?: number; pageSize?: number }, options?: ApiRequestOptions) => {
+  list: async (params: AdminOrderListParams, options?: ApiRequestOptions) => {
     const res = await apiClient.get<{ data: OrderViewModel[]; totalCount: number }>(
       API.ordersPayment.orders,
       withSignal({ params }, options)
@@ -127,4 +151,25 @@ export const orderApi = {
     );
     return unwrap(res.data);
   },
+
+  updateStatus: async (orderNumber: string, status: string) => {
+    const res = await apiClient.patch<OperationResult>(
+      API.ordersPayment.orderStatus(orderNumber),
+      { status }
+    );
+    return res.data;
+  },
+
+  /** GET /orders/payment/revenue-report */
+  revenue: async (
+    params: { fromDate?: string; toDate?: string; groupBy?: string },
+    options?: ApiRequestOptions
+  ) => {
+    const res = await apiClient.get<RevenueReport | OperationResult<RevenueReport>>(
+      API.ordersPayment.revenueReport,
+      withSignal({ params }, options)
+    );
+    return unwrap(res.data) as RevenueReport;
+  },
+
 };

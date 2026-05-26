@@ -4,16 +4,36 @@ export type PaymentMethod = "BankTransfer" | "CreditCard" | "MoMo" | "ZaloPay" |
 
 export interface PremiumPlan {
   planID: number;
+  planCode: string;
   planName: string;
-  tier: string;
+  tier?: string;
   description?: string | null;
   monthlyPrice: number;
   yearlyPrice: number;
-  features: string[];
+  /** Backend trả về JSON string — dùng parsePlanFeatures() để convert sang string[] */
+  features: string;
   isActive: boolean;
-  maxListings?: number | null;
+  discountPercent?: number;
+  maxCarsView?: number | null;
+  maxOrdersPerMonth?: number | null;
   prioritySupport: boolean;
-  aiChatAccess: boolean;
+  displayOrder?: number;
+  // Legacy fields — có thể không có trong response mới
+  maxListings?: number | null;
+  aiChatAccess?: boolean;
+}
+
+/** Parse features JSON string thành mảng. An toàn với mọi input. */
+export function parsePlanFeatures(features: string | string[] | null | undefined): string[] {
+  if (!features) return [];
+  if (Array.isArray(features)) return features;
+  try {
+    const parsed = JSON.parse(features);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    // fallback: comma-separated
+    return String(features).split(',').map(s => s.trim()).filter(Boolean);
+  }
 }
 
 export interface PremiumPlanResponse {
@@ -49,50 +69,62 @@ export interface SubscribeRequest {
 }
 
 export interface PremiumPlanCreateRequest {
+  planCode: string;
   planName: string;
-  tier: string;
   description?: string | null;
+  /** Backend nhận JSON string — dùng JSON.stringify(featuresArray) */
+  features: string;
   monthlyPrice: number;
   yearlyPrice: number;
-  features: string[];
-  isActive: boolean;
-  maxListings?: number | null;
+  discountPercent?: number;
+  maxCarsView?: number | null;
+  maxOrdersPerMonth?: number | null;
   prioritySupport: boolean;
-  aiChatAccess: boolean;
+  isActive: boolean;
+  displayOrder?: number;
 }
 
 export type PremiumPlanUpdateRequest = PremiumPlanCreateRequest;
 
+/**
+ * AdminSubscriptionResponse — maps to C# AdminSubscriptionResponse
+ * Commit: feat/manage revenue premium plans
+ */
 export interface AdminSubscription {
-  subscriptionID: number;
-  userID: number;
+  userPremiumID: number;
+  userID: string;           // Guid as string
   username: string;
-  email: string;
   fullName?: string | null;
+  email?: string | null;
   planID: number;
   planName: string;
-  tier: string;
+  planCode: string;
   subscriptionType: SubscriptionType;
-  status: SubscriptionStatus;
   startDate: string;
   endDate: string;
-  daysRemaining: number;
   autoRenew: boolean;
+  isActive: boolean;        // bool, không phải status string
   paymentMethod?: string | null;
+  paymentReference?: string | null;
+  price: number;
+  daysRemaining: number;
+  createdDate: string;
 }
 
+/** Response shape từ controller: { Data, TotalCount, Page, PageSize } */
 export interface AdminSubscriptionsResponse {
-  items: AdminSubscription[];
+  data: AdminSubscription[];
   totalCount: number;
   page: number;
   pageSize: number;
-  totalPages: number;
 }
 
+/** Query params cho GET /premium-plans/admin/subscriptions */
 export interface AdminSubscriptionsQuery {
   page?: number;
   pageSize?: number;
-  status?: SubscriptionStatus;
-  planID?: number;
-  search?: string;
+  planId?: number;          // backend param là planId (camelCase)
+  isActive?: boolean;       // bool
+  subscriptionType?: string; // "Monthly" | "Yearly"
 }
+
