@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, type ReactNode } from 'react'
 import { useAuthStore, type AuthRole, type AuthUser } from '@/stores/authStore'
 
 interface AuthContextValue {
@@ -39,8 +39,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export function useAuthContext() {
-  const context = useContext(AuthContext)
-  if (!context) throw new Error('useAuthContext must be used inside AuthProvider')
-  return context
-}

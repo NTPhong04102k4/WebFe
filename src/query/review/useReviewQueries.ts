@@ -8,6 +8,7 @@ import type {
   ReviewModerateRequest,
   ServiceReviewRequest,
 } from "src/services/api/functions/review/review.types";
+import { useAuthStore } from "src/stores/authStore";
 
 import { reviewKeys } from "./keys";
 
@@ -28,6 +29,19 @@ export function useCarReview(id: number | null) {
     queryKey: id != null ? reviewKeys.carReview(id) : ["review", "car", "none"],
     queryFn: ({ signal }) => reviewApi.getCarReview(id!, { signal }),
     enabled: id != null,
+  });
+}
+
+/** Lấy review của user hiện tại cho một xe (tất cả status). Trả null nếu chưa có. */
+export function useMyCarReview(carId: number | null) {
+  const userId = useAuthStore((s) => s.user?.userID);
+  return useQuery({
+    queryKey: carId != null && userId != null ? [...reviewKeys.carReviews({ carId }), "mine", userId] : ["review", "mine", "none"],
+    queryFn: async ({ signal }) => {
+      const result = await reviewApi.listCarReviews({ carId: carId!, page: 1, pageSize: 100 }, { signal });
+      return result.data.find((r) => r.userID === userId) ?? null;
+    },
+    enabled: carId != null && userId != null,
   });
 }
 
@@ -78,6 +92,11 @@ export function useReviewMutations() {
   return {
     createCarReview: useMutation({
       mutationFn: (body: CarReviewRequest) => reviewApi.createCarReview(body),
+      onSuccess: invalidate,
+    }),
+    updateCarReview: useMutation({
+      mutationFn: ({ id, body }: { id: number; body: CarReviewRequest }) =>
+        reviewApi.updateCarReview(id, body),
       onSuccess: invalidate,
     }),
     createServiceReview: useMutation({

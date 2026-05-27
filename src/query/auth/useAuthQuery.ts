@@ -44,11 +44,6 @@ export const useAuthQuery = () => {
       const token = response.data.access_token ?? response.data.token ?? "";
       const rToken = response.data.refresh_token ?? "";
       setTokens(token, rToken);
-
-      const decoded = decodeToken(token);
-      if (decoded) {
-        setUser(decoded);
-      }
     },
   });
 

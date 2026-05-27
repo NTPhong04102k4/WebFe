@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom'
-import { useAuthContext } from '@/contexts/AuthContext'
+import { useAuthStore } from '@/stores/authStore'
 import { canAccessStaffBackend, getDefaultRouteForRoles, getUserRoles, normalizeRoles } from '@/common/utils/roles'
 import { getRolesFromToken, isTokenExpired } from '@/services/decode'
 
@@ -10,7 +10,9 @@ interface Props {
 }
 
 export default function ProtectedRoute({ children, roles, redirectTo = '/auth/login' }: Props) {
-  const { accessToken, user, logout } = useAuthContext()
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const user = useAuthStore((s) => s.user)
+  const logout = useAuthStore((s) => s.logout)
   if (!accessToken || !user || isTokenExpired(accessToken)) {
     if (accessToken && isTokenExpired(accessToken)) logout()
     return <Navigate to={redirectTo} replace />

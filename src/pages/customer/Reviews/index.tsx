@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { notify } from "@/components/core/Feedback/toast";
 
 import { carRouteFn } from "@/services/api/functions/Cars/Routes.Fn";
-import { useCarReviews, useCarReviewStats, useReviewMutations } from "@/query/review/useReviewQueries";
+import { useCarReviews, useCarReviewStats, useMyCarReview, useReviewMutations } from "@/query/review/useReviewQueries";
 
 export default function CustomerReviewsPage() {
   const [carID, setCarID] = useState("");
@@ -12,34 +12,70 @@ export default function CustomerReviewsPage() {
   const [content, setContent] = useState("");
   const [pros, setPros] = useState("");
   const [cons, setCons] = useState("");
-  const { createCarReview } = useReviewMutations();
+
+  const { createCarReview, updateCarReview } = useReviewMutations();
 
   const cars = useQuery({
     queryKey: ["review-cars"],
     queryFn: ({ signal }) => carRouteFn.getPaging({ pageIndex: 1, pageSize: 100 }, { signal }),
   });
+
   const selectedCarId = useMemo(() => {
     const value = Number(carID);
     return Number.isFinite(value) && value > 0 ? value : null;
   }, [carID]);
+
   const reviews = useCarReviews({ carId: selectedCarId ?? 0, page: 1, pageSize: 20, status: "Approved" });
   const stats = useCarReviewStats(selectedCarId);
+  const myReview = useMyCarReview(selectedCarId);
+
+  // Fill form khi đã có review của user cho xe này
+  useEffect(() => {
+    if (myReview.data) {
+      const r = myReview.data;
+      setOverallRating(r.overallRating);
+      setTitle(r.title ?? "");
+      setContent(r.content);
+      setPros(r.pros ?? "");
+      setCons(r.cons ?? "");
+    } else if (myReview.data === null) {
+      // Xe đã chọn nhưng chưa có review → reset form
+      setOverallRating(5);
+      setTitle("");
+      setContent("");
+      setPros("");
+      setCons("");
+    }
+  }, [myReview.data]);
+
+  const isPending = createCarReview.isPending || updateCarReview.isPending;
 
   const submit = () => {
     if (!selectedCarId || !content.trim()) {
       notify.info("Vui lòng chọn xe và nhập nội dung đánh giá");
       return;
     }
-    createCarReview.mutate(
-      {
-        carID: selectedCarId,
-        overallRating,
-        title: title.trim() || null,
-        content: content.trim(),
-        pros: pros.trim() || null,
-        cons: cons.trim() || null,
-      },
-      {
+
+    const body = {
+      carID: selectedCarId,
+      overallRating,
+      title: title.trim() || null,
+      content: content.trim(),
+      pros: pros.trim() || null,
+      cons: cons.trim() || null,
+    };
+
+    if (myReview.data?.reviewID) {
+      // Đã có review → update
+      updateCarReview.mutate(
+        { id: myReview.data.reviewID, body },
+        {
+          onSuccess: () => notify.success("Đã cập nhật đánh giá"),
+        }
+      );
+    } else {
+      // Chưa có → tạo mới
+      createCarReview.mutate(body, {
         onSuccess: () => {
           setTitle("");
           setContent("");
@@ -47,20 +83,30 @@ export default function CustomerReviewsPage() {
           setCons("");
           notify.success("Đã gửi đánh giá, vui lòng chờ duyệt");
         },
-        onError: (error: Error) => notify.error(error.message),
-      }
-    );
+      });
+    }
   };
+
+  const isExistingReview = Boolean(myReview.data?.reviewID);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-2xl font-bold text-slate-900">Review xe và dịch vụ</h1>
       <div className="mt-6 grid gap-6 lg:grid-cols-[420px_1fr]">
         <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="font-semibold text-slate-900">Viết review xe</h2>
+          <h2 className="font-semibold text-slate-900">
+            {isExistingReview ? "Cập nhật review xe" : "Viết review xe"}
+          </h2>
+          {isExistingReview && (
+            <p className="mt-1 text-xs text-amber-600">Bạn đã có review cho xe này. Chỉnh sửa và lưu để cập nhật.</p>
+          )}
           <label className="mt-4 block">
             <span className="text-sm font-medium text-slate-700">Xe</span>
-            <select className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" value={carID} onChange={(event) => setCarID(event.target.value)}>
+            <select
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+              value={carID}
+              onChange={(event) => setCarID(event.target.value)}
+            >
               <option value="">Chọn xe</option>
               {(cars.data?.data ?? []).map((car) => (
                 <option key={car.carID} value={car.carID}>{car.carName}</option>
@@ -69,24 +115,53 @@ export default function CustomerReviewsPage() {
           </label>
           <label className="mt-4 block">
             <span className="text-sm font-medium text-slate-700">Điểm tổng thể</span>
-            <select className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" value={overallRating} onChange={(event) => setOverallRating(Number(event.target.value))}>
+            <select
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+              value={overallRating}
+              onChange={(event) => setOverallRating(Number(event.target.value))}
+            >
               {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} sao</option>)}
             </select>
           </label>
           <label className="mt-4 block">
             <span className="text-sm font-medium text-slate-700">Tiêu đề</span>
-            <input className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" value={title} onChange={(event) => setTitle(event.target.value)} />
+            <input
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+            />
           </label>
           <label className="mt-4 block">
             <span className="text-sm font-medium text-slate-700">Nội dung</span>
-            <textarea className="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows={4} value={content} onChange={(event) => setContent(event.target.value)} />
+            <textarea
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+              rows={4}
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+            />
           </label>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <textarea className="rounded-lg border px-3 py-2 text-sm" rows={3} placeholder="Ưu điểm" value={pros} onChange={(event) => setPros(event.target.value)} />
-            <textarea className="rounded-lg border px-3 py-2 text-sm" rows={3} placeholder="Nhược điểm" value={cons} onChange={(event) => setCons(event.target.value)} />
+            <textarea
+              className="rounded-lg border px-3 py-2 text-sm"
+              rows={3}
+              placeholder="Ưu điểm"
+              value={pros}
+              onChange={(event) => setPros(event.target.value)}
+            />
+            <textarea
+              className="rounded-lg border px-3 py-2 text-sm"
+              rows={3}
+              placeholder="Nhược điểm"
+              value={cons}
+              onChange={(event) => setCons(event.target.value)}
+            />
           </div>
-          <button className="mt-5 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={createCarReview.isPending} onClick={submit}>
-            {createCarReview.isPending ? "Đang gửi..." : "Gửi review"}
+          <button
+            className="mt-5 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            disabled={isPending || myReview.isLoading}
+            onClick={submit}
+          >
+            {isPending ? "Đang lưu..." : isExistingReview ? "Cập nhật review" : "Gửi review"}
           </button>
         </div>
 

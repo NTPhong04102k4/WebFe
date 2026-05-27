@@ -29,15 +29,23 @@ export const premiumApi = {
 
   /** GET /premium-plans/my-subscription — Customer only */
   getMySubscription: async (options?: ApiRequestOptions) => {
-    const res = await apiClient.get<UserPremiumResponse | OperationResult<UserPremiumResponse>>(
-      API.premium.mySubscription,
-      withSignal({}, options)
-    );
-    const d = res.data;
-    if (d && typeof d === "object" && "data" in d && !("hasActiveSubscription" in d)) {
-      return (d as OperationResult<UserPremiumResponse>).data ?? { subscription: null, hasActiveSubscription: false };
+    try {
+      const res = await apiClient.get<UserPremiumResponse | OperationResult<UserPremiumResponse>>(
+        API.premium.mySubscription,
+        withSignal({}, options)
+      );
+      const d = res.data;
+      if (d && typeof d === "object" && "data" in d && !("hasActiveSubscription" in d)) {
+        return (d as OperationResult<UserPremiumResponse>).data ?? { subscription: null, hasActiveSubscription: false };
+      }
+      return d as UserPremiumResponse;
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) {
+        return { subscription: null, hasActiveSubscription: false } as UserPremiumResponse;
+      }
+      throw err;
     }
-    return d as UserPremiumResponse;
   },
 
   /** POST /premium-plans/subscribe — Customer only */

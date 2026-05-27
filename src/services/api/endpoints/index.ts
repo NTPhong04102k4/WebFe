@@ -212,6 +212,7 @@ export const API = {
     carStats: (carId: string | number) => `/reviews/cars/${carId}/stats`,
     carDetail: (id: string | number) => `/reviews/cars/detail/${id}`,
     carCreate: "/reviews/cars",
+    carUpdate: (id: string | number) => `/reviews/cars/${id}`,
     car: (id: string | number) => `/reviews/cars/${id}`,
     carHelpful: (id: string | number) => `/reviews/cars/${id}/helpful`,
     carReport: (id: string | number) => `/reviews/cars/${id}/report`,

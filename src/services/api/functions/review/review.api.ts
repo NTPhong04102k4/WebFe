@@ -58,6 +58,15 @@ export const reviewApi = {
     return res.data;
   },
 
+  updateCarReview: async (id: number, body: CarReviewRequest, options?: ApiRequestOptions) => {
+    const res = await apiClient.put<CarReviewViewModel>(
+      API.review.carUpdate(id),
+      body,
+      withSignal({}, options)
+    );
+    return res.data;
+  },
+
   deleteCarReview: async (id: number, options?: ApiRequestOptions) => {
     await apiClient.delete(API.review.car(id), withSignal({}, options));
   },
