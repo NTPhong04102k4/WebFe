@@ -38,7 +38,7 @@ FORM_LIB=react-hook-form
 ```
 AUTH_STRATEGY=jwt + oauth (Google, Facebook)
 TOKEN_STORAGE=localStorage
-REFRESH_TOKEN=no
+REFRESH_TOKEN=yes
 MULTI_TENANT=no
 ```
 
