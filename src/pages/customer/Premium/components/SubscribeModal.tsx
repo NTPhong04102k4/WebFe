@@ -44,7 +44,6 @@ export default function SubscribeModal({ plan, onClose }: Props) {
           notify.success(`Đăng ký ${plan.planName} thành công!`);
           onClose();
         },
-        onError: () => notify.error("Đăng ký thất bại. Vui lòng thử lại."),
       }
     );
   };

@@ -350,6 +350,7 @@ export default function AiChatPage() {
       ]);
     },
     onSuccess: (res) => {
+      if (!res) return;
       setSessionId(res.sessionID);
       setMessages((prev) => [
         ...prev,
@@ -365,9 +366,8 @@ export default function AiChatPage() {
         notify.success("AI đã chuyển cuộc trò chuyện sang nhân viên hỗ trợ");
       }
     },
-    onError: (err: Error) => {
+    onError: () => {
       setMessages((prev) => prev.filter((m) => !m.id.startsWith("opt-")));
-      notify.error(err.message || "Gửi thất bại. Thử lại.");
     },
     onSettled: () => setIsSending(false),
   });
@@ -382,7 +382,6 @@ export default function AiChatPage() {
       }
       notify.success("Đã xóa phiên chat.");
     },
-    onError: () => notify.error("Xóa thất bại."),
   });
 
   const feedbackMutation = useMutation({
@@ -397,7 +396,6 @@ export default function AiChatPage() {
         delete next[messageID];
         return next;
       });
-      notify.error("Gửi đánh giá thất bại.");
     },
   });
 

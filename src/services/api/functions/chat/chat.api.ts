@@ -49,11 +49,15 @@ export interface SendMessageRequest {
 
 export const chatApi = {
   conversations: async (options?: ApiRequestOptions) => {
-    const res = await apiClient.get<ConversationViewModel[]>(
-      API.chat.conversations,
-      withSignal({}, options)
-    );
-    return res.data;
+    const res = await apiClient.get(API.chat.conversations, withSignal({}, options));
+    const d = res.data as unknown;
+    if (Array.isArray(d)) return d as ConversationViewModel[];
+    if (d && typeof d === "object") {
+      const obj = d as Record<string, unknown>;
+      if (Array.isArray(obj.data)) return obj.data as ConversationViewModel[];
+      if (Array.isArray(obj.items)) return obj.items as ConversationViewModel[];
+    }
+    return [] as ConversationViewModel[];
   },
 
   detail: async (id: number, options?: ApiRequestOptions) => {

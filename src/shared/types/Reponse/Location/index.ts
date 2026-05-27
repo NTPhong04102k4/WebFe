@@ -1,4 +1,5 @@
 export interface LocationResponse {
+  locationID?: number;
   locationCode: string;
   locationName: string;
   locationType: string;

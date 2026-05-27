@@ -16,15 +16,16 @@ import type {
 export const premiumApi = {
   /** GET /premium-plans — Public */
   getAllPlans: async (options?: ApiRequestOptions) => {
-    const res = await apiClient.get<PremiumPlan[] | OperationResult<PremiumPlan[]>>(
-      API.premium.plans,
-      withSignal({}, options)
-    );
-    const d = res.data;
-    if (d && typeof d === "object" && "data" in d && Array.isArray((d as OperationResult<PremiumPlan[]>).data)) {
-      return (d as OperationResult<PremiumPlan[]>).data ?? [];
+    const res = await apiClient.get(API.premium.plans, withSignal({}, options));
+    const d = res.data as unknown;
+    if (Array.isArray(d)) return d as PremiumPlan[];
+    if (d && typeof d === "object") {
+      const obj = d as Record<string, unknown>;
+      if (Array.isArray(obj.data)) return obj.data as PremiumPlan[];
+      if (Array.isArray(obj.items)) return obj.items as PremiumPlan[];
+      if (Array.isArray(obj.$values)) return obj.$values as PremiumPlan[];
     }
-    return Array.isArray(d) ? d : [];
+    return [] as PremiumPlan[];
   },
 
   /** GET /premium-plans/my-subscription — Customer only */
@@ -32,7 +33,7 @@ export const premiumApi = {
     try {
       const res = await apiClient.get<UserPremiumResponse | OperationResult<UserPremiumResponse>>(
         API.premium.mySubscription,
-        withSignal({}, options)
+        withSignal({ suppressErrorToast: true } as import("axios").AxiosRequestConfig, options)
       );
       const d = res.data;
       if (d && typeof d === "object" && "data" in d && !("hasActiveSubscription" in d)) {

@@ -51,6 +51,17 @@ function resolveAdminUsersPath(query: UserListQuery) {
   return userRoute.adminUsers;
 }
 
+export interface AdminUserUpdateRequest {
+  email: string;
+  username: string;
+  identityNumber: string;
+  fullName?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  gender?: string | null;
+  dateOfBirth?: string | null;
+}
+
 export const userRouteFn = {
   getAdminUsers: async (query: UserListQuery) => {
     const path = resolveAdminUsersPath(query);
@@ -67,5 +78,12 @@ export const userRouteFn = {
       userRoute.detailByKey(gmailOrUserName)
     );
     return unwrapOperationResult(response.data);
+  },
+  updateAdminUser: async (id: string | number, data: AdminUserUpdateRequest) => {
+    const response = await api.put<UserDetailPayload>(userRoute.adminUserById(id), data);
+    return unwrapOperationResult(response.data);
+  },
+  deleteAdminUser: async (id: string | number) => {
+    await api.delete(userRoute.adminUserById(id));
   },
 };

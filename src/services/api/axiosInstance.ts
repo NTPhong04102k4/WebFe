@@ -28,9 +28,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
       const currentPath = window.location.pathname;
-      const loginPath = currentPath.startsWith("/admin")
-        ? "/auth/admin/login"
-        : "/auth/login";
       try {
         const accessToken = useAuthStore.getState().accessToken;
         const refreshToken = useAuthStore.getState().refreshToken;
@@ -56,12 +53,16 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${data.access_token}`;
         return api(original);
       } catch {
-        useAuthStore.getState().logout();
-        window.location.href = loginPath;
+        window.dispatchEvent(
+          new CustomEvent("auth:unauthorized", { detail: { path: currentPath } })
+        );
+        return Promise.reject(error);
       }
     }
+    const suppressToast = (error.config as { suppressErrorToast?: boolean })?.suppressErrorToast;
     const errData = error.response?.data;
     if (
+      !suppressToast &&
       errData &&
       typeof errData === "object" &&
       errData.success === false &&
