@@ -362,11 +362,8 @@ function ChangePasswordSection() {
       notify.success("Đổi mật khẩu thành công!");
       reset();
       setOpen(false);
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "Đổi mật khẩu thất bại. Vui lòng thử lại.";
-      notify.error(msg);
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -470,14 +467,12 @@ function SubscriptionSection() {
   const handleCancel = () => {
     cancel.mutate(undefined, {
       onSuccess: () => notify.success("Đã hủy gia hạn tự động."),
-      onError: () => notify.error("Hủy thất bại. Vui lòng thử lại."),
     });
   };
 
   const handleRenew = () => {
     renew.mutate(undefined, {
       onSuccess: () => notify.success("Gia hạn thành công!"),
-      onError: () => notify.error("Gia hạn thất bại. Vui lòng thử lại."),
     });
   };
 
@@ -675,12 +670,10 @@ export default function ProfilePage() {
 
   // Avatar upload tức thì — tách mutation riêng để tối ưu UX
   const handleAvatarChange = async (file: File) => {
-    const formData = new FormData();
-    formData.append("image", file);
     try {
       await updateProfile.mutateAsync({ fullName: user?.fullName ?? "", imageFile: file });
     } catch {
-      notify.error("Không thể tải ảnh lên. Vui lòng thử lại.");
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -688,11 +681,8 @@ export default function ProfilePage() {
     try {
       await updateProfile.mutateAsync(values);
       notify.success("Cập nhật thông tin thành công!");
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "Cập nhật thất bại. Vui lòng thử lại.";
-      notify.error(msg);
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
