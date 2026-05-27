@@ -24,8 +24,17 @@ export interface CreateOrderInput {
   downPayment?: number | null;
   deliveryAddress?: string | null;
   notes?: string | null;
+  previewToken?: string | null;
   cars: OrderLineCar[];
   accessories: OrderLineAccessory[];
+}
+
+export interface OrderPreviewResult {
+  previewToken: string;
+  subTotal: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalAmount: number;
 }
 
 export interface OrderViewModel {
@@ -73,7 +82,7 @@ function unwrap<T>(payload: T | OperationResult<T>): T {
 
 export function createOrderInputFromCart(
   items: CartItem[],
-  input: Pick<CreateOrderInput, "paymentMethod" | "deliveryAddress" | "notes">
+  input: Pick<CreateOrderInput, "paymentMethod" | "deliveryAddress" | "notes" | "previewToken">
 ): CreateOrderInput {
   const cars = items
     .filter((item) => item.type === "car")
@@ -90,6 +99,7 @@ export function createOrderInputFromCart(
     isInstallment: false,
     deliveryAddress: input.deliveryAddress,
     notes: input.notes,
+    previewToken: input.previewToken,
     cars,
     accessories,
   };
@@ -140,6 +150,14 @@ export const orderApi = {
     const res = await apiClient.get<PaymentInfoViewModel | OperationResult<PaymentInfoViewModel>>(
       API.ordersPayment.orderPaymentInfo(orderNumber),
       withSignal({}, options)
+    );
+    return unwrap(res.data);
+  },
+
+  preview: async (body: Omit<CreateOrderInput, "previewToken">) => {
+    const res = await apiClient.post<OperationResult<OrderPreviewResult>>(
+      API.ordersPayment.previewOrder,
+      body
     );
     return unwrap(res.data);
   },

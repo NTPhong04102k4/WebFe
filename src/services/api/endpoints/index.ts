@@ -43,6 +43,8 @@ export const API = {
     /** GET /orders/payment/order/{orderNumber}/payment-info — Authorized */
     orderPaymentInfo: (orderNumber: string) =>
       `/orders/payment/order/${orderNumber}/payment-info`,
+    /** POST /orders/payment/preview — Customer */
+    previewOrder: "/orders/payment/preview",
     /** POST /orders/payment/order — Customer */
     createOrder: "/orders/payment/order",
     /** POST /orders/payment/sepay-ipn — AllowAnonymous */
