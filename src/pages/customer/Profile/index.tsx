@@ -88,13 +88,20 @@ export default function ProfilePage() {
       : undefined,
   };
 
+  const isProfilePending = profileQuery.isPending;
+  const isProfileError = profileQuery.isError;
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <h1 className="text-2xl font-bold text-slate-900">Hồ sơ cá nhân</h1>
 
-      {profileQuery.isLoading && !user ? (
+      {isProfilePending ? (
         <div className="mt-6">
           <ProfileSkeleton />
+        </div>
+      ) : isProfileError ? (
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-700">
+          Đã xảy ra lỗi khi tải thông tin hồ sơ. Vui lòng tải lại trang.
         </div>
       ) : (
         <div className="mt-6 space-y-4">
@@ -108,22 +115,11 @@ export default function ProfilePage() {
             isUploading={updateProfile.isPending}
           />
 
-          {profileQuery.isLoading ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-6">
-              <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
-              <div className="mt-4 space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-4 w-full rounded bg-slate-100" />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <InfoSection
-              defaultValues={defaultValues}
-              onSave={handleSave}
-              isSaving={updateProfile.isPending}
-            />
-          )}
+          <InfoSection
+            defaultValues={defaultValues}
+            onSave={handleSave}
+            isSaving={updateProfile.isPending}
+          />
 
           {!isSocialAccount && <ChangePasswordSection />}
 

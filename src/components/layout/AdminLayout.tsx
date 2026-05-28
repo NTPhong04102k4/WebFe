@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Car, ChevronDown, ChevronRight, LayoutDashboard, LogOut,
   Menu, Package, ShoppingBag, Users, Wrench, Shield, Star,
-  UserCog, MapPin, X, Briefcase, Moon, Sun, Sparkles, TrendingUp,
+  UserCog, MapPin, X, Briefcase, Moon, Sun, Sparkles, TrendingUp, MessageSquare,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { resolveAppTheme, useUiPreferenceStore } from '@/stores/uiStore'
@@ -71,6 +71,7 @@ const navItems: NavItem[] = [
     ],
   },
   { label: 'Đánh giá', icon: <Star className="h-4 w-4" />, to: '/admin/reviews' },
+  { label: 'Hỗ trợ (Chat)', icon: <MessageSquare className="h-4 w-4" />, to: '/admin/support' },
   { label: 'Thu Chi', icon: <TrendingUp className="h-4 w-4" />, to: '/admin/finance' },
   {
     label: 'Premium',

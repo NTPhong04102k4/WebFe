@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
+import { UserResponse } from "src/shared/types/Reponse/auth/user";
 import apiClient from "@/services/api/axiosInstance";
 import { authAPI } from "@/services/api/functions/auth/authFn";
 import { API } from "@/services/api/endpoints";
@@ -65,7 +66,12 @@ export function useMyProfile() {
       if (status === 401 || status === 403 || status === 404) return false;
       return count < 1;
     },
-    select: (res) => res.data,
+    select: (res) => {
+      const payload = res.data as any;
+      return (payload && typeof payload === "object" && "data" in payload
+        ? payload.data
+        : payload) as UserResponse;
+    },
   });
 
   // Merge profile API data vào Zustand — chỉ overwrite field mutable
@@ -107,7 +113,7 @@ export function useUpdateProfile() {
       formData.append("fullName", data.fullName);
       formData.append("email", data.email);
       formData.append("username", data.username);
-      formData.append("identityNumber", data.identityNumber);
+      formData.append("identiNumber", data.identityNumber);
       if (data.phone) formData.append("phone", data.phone);
       if (data.address) formData.append("address", data.address);
       if (data.gender) formData.append("gender", data.gender);
@@ -115,16 +121,27 @@ export function useUpdateProfile() {
       if (data.imageFile) formData.append("image", data.imageFile);
       return authAPI.updateProfile(formData);
     },
-    onSuccess: (_res, variables) => {
-      if (currentUser) {
+    onSuccess: (res) => {
+      const payload = res.data as any;
+      const updated = payload && typeof payload === "object" && "data" in payload
+        ? payload.data
+        : payload;
+
+      if (currentUser && updated) {
         setUser({
           ...currentUser,
-          fullName: variables.fullName,
-          email: variables.email,
-          username: variables.username,
-          identityNumber: variables.identityNumber,
-          phone: variables.phone ?? currentUser.phone,
-          address: variables.address ?? currentUser.address,
+          fullName: updated.fullName ?? currentUser.fullName,
+          email: updated.email ?? currentUser.email,
+          username: updated.username ?? currentUser.username,
+          identityNumber: updated.identityNumber ?? currentUser.identityNumber,
+          phone: updated.phone ?? currentUser.phone,
+          address: updated.address ?? currentUser.address,
+          image: updated.image ?? currentUser.image,
+          firstName: updated.firstName ?? currentUser.firstName,
+          lastName: updated.lastName ?? currentUser.lastName,
+          dateOfBirth: updated.dateOfBirth
+            ? String(updated.dateOfBirth)
+            : currentUser.dateOfBirth,
         });
       }
       queryClient.invalidateQueries({ queryKey: profileQueryKey(username) });
@@ -134,12 +151,16 @@ export function useUpdateProfile() {
 
 // ─── useChangePassword ─────────────────────────────────────────────────────
 export function useChangePassword() {
+  const username = useAuthStore((s) => s.user?.username ?? "");
+
   return useMutation({
     mutationFn: (data: ChangePasswordValues) =>
-      apiClient.post(API.user.changePassword, {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-        confirmPassword: data.confirmPassword,
+      apiClient.patch(API.user.changePassword, null, {
+        params: {
+          passwordOld: data.currentPassword,
+          newPassword: data.newPassword,
+          username,
+        },
       }),
   });
 }

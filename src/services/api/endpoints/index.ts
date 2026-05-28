@@ -67,6 +67,8 @@ export const API = {
     assign: (id: string | number) => `/chat/conversations/${id}/assign`,
     close: (id: string | number) => `/chat/conversations/${id}/close`,
     read: (id: string | number) => `/chat/conversations/${id}/read`,
+    respondAssign: (id: string | number) => `/chat/conversations/${id}/respond-assign`,
+    pinMessage: (messageId: string | number) => `/chat/messages/${messageId}/pin`,
   },
   ai: {
     sessions: "/ai/sessions",

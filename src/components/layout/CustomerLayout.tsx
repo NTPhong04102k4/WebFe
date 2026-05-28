@@ -20,6 +20,8 @@ import { API } from "@/services/api/endpoints";
 
 export default function CustomerLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const { user, logout, accessToken } = useAuthStore();
   const refreshToken = useAuthStore((s) => s.refreshToken);
   const setTokens = useAuthStore((s) => s.setTokens);
@@ -72,6 +74,17 @@ export default function CustomerLayout() {
       navigate("/admin/dashboard", { replace: true });
     }
   }, [navigate, user]);
+
+  // Click outside to close user menu dropdown
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -148,55 +161,68 @@ export default function CustomerLayout() {
             </Link>
 
             {user ? (
-              <div className="group relative">
-                <button className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen((p) => !p)}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                >
                   <User className="h-4 w-4" />
                   <span className="hidden sm:block">
                     {user.fullName || user.username}
                   </span>
                 </button>
                 {/* Dropdown */}
-                <div className="absolute right-0 top-full mt-1 hidden w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg group-hover:block">
-                  <Link
-                    to="/profile"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <User className="h-4 w-4" /> Hồ sơ cá nhân
-                  </Link>
-                  <Link
-                    to="/orders"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <ShoppingCart className="h-4 w-4" /> Đơn hàng của tôi
-                  </Link>
-                  <Link
-                    to="/appointments"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <Car className="h-4 w-4" /> Lịch hẹn
-                  </Link>
-                  <Link
-                    to="/chat"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    <MessageCircle className="h-4 w-4" /> Chat
-                  </Link>
-                  {(user.role === "Admin" || user.role === "SuperAdmin") && (
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg z-50">
                     <Link
-                      to="/admin/dashboard"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-slate-50"
+                      to="/profile"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                     >
-                      Trang quản trị
+                      <User className="h-4 w-4" /> Hồ sơ cá nhân
                     </Link>
-                  )}
-                  <hr className="my-1 border-slate-100" />
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    <LogOut className="h-4 w-4" /> Đăng xuất
-                  </button>
-                </div>
+                    <Link
+                      to="/orders"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <ShoppingCart className="h-4 w-4" /> Đơn hàng của tôi
+                    </Link>
+                    <Link
+                      to="/appointments"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <Car className="h-4 w-4" /> Lịch hẹn
+                    </Link>
+                    <Link
+                      to="/chat"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <MessageCircle className="h-4 w-4" /> Chat
+                    </Link>
+                    {(user.role === "Admin" || user.role === "SuperAdmin") && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-slate-50"
+                      >
+                        Trang quản trị
+                      </Link>
+                    )}
+                    <hr className="my-1 border-slate-100" />
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      <LogOut className="h-4 w-4" /> Đăng xuất
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Link

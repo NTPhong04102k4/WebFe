@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getRolesFromToken } from "src/services/decode";
 import { authAPI } from "src/services/api/functions/auth/authFn";
-import { RegisterVerifyResponse } from "src/shared/types/Reponse/auth/user";
+import { RegisterVerifyResponse, UserResponse } from "src/shared/types/Reponse/auth/user";
 
 import { logger } from "@/common/utils/logger";
 import { useAuthStore, type AuthUser } from "@/stores/authStore";
@@ -134,7 +134,12 @@ export const useAuthQuery = () => {
       }
       return failureCount < 1;
     },
-    select: (res) => res.data,
+    select: (res) => {
+      const payload = res.data as any;
+      return (payload && typeof payload === "object" && "data" in payload
+        ? payload.data
+        : payload) as UserResponse;
+    },
   });
 
   // Merge profile API data vào Zustand — chỉ overwrite field user có thể cập nhật

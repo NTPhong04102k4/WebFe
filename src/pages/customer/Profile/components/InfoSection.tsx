@@ -56,7 +56,7 @@ export function InfoSection({ defaultValues, onSave, isSaving }: InfoSectionProp
     formState: { errors, isDirty },
   } = useForm<ProfileEditValues>({
     resolver: zodResolver(profileEditSchema),
-    defaultValues,
+    values: defaultValues,
   });
 
   const handleCancel = () => {
