@@ -12,6 +12,9 @@ import { profileQueryKey } from "@/query/auth/useAuthQuery";
 
 export const profileEditSchema = z.object({
   fullName: z.string().min(1, "Họ tên không được để trống").max(100),
+  email: z.string().min(1, "Email là bắt buộc.").email("Email không đúng định dạng."),
+  username: z.string().min(1, "Username là bắt buộc."),
+  identityNumber: z.string().min(1, "IdentiNumber là bắt buộc."),
   phone: z
     .string()
     .regex(/^[0-9]{10,11}$/, "Số điện thoại phải có 10-11 chữ số")
@@ -72,6 +75,9 @@ export function useMyProfile() {
       setUser({
         ...currentUser,
         fullName: query.data.fullName || currentUser.fullName,
+        email: query.data.email ?? currentUser.email,
+        username: query.data.username ?? currentUser.username,
+        identityNumber: query.data.identityNumber ?? currentUser.identityNumber,
         phone: query.data.phone ?? currentUser.phone,
         address: query.data.address ?? currentUser.address,
         image: query.data.image ?? currentUser.image,
@@ -99,6 +105,9 @@ export function useUpdateProfile() {
     mutationFn: (data: ProfileEditValues & { imageFile?: File }) => {
       const formData = new FormData();
       formData.append("fullName", data.fullName);
+      formData.append("email", data.email);
+      formData.append("username", data.username);
+      formData.append("identityNumber", data.identityNumber);
       if (data.phone) formData.append("phone", data.phone);
       if (data.address) formData.append("address", data.address);
       if (data.gender) formData.append("gender", data.gender);
@@ -107,16 +116,17 @@ export function useUpdateProfile() {
       return authAPI.updateProfile(formData);
     },
     onSuccess: (_res, variables) => {
-      // Optimistic update vào Zustand ngay lập tức
       if (currentUser) {
         setUser({
           ...currentUser,
           fullName: variables.fullName,
+          email: variables.email,
+          username: variables.username,
+          identityNumber: variables.identityNumber,
           phone: variables.phone ?? currentUser.phone,
           address: variables.address ?? currentUser.address,
         });
       }
-      // Invalidate để re-fetch fresh data từ server
       queryClient.invalidateQueries({ queryKey: profileQueryKey(username) });
     },
   });
