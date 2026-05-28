@@ -6,10 +6,9 @@ import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AppProviders } from "./contexts/AppProviders";
-import { createAppQueryClient } from "./query/queryClient";
+import { appQueryClient } from "./query/queryClient";
 import { subscribeToAppTheme } from "./stores/uiStore";
 
-const queryClient = createAppQueryClient();
 subscribeToAppTheme();
 
 const root = ReactDOM.createRoot(
@@ -17,7 +16,7 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={appQueryClient}>
       <AppProviders>
         <BrowserRouter>
           <App />

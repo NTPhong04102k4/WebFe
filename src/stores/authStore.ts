@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { AuthRole, AuthUser } from "@/services/types/auth.types";
 import { localPersistStorage } from "./persistStorage";
 import { decodeToken } from "@/common/utils/jwtDecode";
+import { clearAppQueryCache } from "@/query/queryClient";
 
 export type { AuthUser, AuthRole };
 
@@ -46,7 +47,10 @@ export const useAuthStore = create<AuthState>()(
       },
       setUser: (user) => set({ user }),
       clearUser: () => set({ user: null }),
-      logout: () => set({ accessToken: null, refreshToken: null, user: null }),
+      logout: () => {
+        clearAppQueryCache();
+        set({ accessToken: null, refreshToken: null, user: null });
+      },
       isAdmin: () => ["Admin", "SuperAdmin"].includes(get().user?.role ?? ""),
       isSuperAdmin: () => get().user?.role === "SuperAdmin",
       isStaff: () => get().user?.role === "Staff",

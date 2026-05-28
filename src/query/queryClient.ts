@@ -18,3 +18,9 @@ export function createAppQueryClient() {
     },
   });
 }
+
+export const appQueryClient = createAppQueryClient();
+
+export function clearAppQueryCache() {
+  appQueryClient.clear();
+}
