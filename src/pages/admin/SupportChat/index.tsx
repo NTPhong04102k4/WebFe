@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { FlatList } from "@/shared/components/FlatList";
 import { notify } from "@/components/core/Feedback/toast";
 import {
   Send,
@@ -19,21 +20,35 @@ import {
   Info,
   Star,
   Bell,
+  User,
 } from "lucide-react";
 import {
   chatApi,
   type MessageViewModel,
   type ConversationViewModel,
+  type StaffView,
 } from "@/services/api/functions/chat/chat.api";
 import { useAuthStore } from "@/stores/authStore";
 import { useChatHub } from "@/hooks/useChatHub";
 
 const getCustomerDisplayName = (item?: ConversationViewModel | null) => {
   if (!item) return "Khách ẩn danh";
-  return item.customerName || (item as any).customerUsername || (item as any).userName || (item as any).username || "Khách ẩn danh";
+  return (item as any).customerName || (item as any).customerUsername || "Khách ẩn danh";
 };
 
-// ── Assignment Notification Banner ──────────────────────────────────────────
+// ── View tabs config ──────────────────────────────────────────────────────────
+
+const VIEW_TABS: { key: StaffView; label: string }[] = [
+  { key: "all",         label: "Tất cả" },
+  { key: "open",        label: "Đang mở" },
+  { key: "active",      label: "Đang xử lý" },
+  { key: "closed",      label: "Đã đóng" },
+  { key: "unassigned",  label: "Hộp chung" },
+  { key: "pending",     label: "Chờ tiếp nhận" },
+  { key: "mine",        label: "Tôi phụ trách" },
+];
+
+// ── Assignment notification ───────────────────────────────────────────────────
 
 interface AssignmentNotification {
   conversationId: number;
@@ -46,26 +61,23 @@ interface AssignmentNotification {
 export default function AdminSupportChatPage() {
   const qc = useQueryClient();
   const { user } = useAuthStore();
+
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [activeView, setActiveView] = useState<StaffView>("all");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"All" | "Open" | "Active" | "Closed">("Open");
-  const [assignmentFilter, setAssignmentFilter] = useState<"All" | "Mine" | "Unassigned">("All");
+  const [showOnlyMine, setShowOnlyMine] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Advanced states
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
   const [isCustomerInfoOpen, setIsCustomerInfoOpen] = useState(true);
 
-  // Search in chat
   const [isChatSearchOpen, setIsChatSearchOpen] = useState(false);
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
   const [matchingMessageIds, setMatchingMessageIds] = useState<number[]>([]);
 
-  // Assignment confirmation banner
   const [assignmentNotif, setAssignmentNotif] = useState<AssignmentNotification | null>(null);
 
-  // Close modal
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [closeRating, setCloseRating] = useState(0);
   const [closeFeedback, setCloseFeedback] = useState("");
@@ -73,50 +85,55 @@ export default function AdminSupportChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // ── SignalR realtime ─────────────────────────────────────────────────────
+  // ── SignalR ───────────────────────────────────────────────────────────────
+
   useChatHub({
     activeConversationId: selectedId,
+    joinStaffInbox: true,
     callbacks: {
-      onAssignmentRequested: (data) => {
-        // Hiển thị banner xác nhận phân công trong UI
-        setAssignmentNotif({
-          conversationId: data.conversationId,
-          requestedBy: data.requestedBy,
-          subject: data.subject,
-          action: data.action,
-          assignRequestedAt: data.assignRequestedAt,
-        });
-      },
+      onAssignmentRequested: (data) => setAssignmentNotif({
+        conversationId: data.conversationId,
+        requestedBy: data.requestedBy,
+        subject: data.subject,
+        action: data.action,
+        assignRequestedAt: data.assignRequestedAt,
+      }),
       onAssignmentConfirmed: (data) => {
-        if (data.accepted) {
-          notify.success("Đã hoàn tất chuyển cuộc trò chuyện");
-        } else {
-          notify.info("Nhân viên đã từ chối yêu cầu phân công");
-        }
+        if (data.accepted) notify.success("Đã hoàn tất chuyển cuộc trò chuyện");
+        else notify.info("Nhân viên đã từ chối yêu cầu phân công");
       },
     },
   });
 
-  // ── Queries (fallback polling 30s) ────────────────────────────────────────
+  // ── Queries ───────────────────────────────────────────────────────────────
+
   const conversations = useQuery({
-    queryKey: ["staff-conversations"],
-    queryFn: ({ signal }) => chatApi.staffConversations({ signal }),
+    queryKey: ["staff-conversations", activeView],
+    queryFn: ({ signal }) => chatApi.staffConversations(activeView, { pageSize: 50 }, { signal }),
     refetchInterval: 30_000,
   });
 
-  const detail = useQuery({
-    queryKey: ["staff-conversation", selectedId],
+  /** Badge đỏ cho tab "Chờ tiếp nhận" */
+  const pendingCount = useQuery({
+    queryKey: ["staff-pending-count"],
+    queryFn: () => chatApi.staffConversations("pending", { pageSize: 1 }),
+    select: (d) => d.totalCount,
+    refetchInterval: 30_000,
+  });
+
+  const messagesQuery = useQuery({
+    queryKey: ["chat-messages", selectedId],
     enabled: selectedId != null,
-    queryFn: ({ signal }) => chatApi.detail(selectedId!, { signal }),
+    queryFn: ({ signal }) => chatApi.messages(selectedId!, { pageSize: 50 }, { signal }),
     refetchInterval: selectedId != null ? 30_000 : undefined,
   });
 
-  const messages = detail.data?.messages ?? [];
-  // ✅ Pinned messages từ server — không dùng localStorage
-  const pinnedMessage = (detail.data?.pinnedMessages ?? [])[0] ?? null;
-  const activeConversation = conversations.data?.find(
-    (c) => c.conversationID === selectedId
-  );
+  const conversationList = conversations.data?.data ?? [];
+  const messages = messagesQuery.data?.messages ?? [];
+  const pinnedMessage = (messagesQuery.data?.pinnedMessages ?? [])[0] ?? null;
+  const activeConversation = conversationList.find((c) => c.conversationID === selectedId)
+    ?? conversations.data?.data?.find((c) => c.conversationID === selectedId)
+    ?? null;
 
   const currentUserFullName = user?.fullName || "";
   const currentUsername = user?.username || "";
@@ -125,24 +142,42 @@ export default function AdminSupportChatPage() {
     (activeConversation.assignedStaffName === currentUserFullName ||
       activeConversation.assignedStaffName === currentUsername);
 
+  // ── Client-side filter (text + mine toggle) ──────────────────────────────
+
+  const filteredList = conversationList.filter((item) => {
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        (item.subject ?? "").toLowerCase().includes(q) ||
+        getCustomerDisplayName(item).toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+    }
+    if (showOnlyMine) {
+      return !!(
+        item.assignedStaffName &&
+        (item.assignedStaffName === currentUserFullName ||
+          item.assignedStaffName === currentUsername)
+      );
+    }
+    return true;
+  });
+
   // ── Scroll ────────────────────────────────────────────────────────────────
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     setShowScrollBottomBtn(false);
   };
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages.length]);
+  useEffect(() => { scrollToBottom(); }, [messages.length]);
 
   const handleScroll = () => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    const isScrolledUp =
-      container.scrollHeight - container.scrollTop - container.clientHeight > 200;
-    setShowScrollBottomBtn(isScrolledUp);
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    setShowScrollBottomBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 200);
   };
 
   // ── Mark as read ──────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (selectedId) {
       chatApi
@@ -152,7 +187,8 @@ export default function AdminSupportChatPage() {
     }
   }, [selectedId, messages.length, qc]);
 
-  // ── Search ────────────────────────────────────────────────────────────────
+  // ── In-chat search ────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!chatSearchQuery.trim()) {
       setMatchingMessageIds([]);
@@ -160,11 +196,7 @@ export default function AdminSupportChatPage() {
       return;
     }
     const matches = messages
-      .filter(
-        (m) =>
-          m.content &&
-          m.content.toLowerCase().includes(chatSearchQuery.toLowerCase())
-      )
+      .filter((m) => m.content?.toLowerCase().includes(chatSearchQuery.toLowerCase()))
       .map((m) => m.messageID);
     setMatchingMessageIds(matches);
     setCurrentMatchIndex(matches.length > 0 ? 0 : -1);
@@ -172,48 +204,41 @@ export default function AdminSupportChatPage() {
 
   useEffect(() => {
     if (currentMatchIndex >= 0 && matchingMessageIds[currentMatchIndex]) {
-      const targetId = matchingMessageIds[currentMatchIndex];
-      const element = document.getElementById(`message-bubble-${targetId}`);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
-        element.classList.add("ring-4", "ring-amber-400");
-        const timer = setTimeout(
-          () => element.classList.remove("ring-4", "ring-amber-400"),
-          2000
-        );
-        return () => clearTimeout(timer);
+      const el = document.getElementById(`msg-${matchingMessageIds[currentMatchIndex]}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-4", "ring-amber-400");
+        const t = setTimeout(() => el.classList.remove("ring-4", "ring-amber-400"), 2000);
+        return () => clearTimeout(t);
       }
     }
   }, [currentMatchIndex, matchingMessageIds]);
 
   // ── Mutations ─────────────────────────────────────────────────────────────
 
-  // Tự nhận cuộc trò chuyện (không truyền staffID)
   const assignSelf = useMutation({
     mutationFn: (id: number) => chatApi.assign(id),
     onSuccess: () => {
       notify.success("Đã tiếp nhận cuộc hội thoại");
       qc.invalidateQueries({ queryKey: ["staff-conversations"] });
-      qc.invalidateQueries({ queryKey: ["staff-conversation", selectedId] });
+      qc.invalidateQueries({ queryKey: ["chat-messages", selectedId] });
     },
-    onError: (error: Error) => notify.error(error.message),
   });
 
-  // Xác nhận yêu cầu phân công
   const respondAssign = useMutation({
     mutationFn: ({ id, accept }: { id: number; accept: boolean }) =>
       chatApi.respondAssign(id, accept),
     onSuccess: (_, { accept }) => {
       setAssignmentNotif(null);
+      qc.invalidateQueries({ queryKey: ["staff-conversations"] });
+      qc.invalidateQueries({ queryKey: ["staff-pending-count"] });
       if (accept) {
         notify.success("Đã nhận cuộc trò chuyện");
-        qc.invalidateQueries({ queryKey: ["staff-conversations"] });
-        qc.invalidateQueries({ queryKey: ["staff-conversation", selectedId] });
+        qc.invalidateQueries({ queryKey: ["chat-messages", selectedId] });
       } else {
         notify.info("Đã từ chối yêu cầu phân công");
       }
     },
-    onError: (error: Error) => notify.error(error.message),
   });
 
   const closeConversation = useMutation({
@@ -224,110 +249,66 @@ export default function AdminSupportChatPage() {
       setCloseRating(0);
       setCloseFeedback("");
       qc.invalidateQueries({ queryKey: ["staff-conversations"] });
-      qc.invalidateQueries({ queryKey: ["staff-conversation", selectedId] });
+      qc.invalidateQueries({ queryKey: ["chat-messages", selectedId] });
       notify.success("Đã đóng cuộc hội thoại");
     },
-    onError: (error: Error) => notify.error(error.message),
   });
 
   const sendMessage = useMutation({
     mutationFn: () =>
-      chatApi.sendMessage({
-        conversationID: selectedId!,
-        messageType: "Text",
-        content: message.trim(),
-      }),
+      chatApi.sendMessage({ conversationID: selectedId!, messageType: "Text", content: message.trim() }),
     onSuccess: () => {
       setMessage("");
-      qc.invalidateQueries({ queryKey: ["staff-conversation", selectedId] });
+      qc.invalidateQueries({ queryKey: ["chat-messages", selectedId] });
       qc.invalidateQueries({ queryKey: ["staff-conversations"] });
     },
-    onError: (error: Error) => notify.error(error.message),
   });
 
-  // ✅ Pin/Unpin — gọi server API
   const pinMutation = useMutation({
     mutationFn: ({ messageId, pin }: { messageId: number; pin: boolean }) =>
       chatApi.pinMessage(messageId, pin),
     onSuccess: (_, { pin }) => {
       notify.success(pin ? "Đã ghim tin nhắn" : "Đã bỏ ghim tin nhắn");
-      qc.invalidateQueries({ queryKey: ["staff-conversation", selectedId] });
+      qc.invalidateQueries({ queryKey: ["chat-messages", selectedId] });
     },
-    onError: (error: Error) => notify.error(error.message),
   });
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey &&
-      message.trim() &&
-      !sendMessage.isPending
-    ) {
-      event.preventDefault();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey && message.trim() && !sendMessage.isPending) {
+      e.preventDefault();
       sendMessage.mutate();
     }
   };
 
-  const highlightText = (text: string, searchStr: string) => {
-    if (!searchStr.trim()) return <>{text}</>;
-    const parts = text.split(
-      new RegExp(`(${searchStr.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")})`, "gi")
-    );
+  const highlightText = (text: string, q: string) => {
+    if (!q.trim()) return <>{text}</>;
+    const parts = text.split(new RegExp(`(${q.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")})`, "gi"));
     return (
       <>
-        {parts.map((part, i) =>
-          part.toLowerCase() === searchStr.toLowerCase() ? (
-            <mark
-              key={i}
-              className="bg-yellow-300 text-slate-950 px-0.5 rounded font-semibold"
-            >
-              {part}
-            </mark>
-          ) : (
-            part
-          )
+        {parts.map((p, i) =>
+          p.toLowerCase() === q.toLowerCase()
+            ? <mark key={i} className="bg-yellow-300 text-slate-950 px-0.5 rounded font-semibold">{p}</mark>
+            : p
         )}
       </>
     );
   };
 
-  // ── Filter ────────────────────────────────────────────────────────────────
-  const filteredList = (conversations.data ?? []).filter((item) => {
-    const searchLower = search.toLowerCase();
-    const displayName = getCustomerDisplayName(item);
-    const matchesSearch =
-      (item.subject ?? "").toLowerCase().includes(searchLower) ||
-      displayName.toLowerCase().includes(searchLower);
-
-    const matchesStatus =
-      statusFilter === "All" || item.status === statusFilter;
-
-    const isAssignedToCurrentUser =
-      item.assignedStaffName &&
-      (item.assignedStaffName === currentUserFullName ||
-        item.assignedStaffName === currentUsername);
-
-    const matchesAssignment =
-      assignmentFilter === "All" ||
-      (assignmentFilter === "Mine" && isAssignedToCurrentUser) ||
-      (assignmentFilter === "Unassigned" && !item.assignedStaffName);
-
-    return matchesSearch && matchesStatus && matchesAssignment;
-  });
-
   const isClosed = activeConversation?.status === "Closed";
+  const pendingBadge = pendingCount.data ?? 0;
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col gap-4">
 
-      {/* ── Assignment Confirmation Banner ──────────────────────────────── */}
+      {/* Assignment banner */}
       {assignmentNotif && (
-        <div className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm dark:border-blue-900/40 dark:bg-blue-950/20">
-          <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+        <div className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm dark:border-blue-900/40 dark:bg-blue-950/20 shrink-0">
+          <Bell className="h-5 w-5 text-blue-600 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">
-              Yêu cầu phân công từ{" "}
-              <span className="font-bold">{assignmentNotif.requestedBy}</span>
+              Yêu cầu phân công từ <span className="font-bold">{assignmentNotif.requestedBy}</span>
             </p>
             <p className="text-xs text-blue-700 dark:text-blue-400 truncate">
               Hội thoại #{assignmentNotif.conversationId}
@@ -338,57 +319,33 @@ export default function AdminSupportChatPage() {
             <button
               className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
               disabled={respondAssign.isPending}
-              onClick={() =>
-                respondAssign.mutate({
-                  id: assignmentNotif.conversationId,
-                  accept: true,
-                })
-              }
+              onClick={() => respondAssign.mutate({ id: assignmentNotif.conversationId, accept: true })}
             >
-              <CheckCircle className="h-3.5 w-3.5" />
-              Chấp nhận
+              <CheckCircle className="h-3.5 w-3.5" /> Chấp nhận
             </button>
             <button
               className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 disabled:opacity-50"
               disabled={respondAssign.isPending}
-              onClick={() =>
-                respondAssign.mutate({
-                  id: assignmentNotif.conversationId,
-                  accept: false,
-                })
-              }
+              onClick={() => respondAssign.mutate({ id: assignmentNotif.conversationId, accept: false })}
             >
-              <X className="h-3.5 w-3.5" />
-              Từ chối
+              <X className="h-3.5 w-3.5" /> Từ chối
             </button>
           </div>
         </div>
       )}
 
-      {/* ── Close Modal ─────────────────────────────────────────────────── */}
+      {/* Close modal */}
       {showCloseModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
-              Đóng cuộc hội thoại
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-              Thêm ghi chú hoặc xếp hạng nếu cần trước khi đóng.
-            </p>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Đóng cuộc hội thoại</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Thêm ghi chú hoặc xếp hạng nếu cần.</p>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Chất lượng hỗ trợ (tuỳ chọn)
-              </label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Chất lượng hỗ trợ (tuỳ chọn)</label>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button key={star} onClick={() => setCloseRating(star)}>
-                    <Star
-                      className={`h-7 w-7 transition-colors ${
-                        star <= closeRating
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-slate-300 hover:text-amber-300"
-                      }`}
-                    />
+                    <Star className={`h-7 w-7 transition-colors ${star <= closeRating ? "fill-amber-400 text-amber-400" : "text-slate-300 hover:text-amber-300"}`} />
                   </button>
                 ))}
               </div>
@@ -404,47 +361,33 @@ export default function AdminSupportChatPage() {
               <button
                 className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
                 onClick={() => setShowCloseModal(false)}
-              >
-                Huỷ
-              </button>
+              >Huỷ</button>
               <button
                 className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
                 disabled={closeConversation.isPending}
-                onClick={() =>
-                  closeConversation.mutate({
-                    id: selectedId!,
-                    rating: closeRating || null,
-                    feedback: closeFeedback.trim() || null,
-                  })
-                }
-              >
-                Xác nhận đóng
-              </button>
+                onClick={() => closeConversation.mutate({ id: selectedId!, rating: closeRating || null, feedback: closeFeedback.trim() || null })}
+              >Xác nhận đóng</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            Hỗ trợ trực tuyến
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Quản lý và phản hồi yêu cầu trợ giúp từ khách hàng
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Hỗ trợ trực tuyến</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Quản lý và phản hồi yêu cầu trợ giúp từ khách hàng</p>
         </div>
       </div>
 
-      {/* Main Layout */}
-      <div className="grid flex-1 grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 md:grid-cols-[340px_1fr]">
+      {/* Main layout */}
+      <div className="flex flex-col md:grid flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 md:grid-cols-[340px_1fr]">
 
-        {/* Left Column: Inbox */}
-        <div className="flex flex-col border-r border-slate-200 dark:border-slate-800 overflow-hidden">
+        {/* Left column: inbox */}
+        <div className="flex flex-col border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 overflow-hidden h-[25vh] md:h-full shrink-0">
 
-          {/* Search */}
-          <div className="p-4 border-b border-slate-150 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          {/* Search + mine toggle */}
+          <div className="p-3 border-b border-slate-150 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0 space-y-2">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <input
@@ -454,135 +397,125 @@ export default function AdminSupportChatPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+            <button
+              onClick={() => setShowOnlyMine((v) => !v)}
+              className={`w-full flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                showOnlyMine
+                  ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/30 dark:text-blue-400"
+                  : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+              }`}
+            >
+              <User className="h-3.5 w-3.5" />
+              {showOnlyMine ? "Đang lọc: Của tôi" : "Chỉ của tôi"}
+            </button>
           </div>
 
-          {/* Filters */}
-          <div className="p-3 border-b border-slate-100 dark:border-slate-850 bg-slate-50/30 dark:bg-slate-900/20 space-y-2">
-            <div className="flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-900">
-              {(["Open", "Active", "Closed", "All"] as const).map((s) => (
-                <button
-                  key={s}
-                  className={`flex-1 rounded-md py-1 text-xs font-medium transition-all ${
-                    statusFilter === s
-                      ? "bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400"
-                      : "text-slate-500 hover:text-slate-900 dark:text-slate-400"
-                  }`}
-                  onClick={() => setStatusFilter(s)}
-                >
-                  {s === "Open" ? "Mở" : s === "Active" ? "Đang xử lý" : s === "Closed" ? "Đóng" : "Tất cả"}
-                </button>
-              ))}
-            </div>
-            <div className="flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-900">
-              {(["All", "Mine", "Unassigned"] as const).map((a) => (
-                <button
-                  key={a}
-                  className={`flex-1 rounded-md py-1 text-xs font-medium transition-all ${
-                    assignmentFilter === a
-                      ? "bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400"
-                      : "text-slate-500 hover:text-slate-900 dark:text-slate-400"
-                  }`}
-                  onClick={() => setAssignmentFilter(a)}
-                >
-                  {a === "All" ? "Hộp thư chung" : a === "Mine" ? "Tôi phụ trách" : "Chờ tiếp nhận"}
-                </button>
-              ))}
-            </div>
+          {/* 7 view tabs */}
+          <div className="flex overflow-x-auto gap-0.5 p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/20 shrink-0 scrollbar-none">
+            {VIEW_TABS.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setActiveView(key)}
+                className={`relative shrink-0 rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-all ${
+                  activeView === key
+                    ? "bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400"
+                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400"
+                }`}
+              >
+                {label}
+                {key === "pending" && pendingBadge > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                    {pendingBadge > 99 ? "99+" : pendingBadge}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
 
           {/* Conversation list */}
-          <div className="flex-1 divide-y divide-slate-100 overflow-y-auto dark:divide-slate-850">
-            {conversations.isLoading && (
-              <div className="flex items-center justify-center p-8 text-sm text-slate-450">
-                Đang tải danh sách...
-              </div>
-            )}
-            {!conversations.isLoading && filteredList.length === 0 && (
-              <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400">
-                <Inbox className="h-8 w-8 mb-2 opacity-50" />
-                <p className="text-xs">Không tìm thấy cuộc trò chuyện nào.</p>
-              </div>
-            )}
-            {filteredList.map((item) => {
-              const isSelected = selectedId === item.conversationID;
-              // ✅ Đúng field: unreadCountStaff
-              const hasUnread = (item.unreadCountStaff ?? 0) > 0;
-              const displayName = getCustomerDisplayName(item);
-              const hasPendingAssign = !!item.pendingStaffID;
+          {conversations.isLoading && (
+            <div className="flex items-center justify-center p-8 text-sm text-slate-450">Đang tải danh sách...</div>
+          )}
+          {!conversations.isLoading && filteredList.length === 0 && (
+            <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400">
+              <Inbox className="h-8 w-8 mb-2 opacity-50" />
+              <p className="text-xs">Không tìm thấy cuộc trò chuyện nào.</p>
+            </div>
+          )}
+          {!conversations.isLoading && filteredList.length > 0 && (
+            <FlatList
+              data={filteredList}
+              keyExtractor={(item) => item.conversationID}
+              estimateSize={() => 105}
+              className="flex-1"
+              renderItem={({ item }) => {
+                const isSelected = selectedId === item.conversationID;
+                const hasUnread = (item.unreadCountStaff ?? 0) > 0;
+                const displayName = getCustomerDisplayName(item);
+                const hasPendingAssign = !!item.pendingStaffID;
 
-              return (
-                <button
-                  key={item.conversationID}
-                  className={`relative block w-full px-4 py-3.5 text-left transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 ${
-                    isSelected
-                      ? "bg-blue-50/70 dark:bg-blue-950/20 border-l-4 border-blue-600 pl-3"
-                      : "pl-4"
-                  }`}
-                  onClick={() => setSelectedId(item.conversationID)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span
-                      className={`truncate text-sm font-medium dark:text-slate-200 ${
+                return (
+                  <button
+                    className={`relative block w-full px-4 py-3.5 text-left transition-all hover:bg-slate-50 dark:hover:bg-slate-900/40 border-b border-slate-100 dark:border-slate-850 ${
+                      isSelected ? "bg-blue-50/70 dark:bg-blue-950/20 border-l-4 border-blue-600 pl-3" : "pl-4"
+                    }`}
+                    onClick={() => setSelectedId(item.conversationID)}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className={`truncate text-sm font-medium dark:text-slate-200 ${
                         isSelected ? "text-blue-900 font-bold" : "text-slate-700"
-                      } ${hasUnread ? "font-bold text-slate-950 dark:text-slate-100" : ""}`}
-                    >
-                      {displayName}
-                    </span>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {hasPendingAssign && (
-                        <span className="h-2 w-2 rounded-full bg-amber-400" title="Đang chờ xác nhận phân công" />
-                      )}
-                      <span className="text-[10px] text-slate-400 whitespace-nowrap">
-                        {item.lastMessageAt
-                          ? new Date(item.lastMessageAt).toLocaleDateString()
-                          : ""}
+                      } ${hasUnread ? "font-bold text-slate-950 dark:text-slate-100" : ""}`}>
+                        {displayName}
                       </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {hasPendingAssign && (
+                          <span className="h-2 w-2 rounded-full bg-amber-400" title="Đang chờ xác nhận phân công" />
+                        )}
+                        <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                          {item.lastMessageAt ? new Date(item.lastMessageAt).toLocaleDateString() : ""}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  {/* ✅ lastMessagePreview */}
-                  <p className={`mt-0.5 truncate text-xs ${
-                    hasUnread ? "font-semibold text-slate-900 dark:text-slate-200" : "text-slate-500"
-                  }`}>
-                    {item.lastMessagePreview || item.subject}
-                  </p>
-                  <div className="mt-2 flex items-center justify-between text-[11px]">
-                    <span className={`rounded-full px-2 py-0.5 font-medium ${
-                      item.assignedStaffName
-                        ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                        : "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400"
-                    }`}>
-                      {item.assignedStaffName ? `NV: ${item.assignedStaffName}` : "Chờ phân công"}
-                    </span>
-                    {hasUnread && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
-                        {item.unreadCountStaff}
+                    <p className={`mt-0.5 truncate text-xs ${hasUnread ? "font-semibold text-slate-900 dark:text-slate-200" : "text-slate-500"}`}>
+                      {item.lastMessagePreview || item.subject}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between text-[11px]">
+                      <span className={`rounded-full px-2 py-0.5 font-medium ${
+                        item.assignedStaffName
+                          ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                          : "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400"
+                      }`}>
+                        {item.assignedStaffName ? `NV: ${item.assignedStaffName}` : "Chờ phân công"}
                       </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                      {hasUnread && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
+                          {item.unreadCountStaff}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              }}
+            />
+          )}
         </div>
 
-        {/* Right Column */}
-        <div className="flex bg-slate-50/10 dark:bg-slate-950/10 overflow-hidden">
+        {/* Right column */}
+        <div className="flex bg-slate-50/10 dark:bg-slate-950/10 overflow-hidden flex-1 min-h-0">
           {selectedId && activeConversation ? (
             <div className="flex flex-1 overflow-hidden">
 
-              {/* Chat Window */}
+              {/* Chat window */}
               <div className="flex flex-1 flex-col min-w-0 overflow-hidden relative">
 
-                {/* Toolbar Header */}
+                {/* Toolbar */}
                 <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-slate-50/40 dark:border-slate-800 dark:bg-slate-900/40 shrink-0 gap-2">
                   <div className="min-w-0">
                     <h3 className="truncate font-semibold text-slate-900 dark:text-slate-100">
                       {getCustomerDisplayName(activeConversation)}
                     </h3>
                     <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
-                      <span className="truncate max-w-[200px]">
-                        Yêu cầu: {activeConversation.subject}
-                      </span>
+                      <span className="truncate max-w-[200px]">Yêu cầu: {activeConversation.subject}</span>
                       <span>·</span>
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
                         activeConversation.status === "Open" || activeConversation.status === "Active"
@@ -599,7 +532,6 @@ export default function AdminSupportChatPage() {
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
@@ -623,15 +555,13 @@ export default function AdminSupportChatPage() {
                     </button>
                     <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
 
-                    {/* Assignment action buttons */}
                     {!activeConversation.assignedStaffName ? (
                       <button
                         className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow transition hover:bg-blue-700 disabled:opacity-50"
                         disabled={assignSelf.isPending}
                         onClick={() => assignSelf.mutate(selectedId)}
                       >
-                        <UserPlus className="h-3.5 w-3.5" />
-                        Nhận hỗ trợ
+                        <UserPlus className="h-3.5 w-3.5" /> Nhận hỗ trợ
                       </button>
                     ) : !isAssignedToMe ? (
                       <button
@@ -646,8 +576,7 @@ export default function AdminSupportChatPage() {
                         className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-900/40"
                         onClick={() => setShowCloseModal(true)}
                       >
-                        <CheckCircle className="h-3.5 w-3.5" />
-                        Đóng hỗ trợ
+                        <CheckCircle className="h-3.5 w-3.5" /> Đóng hỗ trợ
                       </button>
                     ) : (
                       <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-2 text-xs text-slate-550 dark:bg-slate-800">
@@ -672,46 +601,40 @@ export default function AdminSupportChatPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       {matchingMessageIds.length > 0 && (
-                        <span className="text-xs text-slate-650 font-medium">
+                        <span className="text-xs text-slate-600 font-medium">
                           {currentMatchIndex + 1}/{matchingMessageIds.length} kết quả
                         </span>
                       )}
-                      {matchingMessageIds.length === 0 && chatSearchQuery.trim() !== "" && (
+                      {matchingMessageIds.length === 0 && chatSearchQuery.trim() && (
                         <span className="text-xs text-red-500 font-medium">Không tìm thấy</span>
                       )}
-                      <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white dark:border-slate-700 dark:bg-slate-850">
+                      <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white dark:border-slate-700">
                         <button
-                          onClick={() => setCurrentMatchIndex((prev) => (prev > 0 ? prev - 1 : matchingMessageIds.length - 1))}
+                          onClick={() => setCurrentMatchIndex((p) => (p > 0 ? p - 1 : matchingMessageIds.length - 1))}
                           disabled={matchingMessageIds.length === 0}
                           className="p-1.5 text-slate-600 hover:bg-slate-50 disabled:opacity-30"
-                        >
-                          <ChevronUp className="h-4 w-4" />
-                        </button>
+                        ><ChevronUp className="h-4 w-4" /></button>
                         <button
-                          onClick={() => setCurrentMatchIndex((prev) => (prev < matchingMessageIds.length - 1 ? prev + 1 : 0))}
+                          onClick={() => setCurrentMatchIndex((p) => (p < matchingMessageIds.length - 1 ? p + 1 : 0))}
                           disabled={matchingMessageIds.length === 0}
                           className="p-1.5 border-l border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30"
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </button>
+                        ><ChevronDown className="h-4 w-4" /></button>
                       </div>
                       <button
                         onClick={() => { setIsChatSearchOpen(false); setChatSearchQuery(""); }}
                         className="p-1.5 text-slate-450 hover:text-slate-650"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                      ><X className="h-4 w-4" /></button>
                     </div>
                   </div>
                 )}
 
-                {/* Pinned message banner — từ server */}
+                {/* Pinned banner */}
                 {pinnedMessage && (
                   <div className="flex items-center justify-between border-b border-slate-200 bg-amber-50/80 px-6 py-2 dark:border-slate-800/60 dark:bg-amber-950/10 shrink-0 gap-4">
                     <div
                       className="flex flex-1 items-center gap-2 cursor-pointer truncate text-xs text-amber-900 dark:text-amber-400 font-semibold"
                       onClick={() => {
-                        const el = document.getElementById(`message-bubble-${pinnedMessage.messageID}`);
+                        const el = document.getElementById(`msg-${pinnedMessage.messageID}`);
                         if (el) {
                           el.scrollIntoView({ behavior: "smooth", block: "center" });
                           el.classList.add("ring-4", "ring-amber-400");
@@ -730,9 +653,7 @@ export default function AdminSupportChatPage() {
                     <button
                       onClick={() => pinMutation.mutate({ messageId: pinnedMessage.messageID, pin: false })}
                       className="text-slate-400 hover:text-slate-600"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                    ><X className="h-3.5 w-3.5" /></button>
                   </div>
                 )}
 
@@ -750,9 +671,9 @@ export default function AdminSupportChatPage() {
                   )}
 
                   {messages.map((item: MessageViewModel) => {
-                    const isCurrentStaff = item.senderType === "Staff";
+                    const isStaff = item.senderType === "Staff";
                     const mine =
-                      isCurrentStaff &&
+                      isStaff &&
                       !!activeConversation.assignedStaffName &&
                       (activeConversation.assignedStaffName === currentUserFullName ||
                         activeConversation.assignedStaffName === currentUsername);
@@ -760,75 +681,50 @@ export default function AdminSupportChatPage() {
                     return (
                       <div
                         key={item.messageID}
-                        id={`message-bubble-${item.messageID}`}
-                        className={`flex flex-col relative group ${
-                          mine ? "items-end" : "items-start"
-                        } transition-all duration-200 rounded-lg p-1`}
+                        id={`msg-${item.messageID}`}
+                        className={`flex flex-col relative group ${mine ? "items-end" : "items-start"} transition-all duration-200 rounded-lg p-1`}
                       >
                         <div className="flex items-center gap-2 max-w-[80%]">
-                          {/* Pin button on hover — chỉ Staff, khi conv chưa đóng */}
                           {!mine && !isClosed && (
                             <button
-                              onClick={() =>
-                                pinMutation.mutate({
-                                  messageId: item.messageID,
-                                  pin: !item.isPinned,
-                                })
-                              }
+                              onClick={() => pinMutation.mutate({ messageId: item.messageID, pin: !item.isPinned })}
                               className={`opacity-0 group-hover:opacity-100 flex items-center justify-center p-1.5 rounded-full shrink-0 transition ${
-                                item.isPinned
-                                  ? "bg-amber-100 text-amber-600 opacity-100"
-                                  : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                                item.isPinned ? "bg-amber-100 text-amber-600 opacity-100" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
                               }`}
                               title={item.isPinned ? "Bỏ ghim" : "Ghim tin nhắn"}
-                            >
-                              <Pin className="h-3 w-3" />
-                            </button>
+                            ><Pin className="h-3 w-3" /></button>
                           )}
 
                           <div className={`rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words shadow-sm transition-all duration-300 ${
                             mine
                               ? "bg-blue-600 text-white rounded-br-none dark:bg-blue-500"
                               : item.senderType === "Customer"
-                              ? "bg-slate-100 text-slate-900 rounded-bl-none dark:bg-slate-800 dark:text-slate-100"
-                              : "bg-amber-100 text-amber-900 rounded-bl-none dark:bg-amber-900/20 dark:text-amber-300 border border-amber-200"
+                                ? "bg-slate-100 text-slate-900 rounded-bl-none dark:bg-slate-800 dark:text-slate-100"
+                                : "bg-amber-100 text-amber-900 rounded-bl-none dark:bg-amber-900/20 dark:text-amber-300 border border-amber-200"
                           }`}>
                             {highlightText(item.content || "", chatSearchQuery)}
                           </div>
 
                           {mine && !isClosed && (
                             <button
-                              onClick={() =>
-                                pinMutation.mutate({
-                                  messageId: item.messageID,
-                                  pin: !item.isPinned,
-                                })
-                              }
+                              onClick={() => pinMutation.mutate({ messageId: item.messageID, pin: !item.isPinned })}
                               className={`opacity-0 group-hover:opacity-100 flex items-center justify-center p-1.5 rounded-full shrink-0 transition ${
-                                item.isPinned
-                                  ? "bg-amber-100 text-amber-600 opacity-100"
-                                  : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                                item.isPinned ? "bg-amber-100 text-amber-600 opacity-100" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
                               }`}
                               title={item.isPinned ? "Bỏ ghim" : "Ghim tin nhắn"}
-                            >
-                              <Pin className="h-3 w-3" />
-                            </button>
+                            ><Pin className="h-3 w-3" /></button>
                           )}
                         </div>
 
                         <span className="mt-1 text-[10px] text-slate-400 px-1 dark:text-slate-500 flex items-center gap-1">
                           {item.senderType === "Customer"
                             ? `Khách hàng (${getCustomerDisplayName(activeConversation)})`
-                            : mine
-                            ? "Bạn"
-                            : `Nhân viên (${activeConversation.assignedStaffName || "Hệ thống"})`}
+                            : mine ? "Bạn" : `Nhân viên (${activeConversation.assignedStaffName || "Hệ thống"})`}
                           {" · "}
                           {item.createdDate
                             ? new Date(item.createdDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                             : ""}
-                          {item.isPinned && (
-                            <Pin className="h-2.5 w-2.5 text-amber-500 rotate-45" />
-                          )}
+                          {item.isPinned && <Pin className="h-2.5 w-2.5 text-amber-500 rotate-45" />}
                         </span>
                       </div>
                     );
@@ -840,9 +736,7 @@ export default function AdminSupportChatPage() {
                   <button
                     onClick={scrollToBottom}
                     className="absolute bottom-20 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition hover:bg-blue-700 z-10 hover:scale-110"
-                  >
-                    <ArrowDown className="h-5 w-5" />
-                  </button>
+                  ><ArrowDown className="h-5 w-5" /></button>
                 )}
 
                 {/* Input */}
@@ -871,21 +765,17 @@ export default function AdminSupportChatPage() {
                         className="inline-flex items-center justify-center rounded-xl bg-blue-600 p-2.5 text-white transition hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500"
                         disabled={!message.trim() || sendMessage.isPending}
                         onClick={() => sendMessage.mutate()}
-                      >
-                        <Send className="h-5 w-5" />
-                      </button>
+                      ><Send className="h-5 w-5" /></button>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Right Sidebar: Customer Info */}
+              {/* Sidebar: customer info */}
               {isCustomerInfoOpen && (
                 <div className="hidden lg:flex w-64 flex-col border-l border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 overflow-y-auto shrink-0 animate-in slide-in-from-right-5 duration-200">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
-                    <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
-                      Thông tin khách hàng
-                    </h4>
+                    <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">Thông tin khách hàng</h4>
                     <button onClick={() => setIsCustomerInfoOpen(false)} className="text-slate-400 hover:text-slate-600">
                       <X className="h-4 w-4" />
                     </button>
@@ -909,23 +799,17 @@ export default function AdminSupportChatPage() {
                     {[
                       { label: "Mã hội thoại", value: `#${activeConversation.conversationID}` },
                       { label: "Chủ đề", value: activeConversation.subject },
-                      { label: "Phân loại", value: activeConversation.conversationType || "Hỗ trợ chung" },
-                      { label: "Độ ưu tiên", value: activeConversation.priority || "Normal" },
+                      { label: "Phân loại", value: activeConversation.conversationType },
+                      { label: "Độ ưu tiên", value: activeConversation.priority },
                       { label: "Nhân viên tiếp nhận", value: activeConversation.assignedStaffName || "Chưa phân công" },
                       {
                         label: "Ngày gửi yêu cầu",
-                        value: activeConversation.createdDate
-                          ? new Date(activeConversation.createdDate).toLocaleString()
-                          : "-",
+                        value: new Date(activeConversation.createdDate).toLocaleString(),
                       },
                     ].map(({ label, value }) => (
                       <div key={label}>
-                        <span className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                          {label}
-                        </span>
-                        <span className="text-xs text-slate-700 dark:text-slate-350 font-medium">
-                          {value}
-                        </span>
+                        <span className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{label}</span>
+                        <span className="text-xs text-slate-700 dark:text-slate-350 font-medium">{value}</span>
                       </div>
                     ))}
                   </div>
@@ -937,12 +821,8 @@ export default function AdminSupportChatPage() {
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900 mb-4 text-slate-350 border border-slate-200/50">
                 <MessageCircle className="h-8 w-8" />
               </div>
-              <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-base mb-1">
-                Kênh hỗ trợ khách hàng
-              </h3>
-              <p className="text-sm max-w-sm">
-                Vui lòng chọn một cuộc trò chuyện từ danh sách hộp thư bên trái.
-              </p>
+              <h3 className="font-semibold text-slate-700 dark:text-slate-300 text-base mb-1">Kênh hỗ trợ khách hàng</h3>
+              <p className="text-sm max-w-sm">Vui lòng chọn một cuộc trò chuyện từ danh sách hộp thư bên trái.</p>
             </div>
           )}
         </div>

@@ -110,7 +110,7 @@ export default function CustomerLayout() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex h-screen flex-col bg-slate-50 overflow-hidden">
       {/* Navbar */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
@@ -265,7 +265,7 @@ export default function CustomerLayout() {
       </header>
 
       {/* Content */}
-      <main className="flex-1">
+      <main className="flex-1 overflow-y-auto flex flex-col min-h-0">
         <Outlet />
       </main>
 

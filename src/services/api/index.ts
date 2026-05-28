@@ -41,8 +41,15 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     const d = response.data;
-    if (d && typeof d === "object" && d.success === true && d.message) {
-      notify.info(d.message);
+    if (d && typeof d === "object") {
+      if (d.success === true && d.message) {
+        notify.info(d.message);
+      }
+      // HTTP 200 nhưng business logic thất bại → show error + reject để mutation.onError biết
+      if (d.success === false && d.message) {
+        notify.error(d.message);
+        return Promise.reject(new Error(d.message));
+      }
     }
     return response;
   },
@@ -50,10 +57,14 @@ apiClient.interceptors.response.use(
     if (error.response) {
       const status = error.response.status;
 
+      const errData = error.response.data;
+      const serverMessage =
+        errData && typeof errData === "object" && errData.success === false
+          ? (errData.message as string | undefined)
+          : undefined;
+
       if (status === 401) {
         const token = useAuthStore.getState().accessToken;
-        // Chỉ logout khi token thực sự hết hạn hoặc không có token.
-        // Nếu token còn hạn mà backend trả 401 (backend permission/claim issue) → không logout.
         const shouldLogout = !token || isTokenExpired(token);
         if (shouldLogout) {
           const currentPath = window.location.pathname;
@@ -69,19 +80,12 @@ apiClient.interceptors.response.use(
               }),
             );
           }
+        } else if (serverMessage) {
+          // Token còn hạn nhưng 401 → permission denied từ business logic → show message
+          notify.error(serverMessage);
         }
-      }
-
-      if (status !== 401) {
-        const errData = error.response.data;
-        if (
-          errData &&
-          typeof errData === "object" &&
-          errData.success === false &&
-          errData.message
-        ) {
-          notify.error(errData.message);
-        }
+      } else if (serverMessage) {
+        notify.error(serverMessage);
       }
     }
 
