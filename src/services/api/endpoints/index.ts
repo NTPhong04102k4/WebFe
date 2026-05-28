@@ -72,6 +72,7 @@ export const API = {
   },
   ai: {
     sessions: "/ai/sessions",
+    sessionsSearch: "/ai/sessions/search",
     session: (id: string | number) => `/ai/sessions/${id}`,
     messages: (id: string | number) => `/ai/sessions/${id}/messages`,
     rename: (id: string | number) => `/ai/sessions/${id}/rename`,

@@ -7,7 +7,6 @@ import { notify } from "@/components/core/Feedback/toast";
 import { carRouteFn } from "@/services/api/functions/Cars/Routes.Fn";
 import { useCarTechSpec } from "@/query/car/useCarQueries";
 import { useMySubscription } from "@/query/premium/usePremiumQueries";
-import { useAuthStore } from "@/stores/authStore";
 import { useCartStore } from "@/stores/cartStore";
 import { formatCurrency } from "@/common/utils/formatCurrency";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -49,7 +48,7 @@ function BoolBadge({ label, value }: { label: string; value: boolean }) {
 
 export default function CustomerCarDetailPage() {
   const addItem = useCartStore((s) => s.addItem);
-  const isLoggedIn = useAuthStore((s) => !!s.accessToken);
+
   const [premiumGateOpen, setPremiumGateOpen] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
 
@@ -67,7 +66,7 @@ export default function CustomerCarDetailPage() {
   });
 
   // Premium subscription
-  const subQuery = useMySubscription(isLoggedIn);
+  const subQuery = useMySubscription();
   const isPremium = subQuery.data?.subscription?.status === "Active";
 
   // Tech spec — only fetch if premium

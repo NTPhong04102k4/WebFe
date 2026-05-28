@@ -113,7 +113,6 @@ export default function AdminPremiumPlansPage() {
     if (!window.confirm(`Xóa gói "${plan.planName}"?`)) return;
     deletePlan.mutate(plan.planID, {
       onSuccess: () => notify.success("Đã xóa gói Premium"),
-      onError: () => notify.error("Có lỗi xảy ra khi xóa gói"),
     });
   };
 

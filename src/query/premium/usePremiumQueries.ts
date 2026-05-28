@@ -7,6 +7,7 @@ import type {
   SubscribeRequest,
 } from "src/services/api/functions/premium/premium.types";
 import { premiumKeys } from "./keys";
+import { useAuthStore } from "@/stores/authStore";
 
 /** GET /premium-plans — Public */
 export function usePremiumPlans() {
@@ -18,15 +19,17 @@ export function usePremiumPlans() {
 }
 
 /** GET /premium-plans/my-subscription — Customer only */
-export function useMySubscription(enabled = true) {
+export function useMySubscription() {
+  const isCustomer = useAuthStore((s) => s.user?.role === "Customer");
   return useQuery({
     queryKey: premiumKeys.mySubscription(),
     queryFn: ({ signal }) => premiumApi.getMySubscription({ signal }),
-    enabled,
-    staleTime: 30_000,
+    enabled: isCustomer,
+    staleTime: 5 * 60_000,
+    gcTime: 60_000,
     retry: (count, error: unknown) => {
       const status = (error as { response?: { status?: number } })?.response?.status;
-      if (status === 404 || status === 401) return false;
+      if (status === 401 || status === 403 || status === 404) return false;
       return count < 1;
     },
   });

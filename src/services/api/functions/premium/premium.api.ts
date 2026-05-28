@@ -18,14 +18,56 @@ export const premiumApi = {
   getAllPlans: async (options?: ApiRequestOptions) => {
     const res = await apiClient.get(API.premium.plans, withSignal({}, options));
     const d = res.data as unknown;
-    if (Array.isArray(d)) return d as PremiumPlan[];
-    if (d && typeof d === "object") {
+
+    let raw: unknown[];
+    if (Array.isArray(d)) raw = d;
+    else if (d && typeof d === "object") {
       const obj = d as Record<string, unknown>;
-      if (Array.isArray(obj.data)) return obj.data as PremiumPlan[];
-      if (Array.isArray(obj.items)) return obj.items as PremiumPlan[];
-      if (Array.isArray(obj.$values)) return obj.$values as PremiumPlan[];
+      if (Array.isArray(obj.data)) raw = obj.data;
+      else if (Array.isArray(obj.items)) raw = obj.items;
+      else if (Array.isArray(obj.$values)) raw = obj.$values;
+      else raw = [];
+    } else {
+      raw = [];
     }
-    return [] as PremiumPlan[];
+
+    // Backend trả price dạng { source: "99000.00", parsedValue: 99000 } — normalize về number
+    const toNum = (v: unknown): number => {
+      if (typeof v === "number") return v;
+      if (v && typeof v === "object") {
+        const o = v as Record<string, unknown>;
+        if (typeof o.parsedValue === "number") return o.parsedValue;
+        const n = Number(o.source);
+        return isNaN(n) ? 0 : n;
+      }
+      const n = Number(v);
+      return isNaN(n) ? 0 : n;
+    };
+
+    // Suy ra tier từ planCode / planName khi server không trả tier
+    const inferTier = (code: string, name: string): string => {
+      const s = (code + " " + name).toLowerCase();
+      if (s.includes("plat")) return "Platinum";
+      if (s.includes("gold")) return "Gold";
+      if (s.includes("silver")) return "Silver";
+      if (s.includes("enter") || s.includes("enterprise")) return "Platinum";
+      return "Bronze";
+    };
+
+    return raw.map((item) => {
+      const p = item as Record<string, unknown>;
+      return {
+        ...p,
+        monthlyPrice: toNum(p.monthlyPrice),
+        yearlyPrice: toNum(p.yearlyPrice),
+        discountPercent: toNum(p.discountPercent),
+        isActive: typeof p.isActive === "boolean" ? p.isActive : true,
+        tier: (p.tier as string | undefined) ?? inferTier(
+          (p.planCode as string) ?? "",
+          (p.planName as string) ?? ""
+        ),
+      } as PremiumPlan;
+    });
   },
 
   /** GET /premium-plans/my-subscription — Customer only */

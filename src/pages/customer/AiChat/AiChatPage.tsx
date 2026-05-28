@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { notify } from "@/components/core/Feedback/toast";
 import { aiApi } from "@/services/api/functions/ai/ai.api";
-import type { AiMessageViewModel, AiSessionViewModel } from "@/services/api/functions/ai/ai.api";
+import type { ChatMessage, AiIntent, AiMetadata, BookingPromptMetadata } from "@/services/api/functions/ai/ai.api";
 import { useAuthStore } from "@/stores/authStore";
 import { useMySubscription } from "@/query/premium/usePremiumQueries";
 import PremiumGateModal from "@/pages/customer/Premium/components/PremiumGateModal";
+import { SessionSearch } from "./SessionSearch";
+import { MetadataRenderer } from "./MetadataRenderer";
+import { BookingModal } from "./BookingModal";
 
 const FREE_AI_LIMIT = 3;
 const AI_COUNT_KEY = "ai-free-count";
@@ -32,33 +35,34 @@ interface DisplayMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
-  messageID?: number;
+  messageId?: number;
+  intent?: AiIntent;
+  metadata?: AiMetadata | null;
 }
 
 type FeedbackMap = Record<number, "up" | "down">;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function normalizeHistory(messages: AiMessageViewModel[]): DisplayMessage[] {
+function normalizeHistory(messages: ChatMessage[]): DisplayMessage[] {
   const result: DisplayMessage[] = [];
   for (const m of messages) {
-    if (m.text) {
-      result.push({ id: `${m.messageID}-u`, role: "user", content: m.text });
+    if (m.rawInput) {
+      result.push({ id: `${m.messageId}-u`, role: "user", content: m.rawInput });
     }
-    const aiContent = m.response ?? (m.role === "assistant" ? (m.content ?? null) : null);
-    if (aiContent) {
+    if (m.responseContent) {
       result.push({
-        id: `${m.messageID}-a`,
+        id: `${m.messageId}-a`,
         role: "assistant",
-        content: aiContent,
-        messageID: m.messageID,
+        content: m.responseContent,
+        messageId: m.messageId,
       });
     }
   }
   return result;
 }
 
-function formatSessionDate(dateStr?: string) {
+function formatSessionDate(dateStr?: string | null) {
   if (!dateStr) return "";
   return new Date(dateStr).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
 }
@@ -161,11 +165,13 @@ function MessageBubble({
   feedback,
   onFeedback,
   feedbackPending,
+  onBookingOpen,
 }: {
   message: DisplayMessage;
   feedback?: "up" | "down";
-  onFeedback: (messageID: number, rating: "up" | "down") => void;
+  onFeedback: (messageId: number, rating: "up" | "down") => void;
   feedbackPending: boolean;
+  onBookingOpen: (services: BookingPromptMetadata["services"]) => void;
 }) {
   if (message.role === "user") {
     return (
@@ -185,16 +191,21 @@ function MessageBubble({
       <div className="group flex max-w-[75%] flex-col gap-1.5">
         <div className="rounded-2xl rounded-bl-sm bg-white px-4 py-3 text-sm leading-relaxed text-slate-800 shadow-sm ring-1 ring-slate-200/80">
           <p className="whitespace-pre-wrap">{message.content}</p>
+          {message.metadata && message.intent && (
+            <MetadataRenderer
+              intent={message.intent}
+              metadata={message.metadata}
+              onBookingOpen={onBookingOpen}
+            />
+          )}
         </div>
-        {message.messageID != null && (
+        {message.messageId != null && (
           <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               disabled={feedbackPending || feedback != null}
-              onClick={() => onFeedback(message.messageID!, "up")}
+              onClick={() => onFeedback(message.messageId!, "up")}
               className={`rounded-md px-1.5 py-0.5 text-xs transition-colors disabled:pointer-events-none ${
-                feedback === "up"
-                  ? "text-green-600"
-                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                feedback === "up" ? "text-green-600" : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               }`}
               title="Hữu ích"
             >
@@ -202,11 +213,9 @@ function MessageBubble({
             </button>
             <button
               disabled={feedbackPending || feedback != null}
-              onClick={() => onFeedback(message.messageID!, "down")}
+              onClick={() => onFeedback(message.messageId!, "down")}
               className={`rounded-md px-1.5 py-0.5 text-xs transition-colors disabled:pointer-events-none ${
-                feedback === "down"
-                  ? "text-red-500"
-                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                feedback === "down" ? "text-red-500" : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               }`}
               title="Không hữu ích"
             >
@@ -231,7 +240,7 @@ function SessionItem({
   onDelete,
   deleteIsPending,
 }: {
-  session: AiSessionViewModel;
+  session: { sessionId: number; title: string | null; totalMessages: number; lastInteractionAt: string | null; createdDate: string; lastMessagePreview: string | null };
   isActive: boolean;
   onSelect: () => void;
   onDelete: () => void;
@@ -252,8 +261,13 @@ function SessionItem({
         <p className={`truncate text-sm font-medium ${isActive ? "text-blue-700" : "text-slate-800"}`}>
           {session.title || "Cuộc trò chuyện"}
         </p>
+        {session.lastMessagePreview && (
+          <p className="mt-0.5 max-w-[200px] truncate text-xs text-slate-500">
+            {session.lastMessagePreview}
+          </p>
+        )}
         <p className="mt-0.5 text-xs text-slate-400">
-          {session.totalMessages ?? 0} tin · {formatSessionDate(session.updatedDate ?? session.createdDate)}
+          {session.totalMessages ?? 0} tin · {formatSessionDate(session.lastInteractionAt ?? session.createdDate)}
         </p>
       </div>
       <button
@@ -268,7 +282,7 @@ function SessionItem({
   );
 }
 
-function EmptyState() {
+function EmptyState({ onSuggestion }: { onSuggestion: (text: string) => void }) {
   const suggestions = [
     "Toyota Camry 2024 còn hàng không?",
     "Đặt lịch bảo dưỡng như thế nào?",
@@ -286,12 +300,13 @@ function EmptyState() {
       </p>
       <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
         {suggestions.map((s) => (
-          <div
+          <button
             key={s}
+            onClick={() => onSuggestion(s)}
             className="rounded-xl border border-slate-200 px-4 py-2.5 text-left text-sm text-slate-600 hover:border-blue-300 hover:bg-blue-50/50"
           >
             "{s}"
-          </div>
+          </button>
         ))}
       </div>
     </div>
@@ -302,28 +317,34 @@ function EmptyState() {
 
 export default function AiChatPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   // ── Auth & premium ─────────────────────────────────────────────────────────
   const isLoggedIn = useAuthStore((s) => !!s.accessToken);
-  const subQuery = useMySubscription(isLoggedIn);
+  const subQuery = useMySubscription();
   const isPremium = subQuery.data?.subscription?.status === "Active";
 
-  // ── State (all useState/useRef before queries/mutations) ──────────────────
+  // ── State ──────────────────────────────────────────────────────────────────
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState("");
   const [feedbackMap, setFeedbackMap] = useState<FeedbackMap>({});
   const [isSending, setIsSending] = useState(false);
   const [premiumGateOpen, setPremiumGateOpen] = useState(false);
+  const [rateLimitMsg, setRateLimitMsg] = useState<string | null>(null);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [bookingServices, setBookingServices] = useState<BookingPromptMetadata["services"]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const sessionsQuery = useQuery({
     queryKey: ["ai-sessions"],
-    queryFn: ({ signal }) => aiApi.sessions({ signal }),
+    queryFn: ({ signal }) => aiApi.sessions(1, { signal }),
     enabled: isLoggedIn,
+    staleTime: 30_000,
     retry: (count, error: unknown) => {
       const status = (error as { response?: { status?: number } })?.response?.status;
       if (status === 401 || status === 403) return false;
@@ -335,15 +356,21 @@ export default function AiChatPage() {
     queryKey: ["ai-messages", sessionId],
     enabled: sessionId != null,
     queryFn: ({ signal }) => aiApi.messages(sessionId!, { signal }),
-    staleTime: 30_000,
+    staleTime: 0,
   });
 
-  // ── Mutations (declared before effects that depend on them) ───────────────
+  // ── Mutations ──────────────────────────────────────────────────────────────
   const sendMutation = useMutation({
-    mutationFn: (text: string) =>
-      aiApi.chat({ sessionID: sessionId, text, inputType: "text" }),
+    mutationFn: (text: string) => {
+      abortRef.current = new AbortController();
+      return aiApi.chat(
+        { sessionId: sessionId ?? undefined, text, inputType: "text" },
+        abortRef.current.signal
+      );
+    },
     onMutate: (text) => {
       setIsSending(true);
+      setRateLimitMsg(null);
       setMessages((prev) => [
         ...prev,
         { id: `opt-${Date.now()}`, role: "user", content: text },
@@ -351,20 +378,20 @@ export default function AiChatPage() {
     },
     onSuccess: (res) => {
       if (!res) return;
-      setSessionId(res.sessionID);
+      setSessionId(res.sessionId);
       setMessages((prev) => [
         ...prev,
         {
-          id: `ai-${res.messageID}`,
+          id: `ai-${res.messageId}`,
           role: "assistant",
           content: res.response,
-          messageID: res.messageID,
+          messageId: res.messageId,
+          intent: res.intent,
+          metadata: res.metadata,
         },
       ]);
       qc.invalidateQueries({ queryKey: ["ai-sessions"] });
-      if (res.wasEscalated) {
-        notify.success("AI đã chuyển cuộc trò chuyện sang nhân viên hỗ trợ");
-      }
+      handleIntent(res.intent, res);
     },
     onError: () => {
       setMessages((prev) => prev.filter((m) => !m.id.startsWith("opt-")));
@@ -385,49 +412,62 @@ export default function AiChatPage() {
   });
 
   const feedbackMutation = useMutation({
-    mutationFn: ({ messageID, rating }: { messageID: number; rating: "up" | "down" }) =>
-      aiApi.feedback(messageID, { rating: rating === "up" ? 1 : -1 }),
-    onMutate: ({ messageID, rating }) => {
-      setFeedbackMap((prev) => ({ ...prev, [messageID]: rating }));
+    mutationFn: ({ messageId, rating }: { messageId: number; rating: "up" | "down" }) =>
+      aiApi.feedback(messageId, { rating: rating === "up" ? 5 : 1 }),
+    onMutate: ({ messageId, rating }) => {
+      setFeedbackMap((prev) => ({ ...prev, [messageId]: rating }));
     },
-    onError: (_, { messageID }) => {
+    onError: (_, { messageId }) => {
       setFeedbackMap((prev) => {
         const next = { ...prev };
-        delete next[messageID];
+        delete next[messageId];
         return next;
       });
     },
   });
 
-  // ── Effects ────────────────────────────────────────────────────────────────
+  // ── Intent handler ─────────────────────────────────────────────────────────
+  const handleIntent = (intent: AiIntent, res: { wasEscalated: boolean; escalatedToConversationId: number | null; response: string }) => {
+    if (intent === "rate_limited") {
+      setRateLimitMsg(res.response);
+      return;
+    }
+    if (res.wasEscalated && res.escalatedToConversationId) {
+      notify.success("AI đã chuyển cuộc trò chuyện sang nhân viên hỗ trợ");
+      setTimeout(() => navigate(`/chat/${res.escalatedToConversationId}`), 2000);
+    }
+  };
 
-  // Auto-select first session on initial load
+  // ── Effects ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (sessionId == null && sessionsQuery.data?.[0]) {
-      setSessionId(sessionsQuery.data[0].sessionID);
+    if (sessionId == null && sessionsQuery.data?.data?.[0]) {
+      setSessionId(sessionsQuery.data.data[0].sessionId);
     }
   }, [sessionId, sessionsQuery.data]);
 
-  // Populate messages from server history when session changes
   useEffect(() => {
-    if (historyQuery.data) {
-      setMessages(normalizeHistory(historyQuery.data));
-      setFeedbackMap({});
-    }
+    if (!historyQuery.data) return;
+    setMessages(normalizeHistory(historyQuery.data.messages ?? []));
+    setFeedbackMap({});
+    setRateLimitMsg(null);
   }, [historyQuery.data]);
 
-  // Scroll to bottom on new messages or while AI is typing
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isSending]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  // Cleanup abort on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleNewChat = () => {
     setSessionId(null);
     setMessages([]);
     setInput("");
     setFeedbackMap({});
+    setRateLimitMsg(null);
     setTimeout(() => textareaRef.current?.focus(), 50);
   };
 
@@ -436,17 +476,20 @@ export default function AiChatPage() {
     setSessionId(id);
     setMessages([]);
     setFeedbackMap({});
+    setRateLimitMsg(null);
   };
 
   const handleSend = () => {
     const text = input.trim();
     if (!text || isSending) return;
-
+    if (text.length > 4000) {
+      notify.error("Nội dung tối đa 4000 ký tự");
+      return;
+    }
     if (!isPremium && getFreeMsgCount() >= FREE_AI_LIMIT) {
       setPremiumGateOpen(true);
       return;
     }
-
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     if (!isPremium) incrementFreeMsgCount();
@@ -467,19 +510,28 @@ export default function AiChatPage() {
     ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`;
   };
 
-  const handleFeedback = (messageID: number, rating: "up" | "down") => {
-    feedbackMutation.mutate({ messageID, rating });
+  const handleFeedback = (messageId: number, rating: "up" | "down") => {
+    feedbackMutation.mutate({ messageId, rating });
+  };
+
+  const handleSuggestion = (text: string) => {
+    setInput(text);
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  };
+
+  const handleBookingOpen = (services: BookingPromptMetadata["services"]) => {
+    setBookingServices(services);
+    setBookingModalOpen(true);
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
-
-  const sessions = sessionsQuery.data ?? [];
+  const sessions = sessionsQuery.data?.data ?? [];
+  const isRateLimited = !!rateLimitMsg;
 
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
       {/* ── Sidebar ─────────────────────────────────────────────────── */}
       <aside className="flex w-72 shrink-0 flex-col border-r border-slate-200 bg-white">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5">
           <span className="text-sm font-semibold text-slate-800">Lịch sử chat</span>
           <Link
@@ -490,7 +542,6 @@ export default function AiChatPage() {
           </Link>
         </div>
 
-        {/* New chat button */}
         <div className="px-3 pt-3">
           <button
             onClick={handleNewChat}
@@ -501,7 +552,10 @@ export default function AiChatPage() {
           </button>
         </div>
 
-        {/* Sessions list */}
+        <div className="px-3 pt-3">
+          <SessionSearch onSelect={handleSelectSession} />
+        </div>
+
         <div className="mt-3 flex-1 overflow-y-auto space-y-0.5 px-2 pb-4">
           {sessionsQuery.isLoading ? (
             <div className="space-y-2 px-1 pt-2">
@@ -514,13 +568,13 @@ export default function AiChatPage() {
           ) : (
             sessions.map((session) => (
               <SessionItem
-                key={session.sessionID}
+                key={session.sessionId}
                 session={session}
-                isActive={sessionId === session.sessionID}
-                onSelect={() => handleSelectSession(session.sessionID)}
-                onDelete={() => deleteMutation.mutate(session.sessionID)}
+                isActive={sessionId === session.sessionId}
+                onSelect={() => handleSelectSession(session.sessionId)}
+                onDelete={() => deleteMutation.mutate(session.sessionId)}
                 deleteIsPending={
-                  deleteMutation.isPending && deleteMutation.variables === session.sessionID
+                  deleteMutation.isPending && deleteMutation.variables === session.sessionId
                 }
               />
             ))
@@ -530,7 +584,6 @@ export default function AiChatPage() {
 
       {/* ── Main Chat Area ───────────────────────────────────────────── */}
       <main className="flex min-w-0 flex-1 flex-col">
-        {/* Chat header */}
         <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-6 py-3.5 shadow-sm">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm">
             <BotIcon />
@@ -547,7 +600,6 @@ export default function AiChatPage() {
           </div>
         </div>
 
-        {/* Messages area */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {historyQuery.isLoading ? (
             <div className="space-y-4">
@@ -563,16 +615,17 @@ export default function AiChatPage() {
               ))}
             </div>
           ) : messages.length === 0 && !isSending ? (
-            <EmptyState />
+            <EmptyState onSuggestion={handleSuggestion} />
           ) : (
             <div className="space-y-5">
               {messages.map((msg) => (
                 <MessageBubble
                   key={msg.id}
                   message={msg}
-                  feedback={msg.messageID != null ? feedbackMap[msg.messageID] : undefined}
+                  feedback={msg.messageId != null ? feedbackMap[msg.messageId] : undefined}
                   onFeedback={handleFeedback}
                   feedbackPending={feedbackMutation.isPending}
+                  onBookingOpen={handleBookingOpen}
                 />
               ))}
               {isSending && <TypingIndicator />}
@@ -581,9 +634,16 @@ export default function AiChatPage() {
           )}
         </div>
 
-        {/* Input area */}
         <div className="border-t border-slate-200 bg-white px-4 py-4">
-          {!isPremium && (
+          {/* Rate limit banner */}
+          {rateLimitMsg && (
+            <div className="mx-auto mb-2 max-w-4xl rounded-lg bg-orange-50 px-3 py-2 text-xs text-orange-700 ring-1 ring-orange-200">
+              {rateLimitMsg}
+            </div>
+          )}
+
+          {/* Free tier counter */}
+          {!isPremium && !isRateLimited && (
             <div className="mx-auto mb-2 flex max-w-4xl items-center justify-between rounded-lg bg-amber-50 px-3 py-1.5">
               <span className="text-xs text-amber-700">
                 Tin nhắn miễn phí hôm nay: <strong>{getFreeMsgCount()}/{FREE_AI_LIMIT}</strong>
@@ -596,6 +656,7 @@ export default function AiChatPage() {
               </button>
             </div>
           )}
+
           <div className="mx-auto flex max-w-4xl items-end gap-3">
             <div className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 transition-all focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-400/20">
               <textarea
@@ -604,19 +665,22 @@ export default function AiChatPage() {
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
                 placeholder={
-                  !isPremium && getFreeMsgCount() >= FREE_AI_LIMIT
+                  isRateLimited
+                    ? "Đã hết lượt — vui lòng thử lại sau"
+                    : !isPremium && getFreeMsgCount() >= FREE_AI_LIMIT
                     ? "Đã hết lượt miễn phí hôm nay — nâng cấp Premium để tiếp tục"
                     : "Nhập câu hỏi... (Enter gửi · Shift+Enter xuống dòng)"
                 }
                 rows={1}
-                disabled={isSending}
+                disabled={isSending || isRateLimited}
+                maxLength={4000}
                 className="block w-full resize-none bg-transparent px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none disabled:opacity-60"
                 style={{ maxHeight: "160px" }}
               />
             </div>
             <button
               onClick={handleSend}
-              disabled={!input.trim() || isSending}
+              disabled={!input.trim() || isSending || isRateLimited}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-40"
               title="Gửi (Enter)"
             >
@@ -640,6 +704,11 @@ export default function AiChatPage() {
           onClose={() => setPremiumGateOpen(false)}
         />
       )}
+      <BookingModal
+        open={bookingModalOpen}
+        preselectedServices={bookingServices}
+        onClose={() => setBookingModalOpen(false)}
+      />
     </div>
   );
 }
