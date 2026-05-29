@@ -420,7 +420,7 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({
             </div>
             <TechSpecForm
               carId={car.carID}
-              initialData={hasSpec ? techSpec : undefined}
+              initialData={hasSpec ? techSpec ?? undefined : undefined}
               onSaved={handleSpecSaved}
               onCancel={() => setShowSpecForm(false)}
             />

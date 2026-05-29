@@ -1,4 +1,4 @@
-import { CarDetailResponse, CarResponse } from "src/shared/types/Reponse/Car";
+import { CarDetailResponse, CarResponse, CarResponseItem } from "src/shared/types/Reponse/Car";
 import type { OperationResult, PagedResponse } from "src/services/types/common.types";
 import apiClient from "../..";
 import type { ApiRequestOptions } from "../../requestOptions";
@@ -12,20 +12,41 @@ import {
   TechSpecDetailUpdateRequest,
 } from "src/shared/types/Request/Car";
 
+export type CarDetailView = CarResponseItem & Partial<CarDetailResponse>;
+
+function unwrapData<T>(payload: OperationResult<T> | T): T {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "success" in payload &&
+    "data" in payload
+  ) {
+    return (payload as OperationResult<T>).data as T;
+  }
+
+  return payload as T;
+}
+
 export const carRouteFn = {
   getDetail: async (id: number, options?: ApiRequestOptions) => {
-    const response = await apiClient.get<CarDetailResponse>(
+    const response = await apiClient.get<OperationResult<CarDetailView> | CarDetailView>(
       carRoute.detail(id),
       withSignal({}, options)
     );
-    return response.data;
+    return unwrapData<CarDetailView>(response.data);
   },
   getTechSpec: async (id: number, options?: ApiRequestOptions) => {
-    const response = await apiClient.get<{ success: boolean; data: CarDetailResponse }>(
-      carRoute.techSpecGet(id),
-      withSignal({}, options)
-    );
-    return response.data.data;
+    try {
+      const response = await apiClient.get<OperationResult<CarDetailResponse> | CarDetailResponse>(
+        carRoute.techSpecGet(id),
+        withSignal({}, options)
+      );
+      return unwrapData<CarDetailResponse>(response.data);
+    } catch (error: unknown) {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 404) return null;
+      throw error;
+    }
   },
   getPaging: async (params: CarPagingRequest, options?: ApiRequestOptions) => {
     const response = await apiClient.get<OperationResult<PagedResponse<CarResponse["data"][number]>>>(

@@ -30,12 +30,18 @@ export function useCarDetail(id: number | null) {
   });
 }
 
-export function useCarTechSpec(carId: number | null, enabled = true) {
+export function useCarTechSpec(carId: number | null, enabled = true, fallbackToNull = false) {
   return useQuery({
     queryKey: carId != null ? carKeys.techSpec(carId) : ["cars", "tech-spec", "none"],
-    queryFn: ({ signal }) => {
+    queryFn: async ({ signal }) => {
       if (!carId) throw new Error("Car ID is required");
-      return carRouteFn.getTechSpec(carId, { signal });
+      if (!fallbackToNull) return carRouteFn.getTechSpec(carId, { signal });
+
+      try {
+        return await carRouteFn.getTechSpec(carId, { signal });
+      } catch {
+        return null;
+      }
     },
     enabled: carId != null && enabled,
     staleTime: 5 * 60_000,
