@@ -9,6 +9,22 @@ import {
   AccessoryDetailResponse,
   AccessoryListResponse,
 } from "src/shared/types/Reponse/accessories/accessory";
+import type { OperationResult } from "src/services/types/common.types";
+import type { ApiRequestOptions } from "../../../requestOptions";
+import { withSignal } from "../../../requestOptions";
+
+function unwrapData<T>(payload: OperationResult<T> | T): T {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "success" in payload &&
+    "data" in payload
+  ) {
+    return (payload as OperationResult<T>).data as T;
+  }
+
+  return payload as T;
+}
 
 function toFormData(
   data: AccessoryRequestCreate | AccessoryRequestUpdate
@@ -26,11 +42,12 @@ function toFormData(
 }
 
 export const accessoryRouteFn = {
-  getDetail: async (id: number) => {
-    const response = await apiClient.get<AccessoryDetailResponse>(
-      accessoryRoute.detail(id)
+  getDetail: async (id: number, options?: ApiRequestOptions) => {
+    const response = await apiClient.get<OperationResult<AccessoryDetailResponse> | AccessoryDetailResponse>(
+      accessoryRoute.detail(id),
+      withSignal({}, options)
     );
-    return response.data;
+    return unwrapData<AccessoryDetailResponse>(response.data);
   },
 
   getAll: async () => {

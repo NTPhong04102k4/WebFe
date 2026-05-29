@@ -32,6 +32,9 @@ const toNumber = (value: string, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const compatibleModelsToFormValue = (value: AccessoryDetailResponse["compatibleCarModels"]) =>
+  Array.isArray(value) ? JSON.stringify(value) : value ?? "";
+
 function formFromDetail(detail: AccessoryDetailResponse): AccessoryFormValues {
   return {
     accessoryCode: detail.accessoryCode ?? "",
@@ -44,7 +47,7 @@ function formFromDetail(detail: AccessoryDetailResponse): AccessoryFormValues {
     stockQuantity: String(detail.stockQuantity ?? 0),
     minStockLevel: String(detail.minStockLevel ?? 0),
     maxStockLevel: String(detail.maxStockLevel ?? 0),
-    compatibleCarModels: detail.compatibleCarModels ?? "",
+    compatibleCarModels: compatibleModelsToFormValue(detail.compatibleCarModels),
     imagePath: null,
     installationVideo: null,
     warrantyMonths: detail.warrantyMonths != null ? String(detail.warrantyMonths) : "",

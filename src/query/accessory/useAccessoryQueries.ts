@@ -20,9 +20,9 @@ export function useAccessoryList(params: AccessoryPagingRequest) {
 export function useAccessoryDetail(id: number | null) {
   return useQuery({
     queryKey: id != null ? accessoryKeys.detail(id) : ["accessories", "detail", "none"],
-    queryFn: () => {
+    queryFn: ({ signal }) => {
       if (!id) throw new Error("Accessory ID is required");
-      return accessoryRouteFn.getDetail(id);
+      return accessoryRouteFn.getDetail(id, { signal });
     },
     enabled: id != null,
     staleTime: LIST_STALE_MS,

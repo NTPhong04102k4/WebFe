@@ -16,6 +16,31 @@ type Props = {
   variant?: "modal" | "page";
 };
 
+function parseCompatibleModels(value: string | string[] | null | undefined) {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value.filter((model): model is string => typeof model === "string" && model.trim() !== "");
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed
+          .map((item: any) =>
+            typeof item === "string"
+              ? item
+              : typeof item?.bodyCode === "string"
+              ? item.bodyCode
+              : null
+          )
+          .filter((model: any): model is string => typeof model === "string" && model.trim() !== "")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 export const UpdateAccessoryEditor: React.FC<Props> = ({
   open,
   onClose,
@@ -117,26 +142,7 @@ export const UpdateAccessoryEditor: React.FC<Props> = ({
       try {
         const detail = await accessoryRouteFn.getDetail(Number(accessoryId));
         if (detail) {
-          // Normalize compatibleCarModels to an array of strings
-          let compat: string[] = [];
-          try {
-            if (detail.compatibleCarModels) {
-              const parsed = JSON.parse(detail.compatibleCarModels);
-              if (Array.isArray(parsed)) {
-                compat = parsed
-                  .map((v: any) =>
-                    typeof v === "string"
-                      ? v
-                      : typeof v?.bodyCode === "string"
-                      ? v.bodyCode
-                      : null
-                  )
-                  .filter((v: any): v is string => typeof v === "string");
-              }
-            }
-          } catch {
-            compat = [];
-          }
+          const compat = parseCompatibleModels(detail.compatibleCarModels);
           setForm({
             accessoryCode: detail.accessoryCode ?? "",
             accessoryName: detail.accessoryName ?? "",

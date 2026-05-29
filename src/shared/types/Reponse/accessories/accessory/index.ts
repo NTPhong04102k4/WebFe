@@ -10,7 +10,7 @@ export interface AccessoryDetailResponse {
   stockQuantity: number;
   minStockLevel: number;
   maxStockLevel: number;
-  compatibleCarModels: string;
+  compatibleCarModels: string | string[];
   imagePath: string;
   installationVideo: string;
   warrantyMonths: number;
