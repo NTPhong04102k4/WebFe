@@ -153,6 +153,14 @@ export default function CustomerCarDetailPage() {
                 <ShoppingCart className="h-4 w-4" />
                 Thêm vào giỏ hàng
               </button>
+              {id ? (
+                <Link
+                  to={`/reviews/${id}`}
+                  className="mt-3 flex w-full items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 hover:bg-amber-100"
+                >
+                  Viết review cho xe này
+                </Link>
+              ) : null}
 
               {/* Basic specs */}
               <div className="mt-6 divide-y divide-slate-100">

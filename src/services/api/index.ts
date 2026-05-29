@@ -5,6 +5,7 @@ import { logger } from "@/common/utils/logger";
 import { useAuthStore } from "@/stores/authStore";
 import { isTokenExpired } from "@/services/decode";
 import { notify } from "@/components/core/Feedback/toast";
+import { registerAuthHeaderCleanup } from "@/services/api/authSession";
 
 const API_BASE_URL = ENV.API_URL;
 
@@ -16,16 +17,21 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+registerAuthHeaderCleanup(() => {
+  delete apiClient.defaults.headers.common.Authorization;
+  delete apiClient.defaults.headers.common.authorization;
+});
+
 apiClient.interceptors.request.use(
   (config) => {
-    // Đọc token từ Zustand store — single source of truth
-    // (Zustand persist lưu vào localStorage key "soldcars-auth")
     const token = useAuthStore.getState().accessToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      logger.log("🔐 Bearer token attached:", config.url);
+      logger.log("Bearer token attached:", config.url);
     } else {
-      logger.warn("⚠️ No auth token in store for:", config.url);
+      delete config.headers.Authorization;
+      delete config.headers.authorization;
+      logger.warn("No auth token in store for:", config.url);
     }
 
     if (config.data instanceof FormData) {
@@ -45,7 +51,6 @@ apiClient.interceptors.response.use(
       if (d.success === true && d.message) {
         notify.info(d.message);
       }
-      // HTTP 200 nhưng business logic thất bại → show error + reject để mutation.onError biết
       if (d.success === false && d.message) {
         notify.error(d.message);
         return Promise.reject(new Error(d.message));
@@ -81,7 +86,6 @@ apiClient.interceptors.response.use(
             );
           }
         } else if (serverMessage) {
-          // Token còn hạn nhưng 401 → permission denied từ business logic → show message
           notify.error(serverMessage);
         }
       } else if (serverMessage) {

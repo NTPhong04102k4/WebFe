@@ -4,6 +4,10 @@ import type { AuthRole, AuthUser } from "@/services/types/auth.types";
 import { localPersistStorage } from "./persistStorage";
 import { decodeToken } from "@/common/utils/jwtDecode";
 import { clearAppQueryCache } from "@/query/queryClient";
+import {
+  clearAuthSessionSideEffects,
+  setGlobalAuthHeader,
+} from "@/services/api/authSession";
 
 export type { AuthUser, AuthRole };
 
@@ -39,6 +43,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       setTokens: (access, refresh) => {
         const decoded = decodeToken(access);
+        setGlobalAuthHeader(access);
         set({
           accessToken: access,
           refreshToken: refresh,
@@ -50,6 +55,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         clearAppQueryCache();
         set({ accessToken: null, refreshToken: null, user: null });
+        clearAuthSessionSideEffects();
       },
       isAdmin: () => ["Admin", "SuperAdmin"].includes(get().user?.role ?? ""),
       isSuperAdmin: () => get().user?.role === "SuperAdmin",

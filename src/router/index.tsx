@@ -87,7 +87,8 @@ export default function AppRouter() {
           <Route path="orders/:orderNumber" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
           <Route path="appointments" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
           <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
+          <Route path="reviews" element={<Navigate to="/cars" replace />} />
+          <Route path="reviews/:carId" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
           <Route path="chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
         </Route>
 

@@ -106,7 +106,6 @@ export default function CustomerLayout() {
     { to: "/cars", label: "Xe hơi" },
     { to: "/accessories", label: "Phụ kiện" },
     { to: "/appointments", label: "Dịch vụ" },
-    { to: "/reviews", label: "Review" },
   ];
 
   return (

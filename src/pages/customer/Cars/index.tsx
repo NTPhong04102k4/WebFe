@@ -232,6 +232,12 @@ export default function CustomerCarsPage() {
                         >
                           Chi tiết
                         </Link>
+                        <Link
+                          to={`/reviews/${car.carID}`}
+                          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100"
+                        >
+                          Review
+                        </Link>
                         <button
                           type="button"
                           className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
