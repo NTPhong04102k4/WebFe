@@ -66,6 +66,8 @@ export function useChatHub({
   const { accessToken } = useAuthStore();
   const connectionRef = useRef<HubConnection | null>(null);
   const prevConvIdRef = useRef<number | null>(null);
+  // Ref luôn giữ giá trị mới nhất — tránh closure stale trong .start().then()
+  const activeConvIdRef = useRef<number | null>(activeConversationId ?? null);
 
   const {
     onNewMessage,
@@ -74,6 +76,11 @@ export function useChatHub({
     onAssignmentConfirmed,
     onMessagePinned,
   } = callbacks;
+
+  // Giữ ref đồng bộ với prop mới nhất (chạy trước effect kết nối)
+  useEffect(() => {
+    activeConvIdRef.current = activeConversationId ?? null;
+  }, [activeConversationId]);
 
   // ── Kết nối / ngắt kết nối ──────────────────────────────────────────────
 
@@ -134,20 +141,24 @@ export function useChatHub({
         if (joinStaffInbox) {
           connection.invoke("JoinStaffInbox").catch(() => {});
         }
-        if (activeConversationId != null) {
-          connection.invoke("JoinConversation", activeConversationId).catch(() => {});
-          prevConvIdRef.current = activeConversationId;
+        // Đọc từ ref — lấy giá trị mới nhất, tránh stale closure
+        const convId = activeConvIdRef.current;
+        if (convId != null) {
+          connection.invoke("JoinConversation", convId).catch(() => {});
+          prevConvIdRef.current = convId;
         }
       })
       .catch((err) => console.warn("[ChatHub] start failed:", err));
 
-    // Rejoin groups sau reconnect
+    // Rejoin groups sau reconnect — cũng dùng ref để lấy conversation hiện tại
     connection.onreconnected(() => {
       if (joinStaffInbox) {
         connection.invoke("JoinStaffInbox").catch(() => {});
       }
-      if (prevConvIdRef.current != null) {
-        connection.invoke("JoinConversation", prevConvIdRef.current).catch(() => {});
+      const convId = activeConvIdRef.current;
+      if (convId != null) {
+        connection.invoke("JoinConversation", convId).catch(() => {});
+        prevConvIdRef.current = convId;
       }
     });
 
