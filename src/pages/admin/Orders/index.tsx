@@ -1,14 +1,10 @@
 import { useState } from "react";
 import { ShoppingBag, Search, Download, RefreshCw } from "lucide-react";
-import { notify } from "src/components/core/Feedback/toast";
 import {
   useAdminOrders,
-  useOrderMutations,
   useRevenue,
 } from "src/query/order/useOrderQueries";
-import type { OrderViewModel } from "src/services/api/functions/orders/order.api";
 import { OrderDetailPanel } from "./OrderDetailPanel";
-import { OrderStatusModal } from "./OrderStatusModal";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
@@ -45,31 +41,15 @@ export default function AdminOrdersPage() {
   const [toDate, setToDate] = useState("");
 
   const [selectedOrderNumber, setSelectedOrderNumber] = useState<string | null>(null);
-  const [statusModalOrder, setStatusModalOrder] = useState<OrderViewModel | null>(null);
 
   const params = { page, pageSize: PAGE_SIZE, keyword: keyword || undefined, status: status || undefined, fromDate: fromDate || undefined, toDate: toDate || undefined };
   const { data, isLoading, isFetching, refetch } = useAdminOrders(params);
-  const { updateStatus } = useOrderMutations();
   const revenueQ = useRevenue({ fromDate: monthStart, toDate: monthEnd, groupBy: "Month" });
 
   const orders = data?.data ?? [];
   const total = data?.totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pendingCount = orders.filter((o) => o.orderStatus === "Pending" || o.orderStatus === "Processing").length;
-
-  const handleUpdateStatus = (newStatus: string) => {
-    if (!statusModalOrder) return;
-    updateStatus.mutate(
-      { orderNumber: statusModalOrder.orderNumber, status: newStatus },
-      {
-        onSuccess: () => {
-          notify.success("Cập nhật trạng thái thành công");
-          setStatusModalOrder(null);
-        },
-        onError: () => notify.error("Có lỗi khi cập nhật trạng thái"),
-      }
-    );
-  };
 
   const exportCsv = () => {
     const header = "Mã đơn,Khách hàng,Email,Tổng tiền,Đơn hàng,Thanh toán,Ngày tạo";
@@ -210,12 +190,6 @@ export default function AdminOrdersPage() {
                     >
                       Chi tiết
                     </button>
-                    <button
-                      onClick={() => setStatusModalOrder(order)}
-                      className="rounded border border-blue-400 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-900/20"
-                    >
-                      Cập nhật
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -252,19 +226,6 @@ export default function AdminOrdersPage() {
       <OrderDetailPanel
         orderNumber={selectedOrderNumber}
         onClose={() => setSelectedOrderNumber(null)}
-        onUpdateStatus={(order) => {
-          setSelectedOrderNumber(null);
-          setStatusModalOrder(order);
-        }}
-      />
-
-      <OrderStatusModal
-        open={statusModalOrder != null}
-        orderNumber={statusModalOrder?.orderNumber ?? ""}
-        currentStatus={statusModalOrder?.orderStatus ?? ""}
-        isPending={updateStatus.isPending}
-        onClose={() => setStatusModalOrder(null)}
-        onConfirm={handleUpdateStatus}
       />
     </div>
   );

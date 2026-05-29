@@ -38,6 +38,7 @@ export const API = {
   ordersPayment: {
     /** GET /orders/payment/orders — Admin,SuperAdmin,Staff */
     orders: "/orders/payment/orders",
+    myOrders: "/orders/payment/my-orders",
     /** GET /orders/payment/order/{orderNumber} — Authorized */
     order: (orderNumber: string) => `/orders/payment/order/${orderNumber}`,
     /** GET /orders/payment/order/{orderNumber}/payment-info — Authorized */
@@ -47,10 +48,15 @@ export const API = {
     previewOrder: "/orders/payment/preview",
     /** POST /orders/payment/order — Customer */
     createOrder: "/orders/payment/order",
+    /** POST /orders/payment/order/{orderNumber}/check-payment — đối soát online */
+    checkPayment: (orderNumber: string) =>
+      `/orders/payment/order/${orderNumber}/check-payment`,
+    /** POST /orders/payment/order/{orderNumber}/cash — ghi tiền mặt (Staff/Admin/Sales) */
+    recordCash: (orderNumber: string) =>
+      `/orders/payment/order/${orderNumber}/cash`,
     /** POST /orders/payment/sepay-ipn — AllowAnonymous */
     sepayIpn: "/orders/payment/sepay-ipn",
     /** PATCH /orders/payment/order/{id}/status — Admin,SuperAdmin,Staff */
-    orderStatus: (id: string | number) => `/orders/payment/order/${id}/status`,
     /**
      * GET /orders/payment/revenue-report — Admin,SuperAdmin
      * params: fromDate?, toDate?, groupBy? (Day|Month|Category)

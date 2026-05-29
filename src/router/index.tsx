@@ -22,6 +22,7 @@ const ReviewsPage         = lazy(() => import('@/pages/customer/Reviews'))
 const ChatPage            = lazy(() => import('@/pages/customer/Chat'))
 const AiChatPage          = lazy(() => import('@/pages/customer/AiChat'))
 const PremiumPlansPage    = lazy(() => import('@/pages/customer/Premium'))
+const ServicesPage        = lazy(() => import('@/pages/customer/Services'))
 
 // ── Auth pages ────────────────────────────────────────────────────────────────
 const LoginPage           = lazy(() => import('@/pages/auth/Login'))
@@ -79,6 +80,7 @@ export default function AppRouter() {
           <Route path="accessories" element={<AccessoriesPage />} />
           <Route path="accessories/:id" element={<AccessoryDetailPage />} />
           <Route path="cart" element={<CartPage />} />
+          <Route path="services" element={<ServicesPage />} />
           <Route path="ai-chat" element={<AiChatPage />} />
           <Route path="premium" element={<PremiumPlansPage />} />
 

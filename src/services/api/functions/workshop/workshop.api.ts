@@ -2,6 +2,7 @@ import apiClient from "../..";
 import { API } from "../../endpoints";
 import type { ApiRequestOptions } from "../../requestOptions";
 import { withSignal } from "../../requestOptions";
+import type { OperationResult } from "src/services/types/common.types";
 
 import type {
   AppointmentListResult,
@@ -27,6 +28,12 @@ import type {
   WorkOrderViewModel,
   WorkshopOperationResult,
 } from "./workshop.types";
+
+function unwrap<T>(payload: T | OperationResult<T>): T {
+  return payload && typeof payload === "object" && "data" in payload
+    ? ((payload as OperationResult<T>).data as T)
+    : (payload as T);
+}
 
 export const workshopApi = {
   // —— Customer vehicles ——
@@ -173,11 +180,11 @@ export const workshopApi = {
   },
 
   getWorkOrder: async (id: number, options?: ApiRequestOptions) => {
-    const res = await apiClient.get<WorkOrderViewModel>(
+    const res = await apiClient.get<WorkOrderViewModel | OperationResult<WorkOrderViewModel>>(
       API.workshop.workOrder(id),
       withSignal({}, options)
     );
-    return res.data;
+    return unwrap(res.data);
   },
 
   createWorkOrder: async (body: WorkOrderRequest) => {
@@ -254,11 +261,11 @@ export const workshopApi = {
   },
 
   getWorkOrderPaymentInfo: async (id: number, options?: ApiRequestOptions) => {
-    const res = await apiClient.get<WorkOrderPaymentInfoViewModel>(
+    const res = await apiClient.get<WorkOrderPaymentInfoViewModel | OperationResult<WorkOrderPaymentInfoViewModel>>(
       API.workshop.workOrderPaymentInfo(id),
       withSignal({}, options)
     );
-    return res.data;
+    return unwrap(res.data);
   },
 
   submitWorkOrderFeedback: async (

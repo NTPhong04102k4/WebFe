@@ -5,7 +5,11 @@
       "Bash(yarn test:*)",
       "Bash(npm install *)",
       "Bash(npx npm *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(mkdir -p /d/webapp/src/lib/db && echo \"ok\")"
+    ],
+    "additionalDirectories": [
+      "D:\\webapp\\src\\lib"
     ]
   }
 }

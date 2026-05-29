@@ -48,10 +48,13 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     const d = response.data;
     if (d && typeof d === "object") {
+      // suppressErrorHandling: true → caller handles success/error branching manually
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const suppress = (response.config as any).suppressErrorHandling === true;
       if (d.success === true && d.message) {
         notify.info(d.message);
       }
-      if (d.success === false && d.message) {
+      if (!suppress && d.success === false && d.message) {
         notify.error(d.message);
         return Promise.reject(new Error(d.message));
       }

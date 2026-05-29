@@ -171,13 +171,17 @@ export interface WorkOrderPaymentInfoViewModel {
   amount?: number;
   amountDue?: number;
   bankName?: string | null;
+  bankAccount?: string | null;
   accountNumber?: string | null;
   accountName?: string | null;
   transferContent?: string | null;
+  qrImageUrl?: string | null;
   qrCodeUrl?: string | null;
   qrCode?: string | null;
   paymentUrl?: string | null;
   expiresAt?: string | null;
+  expiredAt?: string | null;
+  signature?: string | null;
 }
 
 export interface WorkOrderFeedbackRequest {

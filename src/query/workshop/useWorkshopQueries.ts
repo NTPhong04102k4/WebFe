@@ -77,6 +77,7 @@ export function useWorkOrders(q: WorkOrderQueryRequest) {
     queryFn: ({ signal }) => workshopApi.listWorkOrders(q, { signal }),
     staleTime: SEARCH_STALE_MS,
     placeholderData: keepPreviousData,
+    refetchInterval: 15_000,
   });
 }
 
@@ -85,6 +86,10 @@ export function useWorkOrderDetail(id: number | null) {
     queryKey: id != null ? workshopKeys.workOrder(id) : ["workshop", "wo", "none"],
     queryFn: ({ signal }) => workshopApi.getWorkOrder(id!, { signal }),
     enabled: id != null,
+    refetchInterval: (query) => {
+      const status = query.state.data?.paymentStatus;
+      return status === "Paid" || status === "Failed" ? false : 3_000;
+    },
   });
 }
 
@@ -97,6 +102,7 @@ export function useWorkOrderPaymentInfo(id: number | null) {
     queryFn: ({ signal }) =>
       workshopApi.getWorkOrderPaymentInfo(id!, { signal }),
     enabled: id != null,
+    retry: false,
   });
 }
 

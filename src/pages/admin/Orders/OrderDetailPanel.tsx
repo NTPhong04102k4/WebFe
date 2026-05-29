@@ -1,7 +1,6 @@
 import { X, Package, Car, Shield, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { useOrderDetail } from "src/query/order/useOrderQueries";
-import type { OrderViewModel } from "src/services/api/functions/orders/order.api";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
@@ -19,10 +18,9 @@ const PRODUCT_ICONS: Record<string, typeof Car> = { Car, Accessory: Package, Ins
 type Props = {
   orderNumber: string | null;
   onClose: () => void;
-  onUpdateStatus: (order: OrderViewModel) => void;
 };
 
-export function OrderDetailPanel({ orderNumber, onClose, onUpdateStatus }: Props) {
+export function OrderDetailPanel({ orderNumber, onClose }: Props) {
   const { data: order, isLoading } = useOrderDetail(orderNumber);
   const [copied, setCopied] = useState(false);
 
@@ -126,14 +124,7 @@ export function OrderDetailPanel({ orderNumber, onClose, onUpdateStatus }: Props
           )}
         </div>
 
-        <div className="border-t border-slate-200 p-4 dark:border-slate-700 flex gap-2">
-          <button
-            onClick={() => order && onUpdateStatus(order)}
-            disabled={!order}
-            className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            Đổi trạng thái
-          </button>
+        <div className="border-t border-slate-200 p-4 dark:border-slate-700 flex justify-end">
           <button
             onClick={onClose}
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-300"

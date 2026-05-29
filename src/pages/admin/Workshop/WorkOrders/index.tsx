@@ -73,6 +73,7 @@ export default function WorkOrdersPage() {
 
   const { data, isLoading } = useWorkOrders(query);
   const detail = useWorkOrderDetail(detailId);
+  const paymentWorkOrder = useWorkOrderDetail(paymentInfoId);
   const paymentInfo = useWorkOrderPaymentInfo(paymentInfoId);
   const mutations = useWorkshopMutations();
   const { data: techRes } = useHrTechniciansSearch({ page: 1, pageSize: 200 });
@@ -212,15 +213,30 @@ export default function WorkOrdersPage() {
       <Modal open={paymentInfoId !== null} onClose={() => setPaymentInfoId(null)} title="Thong tin thanh toan" size="lg">
         {paymentInfo.isLoading ? <p>Dang tai...</p> : paymentInfo.data ? (
           <div className="space-y-3 text-sm">
+            <div
+              className={`rounded-lg p-3 ${
+                paymentWorkOrder.data?.paymentStatus === "Paid"
+                  ? "bg-green-50 text-green-700"
+                  : paymentWorkOrder.data?.paymentStatus === "Failed"
+                  ? "bg-red-50 text-red-700"
+                  : "bg-amber-50 text-amber-700"
+              }`}
+            >
+              {paymentWorkOrder.data?.paymentStatus === "Paid"
+                ? "Thanh toan thanh cong"
+                : paymentWorkOrder.data?.paymentStatus === "Failed"
+                ? "Thanh toan that bai hoac sai so tien"
+                : "Dang cho thanh toan"}
+            </div>
             <Info label="Ma phieu" value={paymentInfo.data.workOrderNumber ?? paymentInfoId} />
-            <Info label="So tien" value={formatMoney(paymentInfo.data.amountDue ?? paymentInfo.data.amount)} />
+            <Info label="So tien QR" value={formatMoney(paymentInfo.data.amount)} />
             <Info label="Ngan hang" value={paymentInfo.data.bankName ?? "-"} />
-            <Info label="So tai khoan" value={paymentInfo.data.accountNumber ?? "-"} />
+            <Info label="So tai khoan" value={paymentInfo.data.bankAccount ?? paymentInfo.data.accountNumber ?? "-"} />
             <Info label="Chu tai khoan" value={paymentInfo.data.accountName ?? "-"} />
             <Info label="Noi dung CK" value={paymentInfo.data.transferContent ?? "-"} />
-            {paymentInfo.data.qrCodeUrl || paymentInfo.data.qrCode ? (
+            {paymentInfo.data.qrImageUrl || paymentInfo.data.qrCodeUrl || paymentInfo.data.qrCode ? (
               <img
-                src={(paymentInfo.data.qrCodeUrl ?? paymentInfo.data.qrCode) || undefined}
+                src={(paymentInfo.data.qrImageUrl ?? paymentInfo.data.qrCodeUrl ?? paymentInfo.data.qrCode) || undefined}
                 alt="QR thanh toan work order"
                 className="max-h-72 rounded-lg border border-slate-200 bg-white p-2"
               />
@@ -230,6 +246,18 @@ export default function WorkOrdersPage() {
                 Mo lien ket thanh toan
               </a>
             ) : null}
+            <ActionButton onClick={() => paymentWorkOrder.refetch()}>Toi da chuyen khoan</ActionButton>
+          </div>
+        ) : paymentWorkOrder.data?.paymentStatus === "Paid" ? (
+          <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700">
+            Thanh toan thanh cong. Thong tin QR khong con kha dung.
+          </div>
+        ) : paymentInfo.error ? (
+          <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+            Khong tai duoc QR. Neu da chuyen khoan, he thong se cap nhat trang thai sau khi nhan IPN.
+            <div className="mt-3">
+              <ActionButton onClick={() => paymentWorkOrder.refetch()}>Toi da chuyen khoan</ActionButton>
+            </div>
           </div>
         ) : null}
       </Modal>

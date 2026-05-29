@@ -3,10 +3,13 @@ import { Toaster } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import AppRouter from '@/router'
 import { useAuthStore } from '@/stores/authStore'
+import { useCartUserSync } from '@/hooks/useCartUserSync'
 
 export default function App() {
   const navigate = useNavigate()
   const logout = useAuthStore((state) => state.logout)
+
+  useCartUserSync()
 
   useEffect(() => {
     const handler = (event: Event) => {
