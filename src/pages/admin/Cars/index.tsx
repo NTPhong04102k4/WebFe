@@ -183,6 +183,7 @@ export default function AdminCarsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [mode, setMode] = useState<'create' | 'edit'>('create')
   const [editingCar, setEditingCar] = useState<CarResponseItem | null>(null)
+  const [deleteConfirmCar, setDeleteConfirmCar] = useState<CarResponseItem | null>(null)
 
   const {
     control,
@@ -294,6 +295,16 @@ export default function AdminCarsPage() {
 
     return fd
   }
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => carRouteFn.delete(id),
+    onSuccess: () => {
+      notify.success('Xóa xe thành công')
+      setDeleteConfirmCar(null)
+      queryClient.invalidateQueries({ queryKey: ['admin-cars'] })
+    },
+    onError: (e: any) => notify.error(e?.message ?? 'Xóa xe thất bại'),
+  })
 
   const createMutation = useMutation({
     mutationFn: async (fd: FormData) => carRouteFn.create(fd),
@@ -488,6 +499,13 @@ export default function AdminCarsPage() {
                       >
                         Sửa
                       </button>
+                      <button
+                        type="button"
+                        className="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                        onClick={() => setDeleteConfirmCar(car)}
+                      >
+                        Xóa
+                      </button>
                     </div>
                   </div>
                 )
@@ -519,6 +537,40 @@ export default function AdminCarsPage() {
             </button>
           </div>
         </>
+      )}
+
+      {/* Delete confirm */}
+      {deleteConfirmCar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl">
+            <div className="px-6 py-5">
+              <h2 className="text-base font-bold text-slate-900">Xác nhận xóa xe</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Bạn có chắc muốn xóa{' '}
+                <span className="font-semibold text-slate-900">{deleteConfirmCar.carName}</span>?
+                Hành động này không thể hoàn tác.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-6 py-3">
+              <button
+                type="button"
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setDeleteConfirmCar(null)}
+                disabled={deleteMutation.isPending}
+              >
+                Huỷ
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                disabled={deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate(deleteConfirmCar.carID)}
+              >
+                {deleteMutation.isPending ? 'Đang xóa...' : 'Xóa xe'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal */}

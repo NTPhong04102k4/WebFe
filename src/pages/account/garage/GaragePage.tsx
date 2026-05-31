@@ -34,7 +34,7 @@ const defaultValues: FormValues = {
 
 export default function GaragePage() {
   const user = useAuthStore((s) => s.user);
-  const userID = user?.userID ?? user?.id;
+  const userID = user?.userUUID || user?.userID || user?.id;
 
   const { data: brands = [], isLoading: loadingBrands } = useQuery({
     queryKey: ["brand-cars"],

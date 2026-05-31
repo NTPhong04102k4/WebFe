@@ -64,6 +64,7 @@ export function useAccessoryManagement() {
   const [sortDescending, setSortDescending] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<AccessoriesListItem | null>(null);
   const pageSize = 10;
 
   const listParams = useMemo(
@@ -152,23 +153,29 @@ export function useAccessoryManagement() {
           accessoryID: editingAccessory.accessoryID,
         };
         await updateAccessory.mutateAsync({ id: editingAccessory.accessoryID, body });
-        notify.success("Cap nhat phu kien thanh cong");
+        notify.success("Cập nhật phụ kiện thành công");
       } else {
         await createAccessory.mutateAsync(basePayload as AccessoryRequestCreate);
-        notify.success("Tao phu kien thanh cong");
+        notify.success("Tạo phụ kiện thành công");
       }
 
       closeModal();
-    } catch (e) {
-      notify.error(e instanceof Error ? e.message : "Luu phu kien that bai");
+    } catch {
+      // interceptor đã hiển thị toast lỗi
     }
   });
 
   const handleDelete = (item: AccessoriesListItem) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa phụ kiện "${item.accessoryName}" không? Hành động này không thể hoàn tác.`)) return;
-    deleteAccessory.mutate(item.accessoryID, {
-      onSuccess: () => notify.success("Xóa phụ kiện thành công"),
-      onError: () => notify.error("Có lỗi xảy ra khi xóa phụ kiện"),
+    setDeleteConfirmItem(item);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirmItem) return;
+    deleteAccessory.mutate(deleteConfirmItem.accessoryID, {
+      onSuccess: () => {
+        notify.success("Xóa phụ kiện thành công");
+        setDeleteConfirmItem(null);
+      },
     });
   };
 
@@ -176,6 +183,7 @@ export function useAccessoryManagement() {
     accessories,
     brands: brandQuery.data ?? [],
     categories: categoryQuery.data ?? [],
+    deleteConfirmItem,
     editingAccessory,
     error: (accessoryQuery.error ?? null) as Error | null,
     form,
@@ -193,9 +201,11 @@ export function useAccessoryManagement() {
     sortDescending,
     totalPages: accessoryQuery.data?.totalPages ?? 1,
     closeModal,
+    confirmDelete,
     openCreate,
     openEdit,
     handleDelete,
+    setDeleteConfirmItem,
     setPage,
     setSearch,
     setSelectedBrand: (value: string) => {

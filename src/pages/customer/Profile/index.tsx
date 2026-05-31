@@ -10,6 +10,7 @@ import { AvatarSection } from "./components/AvatarSection";
 import { InfoSection } from "./components/InfoSection";
 import { ChangePasswordSection } from "./components/ChangePasswordSection";
 import { SubscriptionSection } from "./components/SubscriptionSection";
+import { VehicleSection } from "./components/VehicleSection";
 
 function ProfileSkeleton() {
   return (
@@ -124,6 +125,8 @@ export default function ProfilePage() {
           {!isSocialAccount && <ChangePasswordSection />}
 
           <SubscriptionSection />
+
+          <VehicleSection />
         </div>
       )}
     </div>

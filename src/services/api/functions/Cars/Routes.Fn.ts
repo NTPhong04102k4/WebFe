@@ -159,13 +159,10 @@ export const carRouteFn = {
     options?: ApiRequestOptions
   ) => {
     const response = await apiClient.put<CarDetailResponse>(
-      carRoute.edit,
+      carRoute.detail(id),
       data,
       withSignal(
-        {
-          params: { id },
-          headers: { "Content-Type": "multipart/form-data" },
-        },
+        data instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {},
         options
       )
     );
