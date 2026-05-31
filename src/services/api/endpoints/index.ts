@@ -223,17 +223,27 @@ export const API = {
     carStats: (carId: string | number) => `/reviews/cars/${carId}/stats`,
     carDetail: (id: string | number) => `/reviews/cars/detail/${id}`,
     carCreate: "/reviews/cars",
+    carMy: "/reviews/cars/my",
     carUpdate: (id: string | number) => `/reviews/cars/${id}`,
     car: (id: string | number) => `/reviews/cars/${id}`,
     carHelpful: (id: string | number) => `/reviews/cars/${id}/helpful`,
     carReport: (id: string | number) => `/reviews/cars/${id}/report`,
     serviceByTechnician: (technicianId: string | number) =>
       `/reviews/services/technician/${technicianId}`,
+    serviceTechnicianStats: (technicianId: string | number) =>
+      `/reviews/services/technician/${technicianId}/stats`,
     serviceByLocation: (locationId: string | number) =>
       `/reviews/services/location/${locationId}`,
+    serviceLocationStats: (locationId: string | number) =>
+      `/reviews/services/location/${locationId}/stats`,
+    serviceWorkOrder: (workOrderId: string | number) =>
+      `/reviews/services/work-order/${workOrderId}`,
     service: (id: string | number) => `/reviews/services/${id}`,
+    serviceDetail: (id: string | number) => `/reviews/services/detail/${id}`,
     serviceCreate: "/reviews/services",
+    serviceMy: "/reviews/services/my",
     serviceRespond: (id: string | number) => `/reviews/services/${id}/respond`,
+    adminAll: "/reviews/admin",
     adminPending: "/reviews/admin/pending",
     adminModerate: (id: string | number) => `/reviews/admin/${id}/moderate`,
   },

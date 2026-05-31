@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Star } from "lucide-react";
 
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { notify } from "@/components/core/Feedback/toast";
 import { formatCurrency } from "@/common/utils/formatCurrency";
 import { useCarDetail, useCarTechSpec } from "@/query/car/useCarQueries";
+import { useCarReviews, useCarReviewStats } from "@/query/review/useReviewQueries";
 import { useCartStore } from "@/stores/cartStore";
 import type { CarDetailResponse } from "@/shared/types/Reponse/Car";
 import type { CarDetailView } from "@/services/api/functions/Cars/Routes.Fn";
@@ -106,12 +107,10 @@ function CarGallery({
 
 function CarInfoPanel({
   car,
-  carId,
   carName,
   onAddToCart,
 }: {
   car: CarDetailView;
-  carId: number;
   carName: string;
   onAddToCart: () => void;
 }) {
@@ -145,13 +144,6 @@ function CarInfoPanel({
         <ShoppingCart className="h-4 w-4" />
         Thêm vào giỏ hàng
       </button>
-
-      <Link
-        to={`/reviews/${carId}`}
-        className="mt-3 flex w-full items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 hover:bg-amber-100"
-      >
-        Viết review cho xe này
-      </Link>
 
       <div className="mt-6 divide-y divide-slate-100">
         <DetailRow label="Mã xe" value={car.carCode} />
@@ -221,6 +213,153 @@ function TechSpecGrid({ spec }: { spec: CarDetailResponse }) {
           <BoolBadge label="Bluetooth" value={spec.bluetoothConnectivity} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function StarBar({ label, count, total }: { label: string; count: number; total: number }) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="w-6 shrink-0 text-right text-slate-500">{label}</span>
+      <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />
+      <div className="flex-1 overflow-hidden rounded-full bg-slate-100 h-2">
+        <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-6 shrink-0 text-slate-400">{count}</span>
+    </div>
+  );
+}
+
+function SubRating({ label, value }: { label: string; value?: number | null }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-slate-500">{label}</span>
+      <span className="flex items-center gap-1 font-medium text-slate-700">
+        {value.toFixed(1)} <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+      </span>
+    </div>
+  );
+}
+
+function ReviewSection({ carId }: { carId: number }) {
+  const [page, setPage] = useState(1);
+  const statsQ = useCarReviewStats(carId);
+  const listQ = useCarReviews({ carId, page, pageSize: 5, status: "Approved" });
+
+  const stats = statsQ.data;
+  const reviews = listQ.data?.data ?? [];
+  const total = listQ.data?.totalCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / 5));
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold text-slate-900">Đánh giá từ khách hàng</h2>
+        <Link
+          to={`/reviews/${carId}`}
+          className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-100"
+        >
+          Viết đánh giá
+        </Link>
+      </div>
+
+      {statsQ.isLoading ? (
+        <div className="flex justify-center py-8"><LoadingSpinner /></div>
+      ) : stats && stats.reviewCount > 0 ? (
+        <div className="mt-5 grid gap-6 sm:grid-cols-[auto_1fr]">
+          {/* Overall score */}
+          <div className="flex flex-col items-center justify-center rounded-xl bg-slate-50 px-8 py-4 text-center">
+            <span className="text-5xl font-extrabold text-slate-800">{stats.averageRating.toFixed(1)}</span>
+            <span className="mt-1 flex gap-0.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className={`h-4 w-4 ${i < Math.round(stats.averageRating) ? "fill-amber-400 text-amber-400" : "text-slate-200"}`} />
+              ))}
+            </span>
+            <span className="mt-1 text-xs text-slate-400">{stats.reviewCount} đánh giá</span>
+          </div>
+
+          {/* Bars + sub-ratings */}
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              {([5, 4, 3, 2, 1] as const).map((s) => (
+                <StarBar
+                  key={s}
+                  label={String(s)}
+                  count={stats[`count${s}Star` as keyof typeof stats] as number}
+                  total={stats.reviewCount}
+                />
+              ))}
+            </div>
+            {(stats.avgPerformance || stats.avgComfort || stats.avgDesign || stats.avgValue) && (
+              <div className="divide-y divide-slate-100 rounded-xl border border-slate-100 px-4 py-1">
+                <SubRating label="Hiệu suất" value={stats.avgPerformance} />
+                <SubRating label="Thoải mái" value={stats.avgComfort} />
+                <SubRating label="Thiết kế" value={stats.avgDesign} />
+                <SubRating label="Giá trị" value={stats.avgValue} />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        !statsQ.isLoading && (
+          <p className="mt-4 text-sm text-slate-400">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
+        )
+      )}
+
+      {/* Review list */}
+      {reviews.length > 0 && (
+        <div className="mt-6 space-y-4">
+          {reviews.map((r) => (
+            <div key={r.reviewID} className="border-t border-slate-100 pt-4">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="text-sm font-medium text-slate-700">{r.reviewerName ?? "Khách hàng"}</span>
+                  <span className="ml-2 inline-flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`h-3.5 w-3.5 ${i < r.overallRating ? "fill-amber-400 text-amber-400" : "text-slate-200"}`} />
+                    ))}
+                  </span>
+                </div>
+                <span className="shrink-0 text-xs text-slate-400">
+                  {new Date(r.createdDate).toLocaleDateString("vi-VN")}
+                </span>
+              </div>
+              {r.title && <p className="mt-1 text-sm font-semibold text-slate-800">{r.title}</p>}
+              <p className="mt-1 text-sm text-slate-600">{r.content}</p>
+              {(r.pros || r.cons) && (
+                <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  {r.pros && <span className="rounded bg-green-50 px-2 py-0.5 text-green-700">+ {r.pros}</span>}
+                  {r.cons && <span className="rounded bg-amber-50 px-2 py-0.5 text-amber-700">− {r.cons}</span>}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-sm">
+              <span className="text-slate-400">Trang {page}/{totalPages} · {total} đánh giá</span>
+              <div className="flex gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 disabled:opacity-40"
+                >
+                  Trước
+                </button>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 disabled:opacity-40"
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -301,10 +440,11 @@ export default function CustomerCarDetailPage() {
               fallbackImage={car.primaryImagePath}
               onSelect={setActiveImageIndex}
             />
-            <CarInfoPanel car={car} carId={carId} carName={carName} onAddToCart={handleAddToCart} />
+            <CarInfoPanel car={car} carName={carName} onAddToCart={handleAddToCart} />
           </div>
 
           <TechSpecSection techSpec={techSpec} />
+          <ReviewSection carId={carId} />
         </div>
       ) : null}
     </div>

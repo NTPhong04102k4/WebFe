@@ -7,6 +7,14 @@ import AuthLayout from '@/components/layout/AuthLayout'
 import ProtectedRoute from '@/components/common/ProtectedRoute'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 
+// ── Account pages ─────────────────────────────────────────────────────────────
+import AccountLayout from '@/pages/account/AccountLayout'
+const AccountGaragePage       = lazy(() => import('@/pages/account/garage/GaragePage'))
+const AccountAppointmentsPage = lazy(() => import('@/pages/account/appointments/AppointmentsPage'))
+const AccountWorkOrdersPage   = lazy(() => import('@/pages/account/work-orders/WorkOrdersPage'))
+const AccountInsurancePage    = lazy(() => import('@/pages/account/insurance/MyInsurancePage'))
+const AccountReviewsPage      = lazy(() => import('@/pages/account/reviews/MyReviewsPage'))
+
 // ── Customer pages ────────────────────────────────────────────────────────────
 const HomePage            = lazy(() => import('@/pages/customer/Home'))
 const CarsPage            = lazy(() => import('@/pages/customer/Cars'))
@@ -91,6 +99,19 @@ export default function AppRouter() {
           <Route path="reviews" element={<Navigate to="/cars" replace />} />
           <Route path="reviews/:carId" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
           <Route path="chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+        </Route>
+
+        {/* ── Account ─────────────────────────────────────── */}
+        <Route
+          path="account"
+          element={<ProtectedRoute><AccountLayout /></ProtectedRoute>}
+        >
+          <Route index element={<Navigate to="garage" replace />} />
+          <Route path="garage" element={<AccountGaragePage />} />
+          <Route path="appointments" element={<AccountAppointmentsPage />} />
+          <Route path="work-orders" element={<AccountWorkOrdersPage />} />
+          <Route path="insurance" element={<AccountInsurancePage />} />
+          <Route path="reviews" element={<AccountReviewsPage />} />
         </Route>
 
         {/* ── Auth ────────────────────────────────────────── */}

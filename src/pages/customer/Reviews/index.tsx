@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Star } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { notify } from "@/components/core/Feedback/toast";
@@ -36,6 +37,31 @@ function getImageSrc(car?: Partial<CarResponseItem> | null): string | undefined 
   return undefined;
 }
 
+function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const active = hovered ?? value;
+  return (
+    <div className="mt-1.5 flex gap-1">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <button
+          key={s}
+          type="button"
+          onClick={() => onChange(s)}
+          onMouseEnter={() => setHovered(s)}
+          onMouseLeave={() => setHovered(null)}
+          className="p-0.5 focus:outline-none"
+          aria-label={`${s} sao`}
+        >
+          <Star
+            className={`h-7 w-7 transition-colors ${s <= active ? "fill-amber-400 text-amber-400" : "fill-none text-slate-300"}`}
+          />
+        </button>
+      ))}
+      <span className="ml-2 self-center text-sm text-slate-500">{value} sao</span>
+    </div>
+  );
+}
+
 function parseCarId(value: string | null | undefined) {
   const id = Number(value);
   return Number.isFinite(id) && id > 0 ? id : null;
@@ -51,7 +77,7 @@ export default function CustomerReviewsPage() {
   const [pros, setPros] = useState("");
   const [cons, setCons] = useState("");
 
-  const { createCarReview, updateCarReview } = useReviewMutations();
+  const { createCarReview, updateCarReview, deleteCarReview } = useReviewMutations();
 
   const selectedCar = useQuery({
     queryKey: ["review-car-detail", selectedCarId],
@@ -180,20 +206,10 @@ export default function CustomerReviewsPage() {
             </p>
           ) : null}
 
-          <label className="mt-4 block">
+          <div className="mt-4">
             <span className="text-sm font-medium text-slate-700">Điểm tổng thể</span>
-            <select
-              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-              value={overallRating}
-              onChange={(event) => setOverallRating(Number(event.target.value))}
-            >
-              {[5, 4, 3, 2, 1].map((rating) => (
-                <option key={rating} value={rating}>
-                  {rating} sao
-                </option>
-              ))}
-            </select>
-          </label>
+            <StarPicker value={overallRating} onChange={setOverallRating} />
+          </div>
 
           <label className="mt-4 block">
             <span className="text-sm font-medium text-slate-700">Tiêu đề</span>
@@ -231,13 +247,36 @@ export default function CustomerReviewsPage() {
             />
           </div>
 
-          <button
-            className="mt-5 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            disabled={isPending || myReview.isLoading}
-            onClick={submit}
-          >
-            {isPending ? "Đang lưu..." : isExistingReview ? "Cập nhật review" : "Gửi review"}
-          </button>
+          <div className="mt-5 flex gap-2">
+            <button
+              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              disabled={isPending || myReview.isLoading}
+              onClick={submit}
+            >
+              {isPending ? "Đang lưu..." : isExistingReview ? "Cập nhật review" : "Gửi review"}
+            </button>
+            {isExistingReview && (
+              <button
+                className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                disabled={deleteCarReview.isPending}
+                onClick={() => {
+                  if (!window.confirm("Xóa review của bạn?")) return;
+                  deleteCarReview.mutate(myReview.data!.reviewID, {
+                    onSuccess: () => {
+                      notify.info("Đã xóa review");
+                      setOverallRating(5);
+                      setTitle("");
+                      setContent("");
+                      setPros("");
+                      setCons("");
+                    },
+                  });
+                }}
+              >
+                Xóa
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white">

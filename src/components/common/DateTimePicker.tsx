@@ -8,6 +8,7 @@ type DateTimePickerProps = {
   value: DateTimeRangeValue;
   onChange: (value: DateTimeRangeValue) => void;
   className?: string;
+  type?: "date" | "datetime-local";
 };
 
 export function DateTimePicker({
@@ -15,6 +16,7 @@ export function DateTimePicker({
   value,
   onChange,
   className = "",
+  type = "datetime-local",
 }: DateTimePickerProps) {
   return (
     <div className={`space-y-2 ${className}`}>
@@ -25,7 +27,7 @@ export function DateTimePicker({
             Tu ngay
           </span>
           <input
-            type="datetime-local"
+            type={type}
             value={value.fromDate}
             onChange={(event) => onChange({ ...value, fromDate: event.target.value })}
             className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-300 dark:focus:ring-blue-300/30"
@@ -36,7 +38,7 @@ export function DateTimePicker({
             Den ngay
           </span>
           <input
-            type="datetime-local"
+            type={type}
             value={value.toDate}
             onChange={(event) => onChange({ ...value, toDate: event.target.value })}
             className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-300 dark:focus:ring-blue-300/30"

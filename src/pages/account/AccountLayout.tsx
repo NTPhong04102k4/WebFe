@@ -8,6 +8,7 @@ const links = [
   { to: "/account/appointments", label: "Lịch hẹn" },
   { to: "/account/work-orders", label: "Phiếu sửa chữa" },
   { to: "/account/insurance", label: "Bảo hiểm" },
+  { to: "/account/reviews", label: "Đánh giá" },
 ];
 
 export default function AccountLayout() {

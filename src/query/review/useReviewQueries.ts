@@ -4,8 +4,10 @@ import { SEARCH_STALE_MS } from "src/query/queryClient";
 import { reviewApi } from "src/services/api/functions/review/review.api";
 import type {
   CarReviewRequest,
+  ReviewHelpfulRequest,
   ReviewListParams,
   ReviewModerateRequest,
+  ReviewReportRequest,
   ServiceReviewRequest,
 } from "src/services/api/functions/review/review.types";
 import { useAuthStore } from "src/stores/authStore";
@@ -32,14 +34,32 @@ export function useCarReview(id: number | null) {
   });
 }
 
-/** Lấy review của user hiện tại cho một xe (tất cả status). Trả null nếu chưa có. */
+export function useMyCarReviews(page = 1, pageSize = 20) {
+  return useQuery({
+    queryKey: [...reviewKeys.all, "my-car", { page, pageSize }],
+    queryFn: ({ signal }) => reviewApi.listMyCarReviews({ page, pageSize }, { signal }),
+    staleTime: SEARCH_STALE_MS,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useMyServiceReviews(page = 1, pageSize = 20) {
+  return useQuery({
+    queryKey: [...reviewKeys.all, "my-service", { page, pageSize }],
+    queryFn: ({ signal }) => reviewApi.listMyServiceReviews({ page, pageSize }, { signal }),
+    staleTime: SEARCH_STALE_MS,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Lấy review của user hiện tại cho một xe. Dùng GET /reviews/cars/my rồi filter theo carID. */
 export function useMyCarReview(carId: number | null) {
   const userId = useAuthStore((s) => s.user?.userID);
   return useQuery({
-    queryKey: carId != null && userId != null ? [...reviewKeys.carReviews({ carId }), "mine", userId] : ["review", "mine", "none"],
+    queryKey: carId != null && userId != null ? [...reviewKeys.all, "my-car-check", carId] : ["review", "mine", "none"],
     queryFn: async ({ signal }) => {
-      const result = await reviewApi.listCarReviews({ carId: carId!, page: 1, pageSize: 100 }, { signal });
-      return result.data.find((r) => r.userID === userId) ?? null;
+      const result = await reviewApi.listMyCarReviews({ page: 1, pageSize: 100 }, { signal });
+      return result.data.find((r) => r.carID === carId) ?? null;
     },
     enabled: carId != null && userId != null,
   });
@@ -72,7 +92,43 @@ export function useServiceReview(id: number | null) {
   });
 }
 
+export function useServiceReviewByWorkOrder(workOrderId: number | null) {
+  return useQuery({
+    queryKey: workOrderId != null ? [...reviewKeys.all, "work-order", workOrderId] : ["review", "work-order", "none"],
+    queryFn: ({ signal }) => reviewApi.getServiceReviewByWorkOrder(workOrderId!, { signal }),
+    enabled: workOrderId != null,
+    retry: false,
+  });
+}
+
+export function useServiceTechnicianStats(technicianId: number | null) {
+  return useQuery({
+    queryKey: technicianId != null ? [...reviewKeys.all, "technician-stats", technicianId] : ["review", "technician-stats", "none"],
+    queryFn: ({ signal }) => reviewApi.getServiceTechnicianStats(technicianId!, { signal }),
+    enabled: technicianId != null,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useServiceLocationStats(locationId: number | null) {
+  return useQuery({
+    queryKey: locationId != null ? [...reviewKeys.all, "location-stats", locationId] : ["review", "location-stats", "none"],
+    queryFn: ({ signal }) => reviewApi.getServiceLocationStats(locationId!, { signal }),
+    enabled: locationId != null,
+    staleTime: 5 * 60_000,
+  });
+}
+
 // ─── Admin ────────────────────────────────────────────────────────────────────
+
+export function useAllCarReviews(params: ReviewListParams) {
+  return useQuery({
+    queryKey: reviewKeys.pending({ ...params, _scope: "all" }),
+    queryFn: ({ signal }) => reviewApi.listAllCarReviews(params, { signal }),
+    staleTime: SEARCH_STALE_MS,
+    placeholderData: keepPreviousData,
+  });
+}
 
 export function usePendingReviews(params: ReviewListParams) {
   return useQuery({
@@ -117,9 +173,17 @@ export function useReviewMutations() {
       onSuccess: invalidate,
     }),
     respondToServiceReview: useMutation({
-      mutationFn: ({ id, response }: { id: number; response: string }) =>
-        reviewApi.respondToServiceReview(id, { response }),
+      mutationFn: ({ id, responseFromShop }: { id: number; responseFromShop: string }) =>
+        reviewApi.respondToServiceReview(id, { responseFromShop }),
       onSuccess: invalidate,
+    }),
+    voteHelpful: useMutation({
+      mutationFn: ({ id, body }: { id: number; body: ReviewHelpfulRequest }) =>
+        reviewApi.voteHelpful(id, body),
+    }),
+    reportReview: useMutation({
+      mutationFn: ({ id, body }: { id: number; body: ReviewReportRequest }) =>
+        reviewApi.reportReview(id, body),
     }),
   };
 }

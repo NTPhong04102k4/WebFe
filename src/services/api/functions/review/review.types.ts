@@ -34,6 +34,7 @@ export interface CarReviewViewModel {
   cons?: string | null;
   status: string;
   helpfulCount: number;
+  isVerifiedPurchase?: boolean;
   createdDate: string;
 }
 
@@ -46,6 +47,10 @@ export interface CarReviewStats {
   count3Star: number;
   count2Star: number;
   count1Star: number;
+  avgPerformance?: number | null;
+  avgComfort?: number | null;
+  avgDesign?: number | null;
+  avgValue?: number | null;
 }
 
 // ─── Service Review ──────────────────────────────────────────────────────────
@@ -53,11 +58,16 @@ export interface CarReviewStats {
 export interface ServiceReviewRequest {
   workOrderID: number;
   technicianID?: number | null;
+  locationID?: number | null;
   overallRating: number;
   qualityRating?: number | null;
-  timelinessRating?: number | null;
+  speedRating?: number | null;
+  priceRating?: number | null;
+  attitudeRating?: number | null;
   title?: string | null;
   content: string;
+  imagePaths?: string[] | null;
+  wouldRecommend?: boolean | null;
 }
 
 export interface ServiceReviewViewModel {
@@ -67,14 +77,35 @@ export interface ServiceReviewViewModel {
   reviewerName?: string | null;
   technicianID?: number | null;
   technicianName?: string | null;
+  locationID?: number | null;
   overallRating: number;
   qualityRating?: number | null;
-  timelinessRating?: number | null;
+  speedRating?: number | null;
+  priceRating?: number | null;
+  attitudeRating?: number | null;
   title?: string | null;
   content: string;
   status: string;
-  shopResponse?: string | null;
+  responseFromShop?: string | null;
+  wouldRecommend?: boolean | null;
   createdDate: string;
+}
+
+export interface ServiceReviewStats {
+  subjectID: number;
+  subjectType: "Technician" | "Location";
+  averageRating: number;
+  reviewCount: number;
+  count5Star: number;
+  count4Star: number;
+  count3Star: number;
+  count2Star: number;
+  count1Star: number;
+  avgQuality?: number | null;
+  avgSpeed?: number | null;
+  avgPrice?: number | null;
+  avgAttitude?: number | null;
+  wouldRecommendCount: number;
 }
 
 // ─── Shared ──────────────────────────────────────────────────────────────────
@@ -86,6 +117,9 @@ export interface ReviewListParams {
   carId?: number;
   technicianId?: number;
   locationId?: number;
+  fromDate?: string;
+  toDate?: string;
+  _scope?: string;
 }
 
 export interface ReviewModerateRequest {
@@ -96,14 +130,16 @@ export interface ReviewModerateRequest {
 }
 
 export interface ReviewHelpfulRequest {
+  reviewType: "Car" | "Service";
   isHelpful: boolean;
 }
 
 export interface ReviewReportRequest {
+  reviewType: "Car" | "Service";
   reason: string;
   description?: string | null;
 }
 
 export interface ServiceReviewRespondRequest {
-  response: string;
+  responseFromShop: string;
 }
