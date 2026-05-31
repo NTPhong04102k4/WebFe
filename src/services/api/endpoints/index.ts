@@ -65,6 +65,9 @@ export const API = {
     /** POST /orders/payment/order/{orderNumber}/send-invoice — Admin,Staff */
     sendInvoice: (orderNumber: string) =>
       `/orders/payment/order/${orderNumber}/send-invoice`,
+    /** GET /orders/payment/order/{orderNumber}/invoice-pdf — Admin,Staff,Customer(own) */
+    invoicePdf: (orderNumber: string) =>
+      `/orders/payment/order/${orderNumber}/invoice-pdf`,
   },
 
   chat: {

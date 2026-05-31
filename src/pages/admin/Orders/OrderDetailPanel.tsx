@@ -1,6 +1,6 @@
-import { X, Package, Car, Shield, Copy, Check, Mail } from "lucide-react";
+import { X, Package, Car, Shield, Copy, Check, Mail, FileText, Download } from "lucide-react";
 import { useState } from "react";
-import { useOrderDetail, useSendInvoice } from "src/query/order/useOrderQueries";
+import { useOrderDetail, useSendInvoice, useInvoicePdf } from "src/query/order/useOrderQueries";
 import { notify } from "src/components/core/Feedback/toast";
 
 const fmt = (v: number) =>
@@ -24,6 +24,7 @@ type Props = {
 export function OrderDetailPanel({ orderNumber, onClose }: Props) {
   const { data: order, isLoading } = useOrderDetail(orderNumber);
   const sendInvoice = useSendInvoice(orderNumber ?? "");
+  const invoicePdf = useInvoicePdf(orderNumber ?? "");
   const [copied, setCopied] = useState(false);
 
   const handleSendInvoice = () => {
@@ -133,20 +134,38 @@ export function OrderDetailPanel({ orderNumber, onClose }: Props) {
           )}
         </div>
 
-        <div className="border-t border-slate-200 p-4 dark:border-slate-700 flex items-center justify-between gap-2">
+        <div className="border-t border-slate-200 p-4 dark:border-slate-700 space-y-2">
           {order?.paymentStatus === "Paid" && (
-            <button
-              onClick={handleSendInvoice}
-              disabled={sendInvoice.isPending}
-              className="flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-700 dark:text-emerald-400"
-            >
-              <Mail className="h-4 w-4" />
-              {sendInvoice.isPending ? "Đang gửi..." : "Gửi hóa đơn"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSendInvoice}
+                disabled={sendInvoice.isPending || invoicePdf.isPending}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-700 dark:text-emerald-400"
+              >
+                <Mail className="h-4 w-4" />
+                {sendInvoice.isPending ? "Đang gửi..." : "Gửi email"}
+              </button>
+              <button
+                onClick={() => invoicePdf.mutate({ action: "open" })}
+                disabled={invoicePdf.isPending || sendInvoice.isPending}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300"
+              >
+                <FileText className="h-4 w-4" />
+                {invoicePdf.isPending ? "Đang tải..." : "Xem PDF"}
+              </button>
+              <button
+                onClick={() => invoicePdf.mutate({ action: "download" })}
+                disabled={invoicePdf.isPending || sendInvoice.isPending}
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300"
+                title="Tải PDF"
+              >
+                <Download className="h-4 w-4" />
+              </button>
+            </div>
           )}
           <button
             onClick={onClose}
-            className="ml-auto rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-300"
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-300"
           >
             Đóng
           </button>

@@ -60,7 +60,7 @@ export function StaffVehiclePanel() {
     () => ({
       page: params.page,
       pageSize: params.pageSize,
-      userId: params.status ? Number(params.status) : undefined,
+      userId: params.status || undefined,
     }),
     [params.page, params.pageSize, params.status]
   );
@@ -121,13 +121,12 @@ export function StaffVehiclePanel() {
         <h3 className={staff.title}>Xe khách hàng</h3>
 
         <div className={staff.tableToolbar}>
-          <div className={staff.field} style={{ marginBottom: 0, minWidth: 160 }}>
-            <label htmlFor="v-userid">Lọc theo User ID</label>
+          <div className={staff.field} style={{ marginBottom: 0, minWidth: 220 }}>
+            <label htmlFor="v-userid">Lọc theo User UUID</label>
             <input
               id="v-userid"
-              type="number"
-              min={1}
-              placeholder="Tất cả"
+              type="text"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
               value={params.status}
               onChange={(e) => setParams({ status: e.target.value, page: 1 })}
             />

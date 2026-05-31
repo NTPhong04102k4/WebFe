@@ -66,14 +66,14 @@ export interface AppointmentServiceItem {
 
 export interface AppointmentRequest {
   customerVehicleID: number;
-  locationID: number;
+  locationID?: number | null;
   scheduledDateTime: string;
   estimatedDuration_minutes: number;
   assignedTechnicianID?: number | null;
   appointmentType: string;
   customerNote?: string | null;
   staffNote?: string | null;
-  services?: AppointmentServiceItem[];
+  services: AppointmentServiceItem[];
 }
 
 export interface AppointmentQueryRequest {
@@ -86,7 +86,13 @@ export interface AppointmentQueryRequest {
   toDate?: string | null;
 }
 
+/** Dùng cho PATCH /appointments/{id}/status */
 export interface AppointmentStatusRequest {
+  status: string;
+}
+
+/** Dùng cho PUT /appointments/{id}/cancel */
+export interface AppointmentCancelRequest {
   status: string;
   cancelReason?: string | null;
 }

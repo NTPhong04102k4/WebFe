@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { formatCurrency } from "@/common/utils/formatCurrency";
 import { orderApi, type RecordCashInput, type CheckPaymentApiResponse, type PaymentStatus } from "@/services/api/functions/orders/order.api";
 import { useAuthStore } from "@/stores/authStore";
-import { useCheckPayment, useRecordCash, useSendInvoice } from "@/query/order/useOrderQueries";
+import { useCheckPayment, useRecordCash, useInvoicePdf } from "@/query/order/useOrderQueries";
 import { useQuery } from "@tanstack/react-query";
 import { orderKeys } from "@/query/order/keys";
 
@@ -166,8 +166,7 @@ export default function CustomerOrderDetailPage() {
 
   const checkPayment = useCheckPayment(orderNumber);
   const recordCash = useRecordCash(orderNumber);
-  const sendInvoice = useSendInvoice(orderNumber);
-  const [invoiceSent, setInvoiceSent] = useState(false);
+  const invoicePdf = useInvoicePdf(orderNumber);
 
   const order = detail.data;
   const pay = payment.data;
@@ -251,22 +250,24 @@ export default function CustomerOrderDetailPage() {
             {order.paymentStatus === "Paid" && (
               <div className="space-y-3">
                 <p className="text-sm font-medium text-green-700">✓ Đơn hàng đã được thanh toán đủ.</p>
-                <button
-                  type="button"
-                  disabled={sendInvoice.isPending || invoiceSent}
-                  onClick={() =>
-                    sendInvoice.mutate(undefined, {
-                      onSuccess: () => setInvoiceSent(true),
-                    })
-                  }
-                  className="w-full rounded-lg border border-emerald-200 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
-                >
-                  {sendInvoice.isPending
-                    ? "Đang gửi..."
-                    : invoiceSent
-                    ? "✓ Đã gửi hóa đơn về email"
-                    : "Gửi hóa đơn về email"}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={invoicePdf.isPending}
+                    onClick={() => invoicePdf.mutate({ action: "open" })}
+                    className="flex-1 rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                  >
+                    {invoicePdf.isPending ? "Đang tải..." : "Xem hóa đơn PDF"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={invoicePdf.isPending}
+                    onClick={() => invoicePdf.mutate({ action: "download" })}
+                    className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    {invoicePdf.isPending ? "Đang tải..." : "Tải hóa đơn PDF"}
+                  </button>
+                </div>
               </div>
             )}
 

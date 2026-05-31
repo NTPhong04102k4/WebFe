@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { SEARCH_STALE_MS } from "src/query/queryClient";
 import { workshopApi } from "src/services/api/functions/workshop/workshop.api";
 import type {
+  AppointmentCancelRequest,
   AppointmentQueryRequest,
   AppointmentRequest,
   AppointmentStatusRequest,
@@ -23,7 +24,7 @@ import { workshopKeys } from "./keys";
 export function useCustomerVehicles(params: {
   page?: number;
   pageSize?: number;
-  userId?: string | number;
+  userId?: string;
 }) {
   return useQuery({
     queryKey: workshopKeys.vehicles(params),
@@ -151,7 +152,7 @@ export function useWorkshopMutations() {
         body,
       }: {
         id: number;
-        body?: AppointmentStatusRequest;
+        body?: AppointmentCancelRequest;
       }) => workshopApi.cancelAppointment(id, body),
       onSuccess: invalidateAll,
     }),

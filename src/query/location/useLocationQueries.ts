@@ -10,14 +10,14 @@ export function useLocationList() {
   });
 }
 
-export function useLocationDetail(ip: string | null) {
+export function useLocationDetail(id: number | null) {
   return useQuery({
-    queryKey: ip ? locationKeys.detail(ip) : ["locations", "detail", "none"],
+    queryKey: id != null ? locationKeys.detail(String(id)) : ["locations", "detail", "none"],
     queryFn: () => {
-      if (!ip) throw new Error("Location code is required");
-      return locationRouteFn.getLocation(ip);
+      if (id == null) throw new Error("Location ID is required");
+      return locationRouteFn.getLocation(id);
     },
-    enabled: Boolean(ip),
+    enabled: id != null,
     staleTime: 5 * 60_000,
   });
 }

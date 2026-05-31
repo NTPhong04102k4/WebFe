@@ -5,6 +5,7 @@ import {
   type AdminOrderListParams,
   type RecordCashInput,
 } from "src/services/api/functions/orders/order.api";
+import { downloadPdfBlob, openPdfInNewTab } from "src/common/utils/pdfBlob";
 import { orderKeys } from "./keys";
 
 export function useAdminOrders(params: AdminOrderListParams) {
@@ -77,6 +78,20 @@ export function useRecordCash(orderNumber: string) {
 export function useSendInvoice(orderNumber: string) {
   return useMutation({
     mutationFn: () => orderApi.sendInvoice(orderNumber),
+  });
+}
+
+export function useInvoicePdf(orderNumber: string) {
+  return useMutation({
+    mutationFn: ({ action }: { action: "open" | "download" }) =>
+      orderApi.invoicePdf(orderNumber),
+    onSuccess: (blob, { action }) => {
+      if (action === "open") {
+        openPdfInNewTab(blob);
+      } else {
+        downloadPdfBlob(blob, `HoaDon_${orderNumber}.pdf`);
+      }
+    },
   });
 }
 

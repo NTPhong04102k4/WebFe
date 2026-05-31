@@ -276,6 +276,19 @@ export const orderApi = {
     return unwrap(res.data);
   },
 
+  /**
+   * GET /orders/payment/order/{orderNumber}/invoice-pdf
+   * Admin/Staff: bất kỳ đơn nào. Customer: chỉ đơn của chính mình.
+   * Trả về Blob (application/pdf).
+   */
+  invoicePdf: async (orderNumber: string, options?: ApiRequestOptions): Promise<Blob> => {
+    const res = await apiClient.get<ArrayBuffer>(
+      API.ordersPayment.invoicePdf(orderNumber),
+      withSignal({ responseType: "arraybuffer" }, options)
+    );
+    return new Blob([res.data], { type: "application/pdf" });
+  },
+
   /** POST /orders/payment/order/{orderNumber}/send-invoice — Admin,Staff gửi lại hóa đơn */
   sendInvoice: async (orderNumber: string, options?: ApiRequestOptions) => {
     const res = await apiClient.post<OperationResult | void>(

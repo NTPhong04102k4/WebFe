@@ -12,10 +12,6 @@ import { useAuthStore } from "@/stores/authStore";
 
 import shell from "../account-shell.module.scss";
 
-function locationRowId(l: LocationResponse & { locationID?: number; id?: number }) {
-  return l.locationID ?? l.id ?? 0;
-}
-
 type ApptForm = {
   customerVehicleID: number;
   locationID: number;
@@ -27,7 +23,8 @@ type ApptForm = {
 
 export default function AppointmentsPage() {
   const user = useAuthStore((s) => s.user);
-  const userID = user?.userID ?? user?.id;
+  const rawUID = user?.userUUID || user?.userID || user?.id;
+  const userID = rawUID != null ? String(rawUID) : undefined;
 
   const { locations, loading: locLoading } = useLocation();
   const { data: vehiclesRes } = useCustomerVehicles({
@@ -130,14 +127,11 @@ export default function AppointmentsPage() {
               <label>Chi nhánh *</label>
               <select {...register("locationID", { valueAsNumber: true })} disabled={locLoading}>
                 <option value={0}>— Chọn —</option>
-                {locations.map((l) => {
-                  const id = locationRowId(l);
-                  return (
-                    <option key={id || l.locationCode} value={id}>
-                      {l.locationName}
-                    </option>
-                  );
-                })}
+                {locations.map((l) => (
+                  <option key={l.locationCode} value={l.locationID}>
+                    {l.locationName}
+                  </option>
+                ))}
               </select>
             </div>
             <div className={shell.field}>

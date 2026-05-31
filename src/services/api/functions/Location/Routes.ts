@@ -1,4 +1,4 @@
 export const locationRoute = {
-  getLocations: "/common/locations",
-  getLocation: "/common/location",
+  getLocations: "/v2/common/locations",
+  getLocation: "/v2/common/locations",
 };

@@ -8,6 +8,7 @@ import type {
   AppointmentListResult,
   AppointmentQueryRequest,
   AppointmentRequest,
+  AppointmentCancelRequest,
   AppointmentStatusRequest,
   AppointmentViewModel,
   AssignTechnicianRequest,
@@ -41,7 +42,7 @@ export const workshopApi = {
     params: {
       page?: number;
       pageSize?: number;
-      userId?: string | number;
+      userId?: string;
     },
     options?: ApiRequestOptions
   ) => {
@@ -140,7 +141,7 @@ export const workshopApi = {
     return res.data;
   },
 
-  cancelAppointment: async (id: number, body?: AppointmentStatusRequest) => {
+  cancelAppointment: async (id: number, body?: AppointmentCancelRequest) => {
     const res = await apiClient.put<WorkshopOperationResult>(
       API.workshop.appointmentCancel(id),
       body ?? {}
