@@ -82,15 +82,15 @@ export function useCategoryManagement() {
 
       if (editingCategory) {
         await updateCategory.mutateAsync({ id: editingCategory.categoryID, data: payload });
-        notify.success("Cap nhat danh muc thanh cong");
+        notify.success("Cập nhật danh mục thành công");
       } else {
         await createCategory.mutateAsync(payload);
-        notify.success("Tao danh muc thanh cong");
+        notify.success("Tạo danh mục thành công");
       }
 
       closeModal();
-    } catch (e) {
-      notify.error(e instanceof Error ? e.message : "Luu danh muc that bai");
+    } catch {
+      // interceptor đã hiển thị toast lỗi
     }
   });
 
@@ -110,9 +110,9 @@ export function useCategoryManagement() {
           })
         )
       );
-      notify.success("Cap nhat thu tu danh muc thanh cong");
-    } catch (e) {
-      notify.error(e instanceof Error ? e.message : "Cap nhat thu tu danh muc that bai");
+      notify.success("Cập nhật thứ tự danh mục thành công");
+    } catch {
+      // interceptor đã hiển thị toast lỗi
     }
   };
 

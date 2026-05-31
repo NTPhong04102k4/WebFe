@@ -12,10 +12,6 @@ const getBrandValue = (brand: { name: string }, index: number) =>
 export default function AdminAccessoriesPage() {
   const accessoryManager = useAccessoryManagement();
 
-  const categoryOptions = accessoryManager.categories.map((category) => ({
-    label: category.categoryName,
-    value: String(category.categoryID),
-  }));
   const brandOptions = accessoryManager.brands.map((brand, index) => ({
     label: brand.name,
     value: getBrandValue(brand, index),
@@ -25,7 +21,8 @@ export default function AdminAccessoriesPage() {
     <div className="space-y-6">
       <AccessoryToolbar
         brandOptions={brandOptions}
-        categoryOptions={categoryOptions}
+        categoryTreeItems={accessoryManager.categoryTreeItems}
+        isCategoryLoading={accessoryManager.isCategoryLoading}
         isSyncing={accessoryManager.isSyncing}
         search={accessoryManager.search}
         selectedBrand={accessoryManager.selectedBrand}

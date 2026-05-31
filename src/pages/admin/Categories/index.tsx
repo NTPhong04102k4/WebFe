@@ -1,7 +1,7 @@
 import { EmptyState, Loading } from "src/components/core";
 
 import { CategoryFormModal } from "./Component/CategoryFormModal";
-import { CategoryTable } from "./Component/CategoryTable";
+import { CategoryTreeTable } from "./Component/CategoryTreeTable";
 import { CategoryToolbar } from "./Component/CategoryToolbar";
 import { useCategoryManagement } from "./customHookModule/useCategoryManagement";
 
@@ -28,10 +28,9 @@ export default function AdminCategoriesPage() {
           <EmptyState title="Khong co danh muc" description="Chua co danh muc phu hop voi bo loc." />
         </div>
       ) : (
-        <CategoryTable
+        <CategoryTreeTable
           categories={categoryManager.categories}
           onEdit={categoryManager.openEdit}
-          onReorder={categoryManager.reorderCategories}
         />
       )}
 

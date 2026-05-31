@@ -1,11 +1,12 @@
 import { Plus } from "lucide-react";
 
-import { Checkbox, HoverInfo, Input, Select } from "src/components/core";
+import { Checkbox, ComboTreeBox, ComboTreeItem, HoverInfo, Input, Select } from "src/components/core";
 import { ACCESSORY_SORT_OPTIONS } from "../data";
 
 type AccessoryToolbarProps = {
   brandOptions: { label: string; value: string }[];
-  categoryOptions: { label: string; value: string }[];
+  categoryTreeItems: ComboTreeItem[];
+  isCategoryLoading?: boolean;
   isSyncing: boolean;
   search: string;
   selectedBrand: string;
@@ -22,7 +23,8 @@ type AccessoryToolbarProps = {
 
 export function AccessoryToolbar({
   brandOptions,
-  categoryOptions,
+  categoryTreeItems,
+  isCategoryLoading,
   isSyncing,
   search,
   selectedBrand,
@@ -36,6 +38,13 @@ export function AccessoryToolbar({
   onSortByChange,
   onSortDescendingChange,
 }: AccessoryToolbarProps) {
+  const handleCategoryChange = (id: string, item: ComboTreeItem) => {
+    // Leaf node (service) — map up to its parent categoryID
+    const resolved = item.children === undefined
+      ? String(item.meta?.categoryID ?? "")
+      : id;
+    onSelectedCategoryChange(resolved);
+  };
   return (
     <div className="rounded-xl border border-slate-300 bg-white p-4 dark:border-slate-600 dark:bg-slate-900">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -63,11 +72,13 @@ export function AccessoryToolbar({
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Tim theo ten, hang, danh muc..."
         />
-        <Select
-          value={selectedCategory}
-          onChange={(event) => onSelectedCategoryChange(event.target.value)}
-          placeholder="Tat ca danh muc"
-          options={categoryOptions}
+        <ComboTreeBox
+          items={categoryTreeItems}
+          value={selectedCategory || undefined}
+          loading={isCategoryLoading}
+          placeholder="Tất cả danh mục"
+          onChange={handleCategoryChange}
+          onClear={() => onSelectedCategoryChange("")}
         />
         <Select
           value={selectedBrand}

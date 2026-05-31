@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
 import { notify } from "src/components/core";
+import type { ComboTreeItem } from "src/components/core";
 import { useAccessoryDetail, useAccessoryList, useAccessoryMutations } from "src/query/accessory/useAccessoryQueries";
 import { useBrandAccessoryList } from "src/query/brand-accessory/useBrandAccessoryQueries";
 import { useServiceCategoryList } from "src/query/service-category/useServiceCategoryQueries";
+import { serviceCatalogApi } from "src/services/api/functions/serviceCatalog/serviceCatalog.api";
 import { useAuthStore } from "src/stores/authStore";
 import type { AccessoriesListItem, AccessoryDetailResponse } from "src/shared/types/Reponse/accessories/accessory";
 import type { AccessoryRequestCreate, AccessoryRequestUpdate } from "src/shared/types/Request/accessories/accessory";
@@ -34,6 +37,16 @@ const toNumber = (value: string, fallback = 0) => {
 
 const compatibleModelsToFormValue = (value: AccessoryDetailResponse["compatibleCarModels"]) =>
   Array.isArray(value) ? JSON.stringify(value) : value ?? "";
+
+function findTreeLabel(items: ComboTreeItem[], id: string): string | undefined {
+  for (const item of items) {
+    if (item.id === id) return item.label;
+    if (item.children) {
+      const found = findTreeLabel(item.children, id);
+      if (found) return found;
+    }
+  }
+}
 
 function formFromDetail(detail: AccessoryDetailResponse): AccessoryFormValues {
   return {
@@ -71,12 +84,11 @@ export function useAccessoryManagement() {
     () => ({
       page,
       pageSize,
-      categoryID: selectedCategory ? Number(selectedCategory) : null,
       brandAccessoryID: selectedBrand ? Number(selectedBrand) : null,
       sortBy,
       sortDescending,
     }),
-    [page, pageSize, selectedBrand, selectedCategory, sortBy, sortDescending]
+    [page, pageSize, selectedBrand, sortBy, sortDescending]
   );
 
   const accessoryQuery = useAccessoryList(listParams);
@@ -84,6 +96,40 @@ export function useAccessoryManagement() {
   const brandQuery = useBrandAccessoryList();
   const detailQuery = useAccessoryDetail(editingId);
   const { createAccessory, updateAccessory, deleteAccessory } = useAccessoryMutations();
+
+  const serviceCatalogQuery = useQuery({
+    queryKey: ["service-catalog", "tree-filter"],
+    queryFn: () => serviceCatalogApi.list({ page: 1, pageSize: 1000, isActive: true }),
+    staleTime: 5 * 60_000,
+  });
+
+  const categoryTreeItems = useMemo<ComboTreeItem[]>(() => {
+    const raw = serviceCatalogQuery.data as any;
+    const services: { serviceID: number; serviceName: string; categoryID: number; categoryName?: string | null }[] =
+      raw?.data ?? raw?.items ?? [];
+
+    const catMap = new Map<number, { id: number; name: string; services: typeof services }>();
+    for (const svc of services) {
+      if (!catMap.has(svc.categoryID)) {
+        catMap.set(svc.categoryID, {
+          id: svc.categoryID,
+          name: svc.categoryName ?? `Danh mục ${svc.categoryID}`,
+          services: [],
+        });
+      }
+      catMap.get(svc.categoryID)!.services.push(svc);
+    }
+
+    return Array.from(catMap.values()).map((cat) => ({
+      id: String(cat.id),
+      label: cat.name,
+      children: cat.services.map((svc) => ({
+        id: `svc_${svc.serviceID}`,
+        label: svc.serviceName,
+        meta: { categoryID: cat.id },
+      })),
+    }));
+  }, [serviceCatalogQuery.data]);
 
   const form = useForm<AccessoryFormValues>({
     defaultValues: emptyForm,
@@ -93,16 +139,26 @@ export function useAccessoryManagement() {
   const editingAccessory = detailQuery.data ?? null;
 
   const accessories = useMemo(() => {
-    const items = accessoryQuery.data?.items ?? [];
-    const q = search.trim().toLowerCase();
-    if (!q) return items;
+    let items = accessoryQuery.data?.items ?? [];
 
-    return items.filter((item) =>
-      [item.accessoryName, item.categoryName, item.brandName]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(q))
-    );
-  }, [accessoryQuery.data?.items, search]);
+    if (selectedCategory) {
+      const catName = findTreeLabel(categoryTreeItems, selectedCategory);
+      if (catName) {
+        items = items.filter((item) => item.categoryName === catName);
+      }
+    }
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      items = items.filter((item) =>
+        [item.accessoryName, item.categoryName, item.brandName]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(q)),
+      );
+    }
+
+    return items;
+  }, [accessoryQuery.data?.items, search, selectedCategory, categoryTreeItems]);
 
   const closeModal = () => {
     setModalOpen(false);
@@ -183,10 +239,12 @@ export function useAccessoryManagement() {
     accessories,
     brands: brandQuery.data ?? [],
     categories: categoryQuery.data ?? [],
+    categoryTreeItems,
     deleteConfirmItem,
     editingAccessory,
     error: (accessoryQuery.error ?? null) as Error | null,
     form,
+    isCategoryLoading: serviceCatalogQuery.isLoading,
     isLoading: accessoryQuery.isLoading || categoryQuery.isLoading || brandQuery.isLoading,
     isSaving: createAccessory.isPending || updateAccessory.isPending,
     isDeleting: deleteAccessory.isPending,

@@ -1,12 +1,46 @@
+import { useMemo } from "react";
 import { Controller } from "react-hook-form";
 
-import { Checkbox, Input, Modal, Select } from "src/components/core";
+import { Checkbox, ComboTreeBox, type ComboTreeItem, Input, Modal } from "src/components/core";
+import type { CategoryResponse } from "src/shared/types/Reponse/category";
 import type { CategoryManagerState } from "../data";
 
 type CategoryFormModalProps = Pick<
   CategoryManagerState,
   "categories" | "editingCategory" | "form" | "isSaving" | "modalOpen" | "closeModal" | "submitForm"
 >;
+
+function buildCategoryTree(
+  categories: CategoryResponse[],
+  excludeId: number | undefined,
+): ComboTreeItem[] {
+  const pool = excludeId
+    ? categories.filter((c) => c.categoryID !== excludeId)
+    : categories;
+
+  const childrenOf = (parentId: number): ComboTreeItem[] =>
+    pool
+      .filter((c) => c.parentCategoryID === parentId)
+      .map((c) => {
+        const children = childrenOf(c.categoryID);
+        return {
+          id: String(c.categoryID),
+          label: c.categoryName,
+          ...(children.length ? { children } : {}),
+        };
+      });
+
+  return pool
+    .filter((c) => !c.parentCategoryID)
+    .map((c) => {
+      const children = childrenOf(c.categoryID);
+      return {
+        id: String(c.categoryID),
+        label: c.categoryName,
+        ...(children.length ? { children } : {}),
+      };
+    });
+}
 
 export function CategoryFormModal({
   categories,
@@ -23,12 +57,10 @@ export function CategoryFormModal({
     formState: { errors },
   } = form;
 
-  const parentOptions = categories
-    .filter((category) => category.categoryID !== editingCategory?.categoryID)
-    .map((category) => ({
-      label: category.categoryName,
-      value: category.categoryID,
-    }));
+  const parentTreeItems = useMemo(
+    () => buildCategoryTree(categories, editingCategory?.categoryID),
+    [categories, editingCategory?.categoryID],
+  );
 
   return (
     <Modal
@@ -63,7 +95,20 @@ export function CategoryFormModal({
           error={errors.categoryName?.message}
           {...register("categoryName", { required: "Vui long nhap ten danh muc" })}
         />
-        <Select label="Danh muc cha" placeholder="Khong co" options={parentOptions} {...register("parentCategoryID")} />
+        <Controller
+          name="parentCategoryID"
+          control={control}
+          render={({ field }) => (
+            <ComboTreeBox
+              label="Danh mục cha"
+              placeholder="Không có"
+              items={parentTreeItems}
+              value={field.value || undefined}
+              onChange={(id) => field.onChange(id)}
+              onClear={() => field.onChange("")}
+            />
+          )}
+        />
         <Input label="Thu tu hien thi" type="number" min="0" {...register("displayOrder")} />
         <Input label="Mo ta" className="md:col-span-2" {...register("description")} />
         <Controller
