@@ -128,7 +128,7 @@ export interface RecordCashResult {
 }
 
 function unwrap<T>(payload: T | OperationResult<T>): T {
-  return payload && typeof payload === "object" && "data" in payload
+  return payload && typeof payload === "object" && "success" in payload && "data" in payload
     ? ((payload as OperationResult<T>).data as T)
     : (payload as T);
 }
@@ -295,6 +295,18 @@ export const orderApi = {
       API.ordersPayment.sendInvoice(orderNumber),
       undefined,
       withSignal({}, options)
+    );
+    return res.data;
+  },
+
+  /** PATCH /orders/payment/order/{id}/status — Admin,SuperAdmin,Staff */
+  updateStatus: async (
+    id: string | number,
+    body: { status: string; notes?: string }
+  ) => {
+    const res = await apiClient.patch<OperationResult>(
+      API.ordersPayment.orderStatus(id),
+      body
     );
     return res.data;
   },

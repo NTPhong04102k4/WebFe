@@ -5,6 +5,8 @@ import { withSignal } from "../../requestOptions";
 import type { OperationResult } from "src/services/types/common.types";
 
 import type {
+  AppointmentCheckInRequest,
+  AppointmentCheckInResult,
   AppointmentListResult,
   AppointmentQueryRequest,
   AppointmentRequest,
@@ -31,7 +33,7 @@ import type {
 } from "./workshop.types";
 
 function unwrap<T>(payload: T | OperationResult<T>): T {
-  return payload && typeof payload === "object" && "data" in payload
+  return payload && typeof payload === "object" && "success" in payload && "data" in payload
     ? ((payload as OperationResult<T>).data as T)
     : (payload as T);
 }
@@ -160,6 +162,18 @@ export const workshopApi = {
     return res.data;
   },
 
+  /**
+   * POST /workshop/appointments/{id}/check-in
+   * Tạo WorkOrder 1 bước từ Appointment — backend tự lấy vehicleId, locationId, copy services.
+   */
+  checkInAppointment: async (id: number, body: AppointmentCheckInRequest) => {
+    const res = await apiClient.post<WorkshopOperationResult<AppointmentCheckInResult>>(
+      API.workshop.appointmentCheckIn(id),
+      body
+    );
+    return unwrap(res.data) as AppointmentCheckInResult;
+  },
+
   sendAppointmentReminder: async (id: number) => {
     const res = await apiClient.post<WorkshopOperationResult>(
       API.workshop.appointmentReminder(id),
@@ -276,6 +290,33 @@ export const workshopApi = {
     const res = await apiClient.post<WorkshopOperationResult>(
       API.workshop.workOrderFeedback(id),
       body
+    );
+    return res.data;
+  },
+
+  /** GET /workshop/appointments/schedule-timeline — Staff+ */
+  getScheduleTimeline: async (
+    params: { date: string; locationId?: number },
+    options?: ApiRequestOptions
+  ) => {
+    const res = await apiClient.get<unknown>(
+      API.workshop.scheduleTimeline,
+      withSignal({ params }, options)
+    );
+    return res.data;
+  },
+
+  /** GET /workshop/work-orders/maintenance-history — Authorized */
+  getWorkOrderMaintenanceHistory: async (
+    params: { vehicleId: number; page?: number; pageSize?: number },
+    options?: ApiRequestOptions
+  ) => {
+    const res = await apiClient.get<{
+      data: MaintenanceHistoryViewModel[];
+      totalCount: number;
+    }>(
+      API.workshop.workOrderMaintenanceHistory,
+      withSignal({ params }, options)
     );
     return res.data;
   },

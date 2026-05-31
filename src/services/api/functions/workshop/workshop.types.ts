@@ -5,6 +5,24 @@ export type {
   PagedResult,
 } from "../hr/hr.types";
 
+// ── Status literal types ──────────────────────────────────────────────────────
+
+export type AppointmentStatus =
+  | "Scheduled"
+  | "Confirmed"
+  | "In-Progress"
+  | "Completed"
+  | "Cancelled";
+
+export type WorkOrderStatus =
+  | "Open"
+  | "InProgress"
+  | "WaitingParts"
+  | "QualityCheck"
+  | "Completed"
+  | "Delivered"
+  | "Cancelled";
+
 export interface CustomerVehicleRequest {
   userID: string | number;
   carID?: number | null;
@@ -88,7 +106,7 @@ export interface AppointmentQueryRequest {
 
 /** Dùng cho PATCH /appointments/{id}/status */
 export interface AppointmentStatusRequest {
-  status: string;
+  status: AppointmentStatus;
 }
 
 /** Dùng cho PUT /appointments/{id}/cancel */
@@ -117,7 +135,10 @@ export interface AppointmentViewModel {
   assignedTechnicianID?: number | null;
   assignedTechnicianName?: string | null;
   appointmentType: string;
-  status: string;
+  status: AppointmentStatus;
+  /** Tồn tại khi Appointment đã có WorkOrder — dùng để disable nút "Tạo phiếu" */
+  workOrderID?: number | null;
+  workOrderNumber?: string | null;
   reminderSent: boolean;
   reminderSentDate?: string | null;
   customerNote?: string | null;
@@ -139,7 +160,7 @@ export interface WorkOrderRequest {
 }
 
 export interface WorkOrderStatusRequest {
-  status: string;
+  status: WorkOrderStatus;
   mileageOut?: number | null;
   diagnosis?: string | null;
   workPerformed?: string | null;
@@ -238,6 +259,7 @@ export interface WorkOrderPartViewModel {
 export interface WorkOrderViewModel {
   workOrderID: number;
   workOrderNumber: string;
+  /** Nullable — WorkOrder có thể tạo không cần Appointment (khách vãng lai) */
   appointmentID?: number | null;
   customerVehicleID: number;
   vehicleInfo?: string | null;
@@ -247,7 +269,7 @@ export interface WorkOrderViewModel {
   primaryTechnicianName?: string | null;
   serviceAdvisorID?: number | null;
   serviceAdvisorName?: string | null;
-  status: string;
+  status: WorkOrderStatus;
   priority: string;
   startDateTime?: string | null;
   endDateTime?: string | null;
@@ -271,6 +293,20 @@ export interface WorkOrderViewModel {
   createdDate: string;
   services?: WorkOrderServiceViewModel[];
   parts?: WorkOrderPartViewModel[];
+}
+
+export interface AppointmentCheckInRequest {
+  primaryTechnicianId: number;
+  mileageIn: number;
+  serviceAdvisorId?: number | null;
+  priority?: string;
+  customerComplaint?: string | null;
+}
+
+export interface AppointmentCheckInResult {
+  workOrderId: number;
+  workOrderNumber: string;
+  servicesCount: number;
 }
 
 export type CustomerVehicleListResult = PagedResult<CustomerVehicleViewModel>;

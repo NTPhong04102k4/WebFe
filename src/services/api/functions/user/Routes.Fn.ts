@@ -24,7 +24,9 @@ function unwrapOperationResult<T>(payload: T | OperationResult<T>): T {
 
 function compactQuery(query: UserListQuery) {
   return Object.fromEntries(
-    Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== "")
+    Object.entries(query).filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    ),
   );
 }
 
@@ -75,18 +77,26 @@ export const userRouteFn = {
   },
   getUserByKey: async (gmailOrUserName: string) => {
     const response = await api.get<UserDetailPayload>(
-      userRoute.detailByKey(gmailOrUserName)
+      userRoute.detailByKey(gmailOrUserName),
     );
     return unwrapOperationResult(response.data);
   },
-  updateAdminUser: async (id: string | number, data: AdminUserUpdateRequest) => {
-    const response = await api.put<UserDetailPayload>(userRoute.adminUserById(id), data);
+  updateAdminUser: async (
+    id: string | number,
+    data: AdminUserUpdateRequest,
+  ) => {
+    const response = await api.put<UserDetailPayload>(
+      userRoute.adminUserById(id),
+      data,
+    );
     return unwrapOperationResult(response.data);
   },
   deleteAdminUser: async (id: string | number) => {
     await api.delete(userRoute.adminUserById(id));
   },
   registerFcmToken: async (token: string) => {
-    await api.patch(userRoute.fcmToken, { token }, { suppressErrorToast: true } as object);
+    await api.patch(userRoute.fcmToken, { token: token }, {
+      suppressErrorToast: true,
+    } as object);
   },
 };

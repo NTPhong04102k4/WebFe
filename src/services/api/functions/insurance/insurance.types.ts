@@ -83,3 +83,33 @@ export interface InsurancePolicyRequest {
 }
 
 export type PolicyListResult = PagedResult<InsurancePolicyViewModel>;
+
+// ── Insurance Claims ──────────────────────────────────────────────────────────
+
+export interface InsuranceClaimRequest {
+  policyId: number;
+  incidentDate: string;
+  incidentDescription: string;
+  damageAmount: number;
+  documents?: File[];
+}
+
+export interface InsuranceClaimViewModel {
+  claimId: number;
+  policyId: number;
+  policyNumber?: string | null;
+  incidentDate: string;
+  incidentDescription: string;
+  damageAmount: number;
+  status: "Pending" | "Processing" | "Approved" | "Rejected";
+  notes?: string | null;
+  createdDate: string;
+  updatedDate?: string | null;
+}
+
+export interface InsuranceClaimStatusRequest {
+  status: "Approved" | "Rejected" | "Processing";
+  notes?: string;
+}
+
+export type ClaimListResult = PagedResult<InsuranceClaimViewModel>;

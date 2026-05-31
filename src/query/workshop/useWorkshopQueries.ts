@@ -4,6 +4,7 @@ import { SEARCH_STALE_MS } from "src/query/queryClient";
 import { workshopApi } from "src/services/api/functions/workshop/workshop.api";
 import type {
   AppointmentCancelRequest,
+  AppointmentCheckInRequest,
   AppointmentQueryRequest,
   AppointmentRequest,
   AppointmentStatusRequest,
@@ -173,7 +174,15 @@ export function useWorkshopMutations() {
     createWorkOrder: useMutation({
       mutationFn: (body: WorkOrderRequest) =>
         workshopApi.createWorkOrder(body),
-      onSuccess: invalidateAll,
+      onSuccess: (_, variables) => {
+        invalidateAll();
+        // Appointment status đổi thành "In-Progress" sau khi tạo WO — invalidate riêng
+        if (variables.appointmentID != null) {
+          qc.invalidateQueries({
+            queryKey: workshopKeys.appointment(variables.appointmentID),
+          });
+        }
+      },
     }),
     patchWorkOrderStatus: useMutation({
       mutationFn: ({
@@ -258,4 +267,102 @@ export function useWorkshopMutations() {
       },
     }),
   };
+}
+
+/**
+ * Check-in lịch hẹn — tạo WorkOrder 1 bước (endpoint mới, thay thế flow 2 bước cũ).
+ * Backend tự lấy vehicleId, locationId, copy services từ Appointment.
+ *
+ * Error codes:
+ * - "Conflict"            → Appointment đã check-in rồi (đã có WorkOrder)
+ * - "AppointmentNotFound" → Appointment không tồn tại hoặc đã bị hủy
+ */
+export function useCheckInAppointment(options?: {
+  onConflict?: (appointmentId: number) => void;
+  onAppointmentNotFound?: () => void;
+}) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number; body: AppointmentCheckInRequest }) =>
+      workshopApi.checkInAppointment(id, body),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: workshopKeys.all });
+      qc.invalidateQueries({ queryKey: workshopKeys.appointment(id) });
+    },
+    onError: (error: unknown, { id }) => {
+      const errorCode = (
+        error as { response?: { data?: { errorCode?: string } } }
+      )?.response?.data?.errorCode;
+
+      if (errorCode === "Conflict") {
+        options?.onConflict?.(id);
+      } else if (errorCode === "AppointmentNotFound") {
+        options?.onAppointmentNotFound?.();
+      }
+    },
+  });
+}
+
+/**
+ * Tạo WorkOrder từ Appointment với xử lý lỗi đặc biệt:
+ * - "Conflict"           → Appointment đã có WorkOrder rồi (1:1 constraint)
+ * - "AppointmentNotFound" → Appointment bị cancel hoặc không tồn tại
+ *
+ * Khi appointmentID = null → khách vãng lai, không copy services
+ */
+export function useCreateWorkOrder(options?: {
+  onConflict?: (appointmentId: number) => void;
+  onAppointmentNotFound?: () => void;
+}) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: WorkOrderRequest) => workshopApi.createWorkOrder(body),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: workshopKeys.all });
+      if (variables.appointmentID != null) {
+        qc.invalidateQueries({
+          queryKey: workshopKeys.appointment(variables.appointmentID),
+        });
+      }
+    },
+    onError: (error: unknown, variables) => {
+      const errorCode = (
+        error as { response?: { data?: { errorCode?: string } } }
+      )?.response?.data?.errorCode;
+
+      if (errorCode === "Conflict" && variables.appointmentID != null) {
+        options?.onConflict?.(variables.appointmentID);
+      } else if (errorCode === "AppointmentNotFound") {
+        options?.onAppointmentNotFound?.();
+      }
+    },
+  });
+}
+
+/** GET /workshop/appointments/schedule-timeline — Staff+ */
+export function useScheduleTimeline(params: { date: string; locationId?: number }) {
+  return useQuery({
+    queryKey: workshopKeys.scheduleTimeline(params),
+    queryFn: ({ signal }) => workshopApi.getScheduleTimeline(params, { signal }),
+    staleTime: 60_000,
+    enabled: !!params.date,
+  });
+}
+
+/** GET /workshop/work-orders/maintenance-history — Lịch sử bảo dưỡng theo phiếu sửa */
+export function useWorkOrderMaintenanceHistory(params: {
+  vehicleId: number;
+  page?: number;
+  pageSize?: number;
+}) {
+  return useQuery({
+    queryKey: workshopKeys.workOrderHistory(params),
+    queryFn: ({ signal }) =>
+      workshopApi.getWorkOrderMaintenanceHistory(params, { signal }),
+    staleTime: SEARCH_STALE_MS,
+    placeholderData: keepPreviousData,
+    enabled: params.vehicleId > 0,
+  });
 }

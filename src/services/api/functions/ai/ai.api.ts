@@ -385,4 +385,18 @@ export const aiApi = {
     const res = await apiClient.post(API.ai.feedback(messageId), body);
     return res.data;
   },
+
+  /** GET /ai/quota — Authorized */
+  quota: async (options?: ApiRequestOptions) => {
+    const res = await apiClient.get<unknown>(
+      API.ai.quota,
+      withSignal({}, options)
+    );
+    return unwrapSingle<{
+      dailyLimit: number;
+      dailyUsed: number;
+      remaining: number;
+      resetAt: string;
+    }>(res.data);
+  },
 };

@@ -153,7 +153,7 @@ export default function CustomerOrderDetailPage() {
         setPollExpired(true);
         return false;
       }
-      return 3_000;
+      return 5_000;
     },
   });
 

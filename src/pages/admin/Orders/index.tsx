@@ -6,8 +6,8 @@ import {
 } from "src/query/order/useOrderQueries";
 import { OrderDetailPanel } from "./OrderDetailPanel";
 
-const fmt = (v: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
+const fmt = (v: number | null | undefined) =>
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v ?? 0);
 
 const now = new Date();
 const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)

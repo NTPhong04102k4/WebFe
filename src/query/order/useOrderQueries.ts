@@ -95,6 +95,17 @@ export function useInvoicePdf(orderNumber: string) {
   });
 }
 
+export function useUpdateOrderStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status, notes }: { id: string | number; status: string; notes?: string }) =>
+      orderApi.updateStatus(id, { status, notes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
 export function useRevenue(params: { fromDate?: string; toDate?: string; groupBy?: string }) {
   return useQuery({
     queryKey: orderKeys.revenue(params),

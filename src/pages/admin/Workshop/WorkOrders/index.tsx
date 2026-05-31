@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Plus } from "lucide-react";
+import { Plus, Star, Trash2, X } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { DataTable, Input, Modal } from "@/components/common";
+import { VehicleAutocomplete } from "../VehicleAutocomplete";
 import {
   useWorkOrderDetail,
   useWorkOrderPaymentInfo,
@@ -18,6 +20,7 @@ import type {
   WorkOrderViewModel,
 } from "src/services/api/functions/workshop/workshop.types";
 import { notify } from "src/components/core/Feedback/toast";
+import apiClient from "src/services/api";
 
 import {
   ActionButton,
@@ -28,7 +31,55 @@ import {
   PageHeader,
   TextareaField,
 } from "../workshopUi";
+import { workshopKeys } from "src/query/workshop/keys";
 
+export const STATUS_LABELS: Record<string, string> = {
+  Open: "Mở",
+  InProgress: "Đang tiến hành",
+  WaitingParts: "Chờ phụ tùng",
+  QualityCheck: "Kiểm tra chất lượng",
+  Completed: "Hoàn thành",
+  Delivered: "Đã giao xe",
+  Cancelled: "Đã hủy",
+};
+
+export const PRIORITY_LABELS: Record<string, string> = {
+  Low: "Thấp",
+  Normal: "Bình thường",
+  High: "Cao",
+  Urgent: "Khẩn cấp",
+};
+
+export const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  Cash: "Tiền mặt",
+  Card: "Thẻ",
+  Transfer: "Chuyển khoản",
+  VNPay: "VNPay",
+  Momo: "Momo",
+};
+
+export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  Pending: "Chờ thanh toán",
+  Paid: "Đã thanh toán",
+  Failed: "Thất bại",
+};
+
+// ─── Kiểu dữ liệu phụ tùng từ accessories API ────────────────────────────────
+interface AccessoryItem {
+  accessoryID: number;
+  accessoryName: string;
+  price?: number;
+  sellingPrice?: number;
+  unitPrice?: number;
+}
+
+interface AccessoryListResponse {
+  data?: AccessoryItem[];
+  items?: AccessoryItem[];
+  totalCount?: number;
+}
+
+// ─── Form tạo phiếu ───────────────────────────────────────────────────────────
 type CreateForm = {
   appointmentID: string;
   customerVehicleID: string;
@@ -63,6 +114,7 @@ function tone(status: string) {
   return "slate" as const;
 }
 
+// ─── Trang chính ──────────────────────────────────────────────────────────────
 export default function WorkOrdersPage() {
   const [query, setQuery] = useState<WorkOrderQueryRequest>({ page: 1, pageSize: 20 });
   const [draft, setDraft] = useState({ status: "", technicianID: "", customerVehicleID: "", fromDate: "", toDate: "" });
@@ -81,6 +133,8 @@ export default function WorkOrdersPage() {
   const technicians = techRes?.data ?? [];
   const services = serviceRes?.data ?? [];
   const createForm = useForm<CreateForm>({ defaultValues: createDefaults });
+  const { register, handleSubmit, reset, setValue, watch } = createForm;
+  const watchVehicleId = watch("customerVehicleID");
 
   const applyFilter = () => {
     setQuery({
@@ -107,7 +161,7 @@ export default function WorkOrdersPage() {
     };
     try {
       await mutations.createWorkOrder.mutateAsync(body);
-      notify.success("Da tao phieu cong viec");
+      notify.success("Đã tạo phiếu công việc");
       setCreateOpen(false);
       createForm.reset(createDefaults);
     } catch (error) {
@@ -117,41 +171,44 @@ export default function WorkOrdersPage() {
 
   const columns = useMemo<ColumnDef<WorkOrderViewModel>[]>(
     () => [
-      { header: "So phieu", accessorKey: "workOrderNumber" },
+      { header: "Số phiếu", accessorKey: "workOrderNumber" },
       {
         header: "Xe",
         cell: ({ row }) => row.original.vehicleInfo ?? `Vehicle #${row.original.customerVehicleID}`,
       },
-      { header: "KTV chinh", accessorKey: "primaryTechnicianName" },
+      { header: "KTV chính", accessorKey: "primaryTechnicianName" },
       {
-        header: "Trang thai",
-        cell: ({ row }) => <Badge tone={tone(row.original.status)}>{row.original.status}</Badge>,
+        header: "Trạng thái",
+        cell: ({ row }) => <Badge tone={tone(row.original.status)}>{STATUS_LABELS[row.original.status] ?? row.original.status}</Badge>,
       },
-      { header: "Uu tien", accessorKey: "priority" },
       {
-        header: "Thanh toan",
+        header: "Ưu tiên",
+        cell: ({ row }) => PRIORITY_LABELS[row.original.priority] ?? row.original.priority,
+      },
+      {
+        header: "Thanh toán",
         cell: ({ row }) => (
           <div>
             <div>{formatMoney(row.original.totalAmount)}</div>
-            <div className="text-xs text-slate-500">{row.original.paymentStatus}</div>
+            <div className="text-xs text-slate-500">{PAYMENT_STATUS_LABELS[row.original.paymentStatus] ?? row.original.paymentStatus}</div>
           </div>
         ),
       },
       {
-        header: "Tao ngay",
+        header: "Tạo ngày",
         cell: ({ row }) => formatDate(row.original.createdDate),
       },
       {
-        header: "Thao tac",
+        header: "Thao tác",
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-2">
             <ActionButton onClick={() => setDetailId(row.original.workOrderID)}>Xem</ActionButton>
             <ActionButton onClick={() => setAction({ type: "status", workOrder: row.original })}>Status</ActionButton>
-            <ActionButton onClick={() => setAction({ type: "assign", workOrder: row.original })}>Gan KTV</ActionButton>
-            <ActionButton onClick={() => setAction({ type: "service", workOrder: row.original })}>Dich vu</ActionButton>
-            <ActionButton onClick={() => setAction({ type: "part", workOrder: row.original })}>Phu tung</ActionButton>
-            <ActionButton onClick={() => setAction({ type: "pay", workOrder: row.original })}>Pay</ActionButton>
+            <ActionButton onClick={() => setAction({ type: "assign", workOrder: row.original })}>Gán KTV</ActionButton>
+            <ActionButton onClick={() => setAction({ type: "service", workOrder: row.original })}>Dịch vụ</ActionButton>
+            <ActionButton onClick={() => setAction({ type: "part", workOrder: row.original })}>Phụ tùng</ActionButton>
+            <ActionButton onClick={() => setAction({ type: "pay", workOrder: row.original })}>Thanh toán</ActionButton>
             <ActionButton onClick={() => setPaymentInfoId(row.original.workOrderID)}>QR</ActionButton>
           </div>
         ),
@@ -166,52 +223,59 @@ export default function WorkOrdersPage() {
   return (
     <div>
       <PageHeader
-        title="Phieu cong viec"
-        description="Quan ly work order, gan tho, them dich vu/phu tung va thanh toan."
-        action={<ActionButton variant="primary" onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" /> Tao phieu</ActionButton>}
+        title="Phiếu công việc"
+        description="Quản lý work order, gán thợ, thêm dịch vụ/phụ tùng và thanh toán."
+        action={<ActionButton variant="primary" onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" /> Tạo phiếu</ActionButton>}
       />
 
       <div className="mb-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 md:grid-cols-5">
-        <Select label="Trang thai" value={draft.status} onChange={(value) => setDraft((s) => ({ ...s, status: value }))} options={workStatuses} />
+        <Select label="Trạng thái" value={draft.status} onChange={(value) => setDraft((s) => ({ ...s, status: value }))} options={workStatuses.map(s => ({ value: s, label: STATUS_LABELS[s] ?? s }))} />
         <Select label="KTV" value={draft.technicianID} onChange={(value) => setDraft((s) => ({ ...s, technicianID: value }))} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
         <Input label="CustomerVehicleID" type="number" min={1} value={draft.customerVehicleID} onChange={(e) => setDraft((s) => ({ ...s, customerVehicleID: e.target.value }))} />
-        <Input label="Tu ngay" type="date" value={draft.fromDate} onChange={(e) => setDraft((s) => ({ ...s, fromDate: e.target.value }))} />
-        <Input label="Den ngay" type="date" value={draft.toDate} onChange={(e) => setDraft((s) => ({ ...s, toDate: e.target.value }))} />
+        <Input label="Từ ngày" type="date" value={draft.fromDate} onChange={(e) => setDraft((s) => ({ ...s, fromDate: e.target.value }))} />
+        <Input label="Đến ngày" type="date" value={draft.toDate} onChange={(e) => setDraft((s) => ({ ...s, toDate: e.target.value }))} />
         <div className="flex gap-2 md:col-span-5">
-          <ActionButton variant="primary" onClick={applyFilter}>Loc</ActionButton>
+          <ActionButton variant="primary" onClick={applyFilter}>Lọc</ActionButton>
           <ActionButton onClick={() => {
             setDraft({ status: "", technicianID: "", customerVehicleID: "", fromDate: "", toDate: "" });
             setQuery({ page: 1, pageSize: 20 });
-          }}>Xoa loc</ActionButton>
+          }}>Xóa lọc</ActionButton>
         </div>
       </div>
 
-      <DataTable data={rows} columns={columns} getRowId={(row) => String(row.workOrderID)} loading={isLoading} emptyTitle="Chua co phieu cong viec" enablePagination={false} />
+      <DataTable data={rows} columns={columns} getRowId={(row) => String(row.workOrderID)} loading={isLoading} emptyTitle="Chưa có phiếu công việc" enablePagination={false} />
 
       <div className="mt-4 flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
-        <span>Tong {data?.totalCount ?? 0} phieu</span>
+        <span>Tổng {data?.totalCount ?? 0} phiếu</span>
         <div className="flex gap-2">
-          <ActionButton disabled={(query.page ?? 1) <= 1} onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) - 1 }))}>Truoc</ActionButton>
+          <ActionButton disabled={(query.page ?? 1) <= 1} onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) - 1 }))}>Trước</ActionButton>
           <span className="px-2 py-2">Trang {query.page ?? 1}/{totalPages}</span>
           <ActionButton disabled={(query.page ?? 1) >= totalPages} onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) + 1 }))}>Sau</ActionButton>
         </div>
       </div>
 
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Tao phieu cong viec" size="xl" footer={
+      {/* Modal tạo phiếu */}
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Tạo phiếu công việc" size="xl" footer={
         <div className="flex justify-end gap-2">
-          <ActionButton onClick={() => setCreateOpen(false)}>Huy</ActionButton>
-          <ActionButton variant="primary" onClick={createForm.handleSubmit(createWorkOrder)} disabled={mutations.createWorkOrder.isPending}>Tao phieu</ActionButton>
+          <ActionButton onClick={() => setCreateOpen(false)}>Hủy</ActionButton>
+          <ActionButton variant="primary" onClick={handleSubmit(createWorkOrder)} disabled={mutations.createWorkOrder.isPending}>Tạo phiếu</ActionButton>
         </div>
       }>
-        <CreateFields register={createForm.register} technicians={technicians} />
+        <CreateFields register={register} setValue={setValue} watchVehicleId={watchVehicleId} technicians={technicians} />
       </Modal>
 
-      <Modal open={detailId !== null} onClose={() => setDetailId(null)} title="Chi tiet phieu cong viec" size="xl">
-        {detail.isLoading ? <p>Dang tai...</p> : detail.data ? <WorkOrderDetail workOrder={detail.data} /> : null}
+      {/* Modal chi tiết */}
+      <Modal open={detailId !== null} onClose={() => setDetailId(null)} title="Chi tiết phiếu công việc" size="xl">
+        {detail.isLoading ? (
+          <p>Đang tải...</p>
+        ) : detail.data ? (
+          <WorkOrderDetail workOrder={detail.data} mutations={mutations} />
+        ) : null}
       </Modal>
 
-      <Modal open={paymentInfoId !== null} onClose={() => setPaymentInfoId(null)} title="Thong tin thanh toan" size="lg">
-        {paymentInfo.isLoading ? <p>Dang tai...</p> : paymentInfo.data ? (
+      {/* Modal thông tin thanh toán */}
+      <Modal open={paymentInfoId !== null} onClose={() => setPaymentInfoId(null)} title="Thông tin thanh toán" size="lg">
+        {paymentInfo.isLoading ? <p>Đang tải...</p> : paymentInfo.data ? (
           <div className="space-y-3 text-sm">
             <div
               className={`rounded-lg p-3 ${
@@ -223,40 +287,40 @@ export default function WorkOrdersPage() {
               }`}
             >
               {paymentWorkOrder.data?.paymentStatus === "Paid"
-                ? "Thanh toan thanh cong"
+                ? "Thanh toán thành công"
                 : paymentWorkOrder.data?.paymentStatus === "Failed"
-                ? "Thanh toan that bai hoac sai so tien"
-                : "Dang cho thanh toan"}
+                ? "Thanh toán thất bại hoặc sai số tiền"
+                : "Đang chờ thanh toán"}
             </div>
-            <Info label="Ma phieu" value={paymentInfo.data.workOrderNumber ?? paymentInfoId} />
-            <Info label="So tien QR" value={formatMoney(paymentInfo.data.amount)} />
-            <Info label="Ngan hang" value={paymentInfo.data.bankName ?? "-"} />
-            <Info label="So tai khoan" value={paymentInfo.data.bankAccount ?? paymentInfo.data.accountNumber ?? "-"} />
-            <Info label="Chu tai khoan" value={paymentInfo.data.accountName ?? "-"} />
-            <Info label="Noi dung CK" value={paymentInfo.data.transferContent ?? "-"} />
+            <Info label="Mã phiếu" value={paymentInfo.data.workOrderNumber ?? paymentInfoId} />
+            <Info label="Số tiền QR" value={formatMoney(paymentInfo.data.amount)} />
+            <Info label="Ngân hàng" value={paymentInfo.data.bankName ?? "-"} />
+            <Info label="Số tài khoản" value={paymentInfo.data.bankAccount ?? paymentInfo.data.accountNumber ?? "-"} />
+            <Info label="Chủ tài khoản" value={paymentInfo.data.accountName ?? "-"} />
+            <Info label="Nội dung CK" value={paymentInfo.data.transferContent ?? "-"} />
             {paymentInfo.data.qrImageUrl || paymentInfo.data.qrCodeUrl || paymentInfo.data.qrCode ? (
               <img
                 src={(paymentInfo.data.qrImageUrl ?? paymentInfo.data.qrCodeUrl ?? paymentInfo.data.qrCode) || undefined}
-                alt="QR thanh toan work order"
+                alt="QR thanh toán work order"
                 className="max-h-72 rounded-lg border border-slate-200 bg-white p-2"
               />
             ) : null}
             {paymentInfo.data.paymentUrl ? (
               <a className="text-blue-600 underline" href={paymentInfo.data.paymentUrl} target="_blank" rel="noreferrer">
-                Mo lien ket thanh toan
+                Mở liên kết thanh toán
               </a>
             ) : null}
-            <ActionButton onClick={() => paymentWorkOrder.refetch()}>Toi da chuyen khoan</ActionButton>
+            <ActionButton onClick={() => paymentWorkOrder.refetch()}>Tôi đã chuyển khoản</ActionButton>
           </div>
         ) : paymentWorkOrder.data?.paymentStatus === "Paid" ? (
           <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700">
-            Thanh toan thanh cong. Thong tin QR khong con kha dung.
+            Thanh toán thành công. Thông tin QR không còn khả dụng.
           </div>
         ) : paymentInfo.error ? (
           <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
-            Khong tai duoc QR. Neu da chuyen khoan, he thong se cap nhat trang thai sau khi nhan IPN.
+            Không tải được QR. Nếu đã chuyển khoản, hệ thống sẽ cập nhật trạng thái sau khi nhận IPN.
             <div className="mt-3">
-              <ActionButton onClick={() => paymentWorkOrder.refetch()}>Toi da chuyen khoan</ActionButton>
+              <ActionButton onClick={() => paymentWorkOrder.refetch()}>Tôi đã chuyển khoản</ActionButton>
             </div>
           </div>
         ) : null}
@@ -275,6 +339,7 @@ export default function WorkOrdersPage() {
   );
 }
 
+// ─── Select component ─────────────────────────────────────────────────────────
 function Select({
   label,
   value,
@@ -290,52 +355,165 @@ function Select({
     <label className="space-y-1">
       <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{label}</span>
       <select value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900">
-        <option value="">Tat ca</option>
+        <option value="">Tất cả</option>
         {options.map((option) => {
-          const value = typeof option === "string" ? option : option.value;
-          const label = typeof option === "string" ? option : option.label;
-          return <option key={value} value={value}>{label}</option>;
+          const val = typeof option === "string" ? option : option.value;
+          const lbl = typeof option === "string" ? option : option.label;
+          return <option key={val} value={val}>{lbl}</option>;
         })}
       </select>
     </label>
   );
 }
 
+// ─── Autocomplete phụ tùng ───────────────────────────────────────────────────
+function AccessoryAutocomplete({
+  onSelect,
+}: {
+  onSelect: (item: AccessoryItem) => void;
+}) {
+  const [keyword, setKeyword] = useState("");
+  const [results, setResults] = useState<AccessoryItem[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Debounce 400ms
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!keyword.trim()) {
+      setResults([]);
+      setOpen(false);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await apiClient.get<AccessoryListResponse>("/accessories", {
+          params: { keyword: keyword.trim(), page: 1, pageSize: 20 },
+        });
+        const items: AccessoryItem[] = res.data?.data ?? res.data?.items ?? [];
+        setResults(items);
+        setOpen(items.length > 0);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [keyword]);
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleSelect = (item: AccessoryItem) => {
+    onSelect(item);
+    setKeyword(item.accessoryName);
+    setOpen(false);
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative space-y-1">
+      <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Tìm phụ tùng</span>
+      <input
+        type="text"
+        value={keyword}
+        onChange={(e) => setKeyword(e.target.value)}
+        placeholder="Nhập tên phụ tùng..."
+        className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
+      />
+      {loading && (
+        <div className="absolute right-3 top-9 text-xs text-slate-400">Đang tìm...</div>
+      )}
+      {open && results.length > 0 && (
+        <ul className="absolute z-50 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+          {results.map((item) => {
+            const price = item.price ?? item.sellingPrice ?? item.unitPrice ?? 0;
+            return (
+              <li
+                key={item.accessoryID}
+                onMouseDown={() => handleSelect(item)}
+                className="cursor-pointer px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                <span className="font-medium">{item.accessoryName}</span>
+                {price > 0 && (
+                  <span className="ml-2 text-slate-500">{formatMoney(price)}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// ─── Form tạo phiếu (fields) ─────────────────────────────────────────────────
 function CreateFields({
   register,
+  setValue,
+  watchVehicleId,
   technicians,
 }: {
   register: ReturnType<typeof useForm<CreateForm>>["register"];
+  setValue: ReturnType<typeof useForm<CreateForm>>["setValue"];
+  watchVehicleId: string;
   technicians: Array<{ technicianID: number; staffFullName?: string | null }>;
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <Input label="AppointmentID" type="number" min={1} {...register("appointmentID")} />
-      <Input label="CustomerVehicleID" type="number" min={1} required {...register("customerVehicleID", { required: true })} />
-      <Input label="LocationID" type="number" min={1} required {...register("locationID", { required: true })} />
+      <Input label="Mã hẹn (AppointmentID)" type="number" min={1} {...register("appointmentID")} />
+      <div>
+        <VehicleAutocomplete
+          value={watchVehicleId}
+          onSelect={(veh) => {
+            setValue("customerVehicleID", String(veh.customerVehicleID));
+          }}
+          required
+          label="Xe khách hàng"
+        />
+        <input
+          type="hidden"
+          {...register("customerVehicleID", { required: true })}
+        />
+      </div>
+      <Input label="Chi nhánh (LocationID)" type="number" min={1} required {...register("locationID", { required: true })} />
       <label className="space-y-1">
-        <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">KTV chinh *</span>
+        <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">KTV chính *</span>
         <select className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900" {...register("primaryTechnicianID", { required: true })}>
-          <option value="">Chon KTV</option>
+          <option value="">Chọn KTV</option>
           {technicians.map((t) => <option key={t.technicianID} value={t.technicianID}>{t.staffFullName ?? `Tech #${t.technicianID}`}</option>)}
         </select>
       </label>
-      <Input label="ServiceAdvisorID" type="number" min={1} {...register("serviceAdvisorID")} />
+      <Input label="Cố vấn dịch vụ (ServiceAdvisorID)" type="number" min={1} {...register("serviceAdvisorID")} />
       <label className="space-y-1">
-        <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Uu tien</span>
+        <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Ưu tiên</span>
         <select className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900" {...register("priority")}>
-          {priorities.map((p) => <option key={p} value={p}>{p}</option>)}
+          {priorities.map((p) => <option key={p} value={p}>{PRIORITY_LABELS[p] ?? p}</option>)}
         </select>
       </label>
-      <Input label="Km vao" type="number" min={0} {...register("mileageIn")} />
+      <Input label="Km vào" type="number" min={0} {...register("mileageIn")} />
       <label className="space-y-1 sm:col-span-2">
-        <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Khach phan anh</span>
+        <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Khách phản ánh</span>
         <textarea className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900" rows={3} {...register("customerComplaint")} />
       </label>
     </div>
   );
 }
 
+// ─── Modal thao tác (status / assign / service / part / pay) ─────────────────
 function WorkOrderActionModal({
   action,
   technicians,
@@ -355,7 +533,7 @@ function WorkOrderActionModal({
   const [workPerformed, setWorkPerformed] = useState(action.workOrder.workPerformed ?? "");
   const [technicianID, setTechnicianID] = useState("");
   const [service, setService] = useState({ serviceID: "", technicianID: "", laborHours: "1", unitPrice: "0", notes: "" });
-  const [part, setPart] = useState({ accessoryID: "", quantity: "1", unitPrice: "0", installedByTechnicianID: "", notes: "" });
+  const [part, setPart] = useState({ accessoryID: "", accessoryName: "", quantity: "1", unitPrice: "0", installedByTechnicianID: "", notes: "" });
   const [payment, setPayment] = useState({ paymentMethod: "Cash", amountPaid: String(action.workOrder.totalAmount ?? 0), discountAmount: "0" });
 
   const save = async () => {
@@ -409,7 +587,7 @@ function WorkOrderActionModal({
           },
         });
       }
-      notify.success("Da luu thay doi");
+      notify.success("Đã lưu thay đổi");
       onClose();
     } catch (error) {
       notify.error(getErrorMessage(error));
@@ -417,27 +595,29 @@ function WorkOrderActionModal({
   };
 
   return (
-    <Modal open onClose={onClose} title={`Thao tac ${action.workOrder.workOrderNumber}`} size="lg" footer={
+    <Modal open onClose={onClose} title={`Thao tác ${action.workOrder.workOrderNumber}`} size="lg" footer={
       <div className="flex justify-end gap-2">
-        <ActionButton onClick={onClose}>Huy</ActionButton>
-        <ActionButton variant="primary" onClick={save}>Luu</ActionButton>
+        <ActionButton onClick={onClose}>Hủy</ActionButton>
+        <ActionButton variant="primary" onClick={save}>Lưu</ActionButton>
       </div>
     }>
       {action.type === "status" ? (
         <div className="space-y-4">
-          <Select label="Trang thai" value={status} onChange={setStatus} options={workStatuses} />
+          <Select label="Trạng thái" value={status} onChange={setStatus} options={workStatuses.map(s => ({ value: s, label: STATUS_LABELS[s] ?? s }))} />
           <Input label="Km ra" type="number" min={0} value={mileageOut} onChange={(e) => setMileageOut(e.target.value)} />
-          <TextareaField label="Chan doan" value={diagnosis} onChange={setDiagnosis} />
-          <TextareaField label="Cong viec da lam" value={workPerformed} onChange={setWorkPerformed} />
+          <TextareaField label="Chẩn đoán" value={diagnosis} onChange={setDiagnosis} />
+          <TextareaField label="Công việc đã làm" value={workPerformed} onChange={setWorkPerformed} />
         </div>
       ) : null}
+
       {action.type === "assign" ? (
-        <Select label="Ky thuat vien" value={technicianID} onChange={setTechnicianID} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
+        <Select label="Kỹ thuật viên" value={technicianID} onChange={setTechnicianID} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
       ) : null}
+
       {action.type === "service" ? (
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="space-y-1">
-            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Dich vu</span>
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Dịch vụ</span>
             <select
               value={service.serviceID}
               onChange={(e) => {
@@ -450,7 +630,7 @@ function WorkOrderActionModal({
               }}
               className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
             >
-              <option value="">Chon dich vu</option>
+              <option value="">Chọn dịch vụ</option>
               {services.map((item) => (
                 <option key={item.serviceID} value={item.serviceID}>
                   {item.serviceName} - {item.price.toLocaleString("vi-VN")} VND
@@ -458,52 +638,112 @@ function WorkOrderActionModal({
               ))}
             </select>
           </label>
-          <Select label="Ky thuat vien" value={service.technicianID} onChange={(value) => setService((s) => ({ ...s, technicianID: value }))} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
-          <Input label="Gio cong" type="number" min={0} max={24} value={service.laborHours} onChange={(e) => setService((s) => ({ ...s, laborHours: e.target.value }))} />
-          <Input label="Don gia" type="number" min={0} value={service.unitPrice} onChange={(e) => setService((s) => ({ ...s, unitPrice: e.target.value }))} />
-          <Input label="Ghi chu" value={service.notes} onChange={(e) => setService((s) => ({ ...s, notes: e.target.value }))} />
+          <Select label="Kỹ thuật viên" value={service.technicianID} onChange={(value) => setService((s) => ({ ...s, technicianID: value }))} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
+          <Input label="Giờ công" type="number" min={0} max={24} value={service.laborHours} onChange={(e) => setService((s) => ({ ...s, laborHours: e.target.value }))} />
+          <Input label="Đơn giá" type="number" min={0} value={service.unitPrice} onChange={(e) => setService((s) => ({ ...s, unitPrice: e.target.value }))} />
+          <Input label="Ghi chú" value={service.notes} onChange={(e) => setService((s) => ({ ...s, notes: e.target.value }))} />
         </div>
       ) : null}
+
       {action.type === "part" ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="AccessoryID" type="number" min={1} value={part.accessoryID} onChange={(e) => setPart((s) => ({ ...s, accessoryID: e.target.value }))} />
-          <Input label="So luong" type="number" min={1} value={part.quantity} onChange={(e) => setPart((s) => ({ ...s, quantity: e.target.value }))} />
-          <Input label="Don gia" type="number" min={0} value={part.unitPrice} onChange={(e) => setPart((s) => ({ ...s, unitPrice: e.target.value }))} />
-          <Select label="Nguoi lap" value={part.installedByTechnicianID} onChange={(value) => setPart((s) => ({ ...s, installedByTechnicianID: value }))} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
-          <Input label="Ghi chu" value={part.notes} onChange={(e) => setPart((s) => ({ ...s, notes: e.target.value }))} />
+          {/* Autocomplete phụ tùng */}
+          <div className="sm:col-span-2">
+            <AccessoryAutocomplete
+              onSelect={(item) => {
+                const price = item.price ?? item.sellingPrice ?? item.unitPrice ?? 0;
+                setPart((s) => ({
+                  ...s,
+                  accessoryID: String(item.accessoryID),
+                  accessoryName: item.accessoryName,
+                  unitPrice: price > 0 ? String(price) : s.unitPrice,
+                }));
+              }}
+            />
+          </div>
+          {/* Hiển thị tên + ID đã chọn */}
+          {part.accessoryID && (
+            <div className="sm:col-span-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              Đã chọn: <strong>{part.accessoryName}</strong> (ID: {part.accessoryID})
+            </div>
+          )}
+          <Input label="Số lượng" type="number" min={1} value={part.quantity} onChange={(e) => setPart((s) => ({ ...s, quantity: e.target.value }))} />
+          <Input label="Đơn giá" type="number" min={0} value={part.unitPrice} onChange={(e) => setPart((s) => ({ ...s, unitPrice: e.target.value }))} />
+          <Select label="Người lắp" value={part.installedByTechnicianID} onChange={(value) => setPart((s) => ({ ...s, installedByTechnicianID: value }))} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
+          <Input label="Ghi chú" value={part.notes} onChange={(e) => setPart((s) => ({ ...s, notes: e.target.value }))} />
         </div>
       ) : null}
+
       {action.type === "pay" ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Select label="Phuong thuc" value={payment.paymentMethod} onChange={(value) => setPayment((s) => ({ ...s, paymentMethod: value }))} options={paymentMethods} />
-          <Input label="So tien tra" type="number" min={0} value={payment.amountPaid} onChange={(e) => setPayment((s) => ({ ...s, amountPaid: e.target.value }))} />
-          <Input label="Giam gia" type="number" min={0} value={payment.discountAmount} onChange={(e) => setPayment((s) => ({ ...s, discountAmount: e.target.value }))} />
+          <Select label="Phương thức" value={payment.paymentMethod} onChange={(value) => setPayment((s) => ({ ...s, paymentMethod: value }))} options={paymentMethods.map(m => ({ value: m, label: PAYMENT_METHOD_LABELS[m] ?? m }))} />
+          <Input label="Số tiền trả" type="number" min={0} value={payment.amountPaid} onChange={(e) => setPayment((s) => ({ ...s, amountPaid: e.target.value }))} />
+          <Input label="Giảm giá" type="number" min={0} value={payment.discountAmount} onChange={(e) => setPayment((s) => ({ ...s, discountAmount: e.target.value }))} />
         </div>
       ) : null}
     </Modal>
   );
 }
 
-function WorkOrderDetail({ workOrder }: { workOrder: WorkOrderViewModel }) {
+// ─── Chi tiết phiếu công việc ─────────────────────────────────────────────────
+function WorkOrderDetail({
+  workOrder,
+  mutations,
+}: {
+  workOrder: WorkOrderViewModel;
+  mutations: ReturnType<typeof useWorkshopMutations>;
+}) {
+  const qc = useQueryClient();
+
+  const handleDeleteService = async (workOrderServiceID: number) => {
+    if (!window.confirm("Xóa dịch vụ này khỏi phiếu?")) return;
+    try {
+      await mutations.deleteWorkOrderService.mutateAsync({
+        workOrderId: workOrder.workOrderID,
+        workOrderServiceId: workOrderServiceID,
+      });
+      await qc.invalidateQueries({ queryKey: workshopKeys.workOrder(workOrder.workOrderID) });
+      notify.success("Đã xóa dịch vụ");
+    } catch (error) {
+      notify.error(getErrorMessage(error));
+    }
+  };
+
+  const handleDeletePart = async (workOrderPartID: number) => {
+    if (!window.confirm("Xóa phụ tùng này khỏi phiếu?")) return;
+    try {
+      await mutations.deleteWorkOrderPart.mutateAsync({
+        workOrderId: workOrder.workOrderID,
+        workOrderPartId: workOrderPartID,
+      });
+      await qc.invalidateQueries({ queryKey: workshopKeys.workOrder(workOrder.workOrderID) });
+      notify.success("Đã xóa phụ tùng");
+    } catch (error) {
+      notify.error(getErrorMessage(error));
+    }
+  };
+
   return (
     <div className="space-y-5 text-sm">
+      {/* Thông tin chung */}
       <div className="grid gap-3 sm:grid-cols-3">
-        <Info label="So phieu" value={workOrder.workOrderNumber} />
-        <Info label="Trang thai" value={<Badge tone={tone(workOrder.status)}>{workOrder.status}</Badge>} />
-        <Info label="Thanh toan" value={workOrder.paymentStatus} />
+        <Info label="Số phiếu" value={workOrder.workOrderNumber} />
+        <Info label="Trạng thái" value={<Badge tone={tone(workOrder.status)}>{STATUS_LABELS[workOrder.status] ?? workOrder.status}</Badge>} />
+        <Info label="Thanh toán" value={PAYMENT_STATUS_LABELS[workOrder.paymentStatus] ?? workOrder.paymentStatus} />
         <Info label="Xe" value={workOrder.vehicleInfo ?? workOrder.customerVehicleID} />
-        <Info label="Chi nhanh" value={workOrder.locationName ?? workOrder.locationID} />
-        <Info label="KTV chinh" value={workOrder.primaryTechnicianName ?? workOrder.primaryTechnicianID} />
-        <Info label="Bat dau" value={formatDate(workOrder.startDateTime)} />
-        <Info label="Ket thuc" value={formatDate(workOrder.endDateTime)} />
-        <Info label="Tong tien" value={formatMoney(workOrder.totalAmount)} />
+        <Info label="Chi nhánh" value={workOrder.locationName ?? workOrder.locationID} />
+        <Info label="KTV chính" value={workOrder.primaryTechnicianName ?? workOrder.primaryTechnicianID} />
+        <Info label="Bắt đầu" value={formatDate(workOrder.startDateTime)} />
+        <Info label="Kết thúc" value={formatDate(workOrder.endDateTime)} />
+        <Info label="Tổng tiền" value={formatMoney(workOrder.totalAmount)} />
       </div>
-      <Info label="Khach phan anh" value={workOrder.customerComplaint ?? "-"} />
-      <Info label="Chan doan" value={workOrder.diagnosis ?? "-"} />
-      <Info label="Cong viec da lam" value={workOrder.workPerformed ?? "-"} />
+      <Info label="Khách phản ánh" value={workOrder.customerComplaint ?? "-"} />
+      <Info label="Chẩn đoán" value={workOrder.diagnosis ?? "-"} />
+      <Info label="Công việc đã làm" value={workOrder.workPerformed ?? "-"} />
 
-      <Section title="Dich vu">
-        <Table headers={["Dich vu", "KTV", "Gio", "Don gia", "Thanh tien"]}>
+      {/* Bảng dịch vụ */}
+      <Section title="Dịch vụ">
+        <Table headers={["Dịch vụ", "KTV", "Giờ", "Đơn giá", "Thành tiền", ""]}>
           {(workOrder.services ?? []).map((s) => (
             <tr key={s.workOrderServiceID}>
               <td className="py-2">{s.serviceName ?? s.serviceID}</td>
@@ -511,13 +751,23 @@ function WorkOrderDetail({ workOrder }: { workOrder: WorkOrderViewModel }) {
               <td>{s.laborHours}</td>
               <td>{formatMoney(s.unitPrice)}</td>
               <td>{formatMoney(s.totalPrice ?? s.lineTotal)}</td>
+              <td>
+                <button
+                  onClick={() => handleDeleteService(s.workOrderServiceID)}
+                  className="rounded p-1 text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"
+                  title="Xóa dịch vụ"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </td>
             </tr>
           ))}
         </Table>
       </Section>
 
-      <Section title="Phu tung">
-        <Table headers={["Phu tung", "SL", "Don gia", "Thanh tien", "Nguoi lap"]}>
+      {/* Bảng phụ tùng */}
+      <Section title="Phụ tùng">
+        <Table headers={["Phụ tùng", "SL", "Đơn giá", "Thành tiền", "Người lắp", ""]}>
           {(workOrder.parts ?? []).map((p) => (
             <tr key={p.workOrderPartID}>
               <td className="py-2">{p.accessoryName ?? p.accessoryID}</td>
@@ -525,14 +775,132 @@ function WorkOrderDetail({ workOrder }: { workOrder: WorkOrderViewModel }) {
               <td>{formatMoney(p.unitPrice)}</td>
               <td>{formatMoney(p.totalPrice ?? p.lineTotal)}</td>
               <td>{p.installedByTechnicianName ?? p.installedByTechnicianID ?? "-"}</td>
+              <td>
+                <button
+                  onClick={() => handleDeletePart(p.workOrderPartID)}
+                  className="rounded p-1 text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"
+                  title="Xóa phụ tùng"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </td>
             </tr>
           ))}
         </Table>
       </Section>
+
+      {/* Section đánh giá khách hàng — chỉ hiện khi Completed */}
+      {workOrder.status === "Completed" && (
+        <FeedbackSection workOrder={workOrder} mutations={mutations} />
+      )}
     </div>
   );
 }
 
+// ─── Section đánh giá khách hàng ─────────────────────────────────────────────
+function FeedbackSection({
+  workOrder,
+  mutations,
+}: {
+  workOrder: WorkOrderViewModel;
+  mutations: ReturnType<typeof useWorkshopMutations>;
+}) {
+  const [rating, setRating] = useState<number>(workOrder.customerRating ?? 0);
+  const [hovered, setHovered] = useState<number>(0);
+  const [comment, setComment] = useState<string>(workOrder.customerFeedback ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (rating === 0) {
+      notify.error("Vui lòng chọn số sao đánh giá");
+      return;
+    }
+    setSaving(true);
+    try {
+      await mutations.feedbackWorkOrder.mutateAsync({
+        id: workOrder.workOrderID,
+        body: { rating, feedback: comment || null },
+      });
+      notify.success("Đã lưu đánh giá khách hàng");
+    } catch (error) {
+      notify.error(getErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const displayRating = hovered > 0 ? hovered : rating;
+
+  return (
+    <Section title="Đánh giá khách hàng">
+      <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+        {/* Đã có đánh giá cũ */}
+        {workOrder.customerRating != null && workOrder.customerRating > 0 && (
+          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <span>Đánh giá hiện tại:</span>
+            <span className="flex">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star
+                  key={i}
+                  className={`h-4 w-4 ${i <= (workOrder.customerRating ?? 0) ? "fill-amber-400 text-amber-400" : "text-slate-300"}`}
+                />
+              ))}
+            </span>
+            {workOrder.customerFeedback && (
+              <span className="italic">"{workOrder.customerFeedback}"</span>
+            )}
+          </div>
+        )}
+
+        {/* Chọn sao */}
+        <div>
+          <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">Chọn mức đánh giá</p>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <button
+                key={i}
+                type="button"
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(0)}
+                onClick={() => setRating(i)}
+                className="rounded p-0.5 transition-transform hover:scale-110 focus:outline-none"
+              >
+                <Star
+                  className={`h-7 w-7 transition-colors ${
+                    i <= displayRating ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"
+                  }`}
+                />
+              </button>
+            ))}
+            {rating > 0 && (
+              <span className="ml-2 self-center text-sm text-slate-500">
+                {["", "Rất tệ", "Tệ", "Bình thường", "Tốt", "Xuất sắc"][rating]}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Bình luận */}
+        <div className="space-y-1">
+          <span className="block text-sm font-medium text-slate-700 dark:text-slate-200">Bình luận</span>
+          <textarea
+            rows={3}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Nhập nhận xét của khách hàng..."
+            className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
+          />
+        </div>
+
+        <ActionButton variant="primary" onClick={handleSave} disabled={saving}>
+          {saving ? "Đang lưu..." : "Lưu đánh giá"}
+        </ActionButton>
+      </div>
+    </Section>
+  );
+}
+
+// ─── Các component nhỏ ────────────────────────────────────────────────────────
 function Info({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>

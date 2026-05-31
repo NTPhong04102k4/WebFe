@@ -97,6 +97,12 @@ export const premiumApi = {
     return res.data;
   },
 
+  /** POST /premium-plans/subscribe/activate — Customer only */
+  activateSubscription: async (body: { paymentReference: string }) => {
+    const res = await apiClient.post<OperationResult>(API.premium.subscribeActivate, body);
+    return res.data;
+  },
+
   /** POST /premium-plans/cancel — Customer only */
   cancelSubscription: async () => {
     const res = await apiClient.post<OperationResult>(API.premium.cancel, {});

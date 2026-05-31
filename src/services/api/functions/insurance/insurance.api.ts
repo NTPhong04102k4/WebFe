@@ -11,6 +11,10 @@ import type {
   InsurancePolicyRequest,
   InsurancePolicyViewModel,
   PolicyListResult,
+  InsuranceClaimRequest,
+  InsuranceClaimViewModel,
+  InsuranceClaimStatusRequest,
+  ClaimListResult,
 } from "./insurance.types";
 import type { OperationResult } from "src/services/types/common.types";
 
@@ -186,4 +190,41 @@ export const insuranceApi = {
     return res.data;
   },
 
+  // ── Claims ──────────────────────────────────────────────────────────────────
+
+  /** POST /insurance/claims — Customer */
+  createClaim: async (body: InsuranceClaimRequest) => {
+    const fd = new FormData();
+    fd.append("policyId", String(body.policyId));
+    fd.append("incidentDate", body.incidentDate);
+    fd.append("incidentDescription", body.incidentDescription);
+    fd.append("damageAmount", String(body.damageAmount));
+    body.documents?.forEach((f) => fd.append("documents", f));
+    const res = await apiClient.post<InsuranceClaimViewModel | OperationResult<{ claimId: number }>>(
+      API.insurance.claims,
+      fd
+    );
+    return unwrapOperation(res.data);
+  },
+
+  /** GET /insurance/claims — Authorized */
+  listClaims: async (
+    params: { page?: number; pageSize?: number; status?: string },
+    options?: ApiRequestOptions
+  ) => {
+    const res = await apiClient.get<ClaimListResult>(
+      API.insurance.claims,
+      withSignal({ params }, options)
+    );
+    return res.data;
+  },
+
+  /** PATCH /insurance/claims/{id}/status — Admin,Staff */
+  updateClaimStatus: async (id: number, body: InsuranceClaimStatusRequest) => {
+    const res = await apiClient.patch<OperationResult>(
+      API.insurance.claimStatus(id),
+      body
+    );
+    return res.data;
+  },
 };

@@ -68,6 +68,31 @@ export const API = {
     /** GET /orders/payment/order/{orderNumber}/invoice-pdf — Admin,Staff,Customer(own) */
     invoicePdf: (orderNumber: string) =>
       `/orders/payment/order/${orderNumber}/invoice-pdf`,
+    /** PATCH /orders/payment/order/{id}/status — Admin,SuperAdmin,Staff */
+    orderStatus: (id: string | number) =>
+      `/orders/payment/order/${id}/status`,
+  },
+
+  finance: {
+    /** GET /finance/summary — Admin,SuperAdmin */
+    summary: "/finance/summary",
+    /** GET /finance/payroll-summary — Admin,SuperAdmin */
+    payrollSummary: "/finance/payroll-summary",
+  },
+
+  cart: {
+    /** GET /cart — Customer */
+    root: "/cart",
+    /** POST /cart/cars — Customer */
+    cars: "/cart/cars",
+    /** DELETE /cart/cars/{carId} — Customer */
+    car: (carId: number) => `/cart/cars/${carId}`,
+    /** POST /cart/accessories — Customer */
+    accessories: "/cart/accessories",
+    /** DELETE /cart/accessories/{accessoryId} — Customer */
+    accessory: (accessoryId: number) => `/cart/accessories/${accessoryId}`,
+    /** PATCH /cart/items — Customer */
+    items: "/cart/items",
   },
 
   chat: {
@@ -92,6 +117,8 @@ export const API = {
     feedback: (id: string | number) => `/ai/messages/${id}/feedback`,
     kb: "/ai/kb",
     kbItem: (id: string | number) => `/ai/kb/${id}`,
+    /** GET /ai/quota — Authorized */
+    quota: "/ai/quota",
   },
   car: {
     detail: (id: string | number) => `/cars/${id}`,
@@ -162,6 +189,12 @@ export const API = {
     policiesExpiring: "/insurance/policies/expiring",
     policy: (id: string | number) => `/insurance/policies/${id}`,
     policyCancel: (id: string | number) => `/insurance/policies/${id}/cancel`,
+    /** POST /insurance/claims — Customer */
+    claims: "/insurance/claims",
+    /** GET /insurance/claims — Authorized */
+    claim: (id: string | number) => `/insurance/claims/${id}`,
+    /** PATCH /insurance/claims/{id}/status — Admin,Staff */
+    claimStatus: (id: string | number) => `/insurance/claims/${id}/status`,
   },
   workshop: {
     customerVehicles: "/workshop/customer-vehicles",
@@ -196,6 +229,13 @@ export const API = {
       `/workshop/work-orders/${id}/payment-info`,
     workOrderFeedback: (id: string | number) =>
       `/workshop/work-orders/${id}/feedback`,
+    /** POST /workshop/appointments/{id}/check-in — tạo WorkOrder 1 bước từ Appointment */
+    appointmentCheckIn: (id: string | number) =>
+      `/workshop/appointments/${id}/check-in`,
+    /** GET /workshop/appointments/schedule-timeline — Staff+ */
+    scheduleTimeline: "/workshop/appointments/schedule-timeline",
+    /** GET /workshop/work-orders/maintenance-history — Authorized */
+    workOrderMaintenanceHistory: "/workshop/work-orders/maintenance-history",
     workOrderServiceItem: (
       workOrderId: string | number,
       workOrderServiceId: string | number,
@@ -219,6 +259,8 @@ export const API = {
     renew: "/premium-plans/renew",
     /** GET /premium-plans/admin/subscriptions — Added in commit feat/manage revenue premium plans */
     adminSubscriptions: "/premium-plans/admin/subscriptions",
+    /** POST /premium-plans/subscribe/activate — Customer */
+    subscribeActivate: "/premium-plans/subscribe/activate",
   },
 
   review: {

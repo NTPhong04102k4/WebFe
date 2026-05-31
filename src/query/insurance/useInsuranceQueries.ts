@@ -4,6 +4,8 @@ import { SEARCH_STALE_MS } from "src/query/queryClient";
 import { insuranceApi } from "src/services/api/functions/insurance/insurance.api";
 import type {
   InsuranceCompanyRequest,
+  InsuranceClaimRequest,
+  InsuranceClaimStatusRequest,
   InsurancePackageRequest,
   InsurancePolicyRequest,
 } from "src/services/api/functions/insurance/insurance.types";
@@ -117,6 +119,39 @@ export function useInsuranceMutations() {
     }),
     deletePackage: useMutation({
       mutationFn: (id: number) => insuranceApi.deletePackage(id),
+      onSuccess: invalidate,
+    }),
+  };
+}
+
+// ── Claims ───────────────────────────────────────────────────────────────────
+
+export function useInsuranceClaims(params: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+} = {}) {
+  return useQuery({
+    queryKey: insuranceKeys.claims(params),
+    queryFn: ({ signal }) => insuranceApi.listClaims(params, { signal }),
+    staleTime: SEARCH_STALE_MS,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useInsuranceClaimMutations() {
+  const qc = useQueryClient();
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: insuranceKeys.claims() });
+
+  return {
+    createClaim: useMutation({
+      mutationFn: (body: InsuranceClaimRequest) => insuranceApi.createClaim(body),
+      onSuccess: invalidate,
+    }),
+    updateClaimStatus: useMutation({
+      mutationFn: ({ id, body }: { id: number; body: InsuranceClaimStatusRequest }) =>
+        insuranceApi.updateClaimStatus(id, body),
       onSuccess: invalidate,
     }),
   };

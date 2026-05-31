@@ -46,6 +46,11 @@ export function usePremiumMutations() {
       mutationFn: (req: SubscribeRequest) => premiumApi.subscribe(req),
       onSuccess: invalidate,
     }),
+    activateSubscription: useMutation({
+      mutationFn: (body: { paymentReference: string }) =>
+        premiumApi.activateSubscription(body),
+      onSuccess: invalidate,
+    }),
     cancel: useMutation({
       mutationFn: () => premiumApi.cancelSubscription(),
       onSuccess: invalidate,

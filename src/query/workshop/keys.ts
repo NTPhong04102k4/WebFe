@@ -15,4 +15,8 @@ export const workshopKeys = {
   workOrder: (id: number) => [...workshopKeys.all, "workOrder", id] as const,
   workOrderPaymentInfo: (id: number) =>
     [...workshopKeys.all, "workOrderPaymentInfo", id] as const,
+  scheduleTimeline: (params: { date: string; locationId?: number }) =>
+    [...workshopKeys.all, "scheduleTimeline", params] as const,
+  workOrderHistory: (params: { vehicleId: number; page?: number; pageSize?: number }) =>
+    [...workshopKeys.all, "workOrderHistory", params] as const,
 };

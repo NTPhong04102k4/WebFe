@@ -6,6 +6,7 @@ import {
   useWorkOrders,
   useWorkshopMutations,
 } from "src/query/workshop/useWorkshopQueries";
+import type { AppointmentStatus, WorkOrderStatus } from "src/services/api/functions/workshop/workshop.types";
 import { useLocation } from "src/shared/hooks/location";
 import type { LocationResponse } from "src/shared/types/Reponse/Location";
 
@@ -73,7 +74,7 @@ export function StaffWorkshopPanel() {
   const onApptStatus = async (id: number, status: string) => {
     setMsg(null);
     try {
-      await patchAppointmentStatus.mutateAsync({ id, body: { status } });
+      await patchAppointmentStatus.mutateAsync({ id, body: { status: status as AppointmentStatus } });
       setMsg("Đã cập nhật trạng thái lịch.");
     } catch {
       setMsg("Cập nhật thất bại.");
@@ -130,7 +131,7 @@ export function StaffWorkshopPanel() {
     try {
       await patchWorkOrderStatus.mutateAsync({
         id: workOrderId,
-        body: { status },
+        body: { status: status as WorkOrderStatus },
       });
       setMsg("Đã cập nhật phiếu.");
     } catch {
