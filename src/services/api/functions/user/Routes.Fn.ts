@@ -86,4 +86,7 @@ export const userRouteFn = {
   deleteAdminUser: async (id: string | number) => {
     await api.delete(userRoute.adminUserById(id));
   },
+  registerFcmToken: async (token: string) => {
+    await api.patch(userRoute.fcmToken, { token }, { suppressErrorToast: true } as object);
+  },
 };

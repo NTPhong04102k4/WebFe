@@ -8,7 +8,13 @@ import { AppProviders } from './contexts/AppProviders'
 import { appQueryClient } from './query/queryClient'
 import { subscribeToAppTheme } from './stores/uiStore'
 
-subscribeToAppTheme()
+subscribeToAppTheme();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/firebase-messaging-sw.js")
+    .catch(() => {});
+}
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

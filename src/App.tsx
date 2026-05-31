@@ -4,12 +4,14 @@ import { useNavigate } from 'react-router-dom'
 import AppRouter from '@/router'
 import { useAuthStore } from '@/stores/authStore'
 import { useCartUserSync } from '@/hooks/useCartUserSync'
+import { useFcmToken } from '@/hooks/useFcmToken'
 
 export default function App() {
   const navigate = useNavigate()
   const logout = useAuthStore((state) => state.logout)
 
   useCartUserSync()
+  useFcmToken()
 
   useEffect(() => {
     const handler = (event: Event) => {

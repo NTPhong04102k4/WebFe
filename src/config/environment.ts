@@ -14,4 +14,5 @@ export const ENV = {
   SEPAY_ENVIRONMENT: (env.VITE_SEPAY_ENVIRONMENT as string) ?? "sandbox",
   SEPAY_BASE_URL:
     (env.VITE_SEPAY_BASE_URL as string) ?? "https://pay-sandbox.sepay.vn",
+  FIREBASE_VAPID_KEY: env.VITE_FIREBASE_VAPID_KEY as string | undefined,
 };
