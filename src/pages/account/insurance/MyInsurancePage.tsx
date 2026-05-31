@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import {
-  useClaimsList,
   useInsuranceMutations,
   useInsurancePackages,
   useMyPolicies,
@@ -20,15 +19,6 @@ type PolicyForm = {
   premiumAmount: number;
 };
 
-type ClaimForm = {
-  policyID: number;
-  incidentDate: string;
-  reportedDate: string;
-  description: string;
-  claimAmount: number;
-  workOrderID: string;
-};
-
 export default function MyInsurancePage() {
   const user = useAuthStore((s) => s.user);
   const userID = user?.userID ?? user?.id;
@@ -44,11 +34,9 @@ export default function MyInsurancePage() {
   const vehicles = vehiclesRes?.data ?? [];
 
   const { data: packages = [] } = useInsurancePackages(undefined);
-  const { data: claimsRes } = useClaimsList(1, 30);
-  const claims = claimsRes?.data ?? [];
 
-  const { createPolicy, createClaim } = useInsuranceMutations();
-  const [tab, setTab] = useState<"policies" | "new" | "claims">("policies");
+  const { createPolicy } = useInsuranceMutations();
+  const [tab, setTab] = useState<"policies" | "new">("policies");
   const [msg, setMsg] = useState<string | null>(null);
 
   const policyForm = useForm<PolicyForm>({
@@ -58,17 +46,6 @@ export default function MyInsurancePage() {
       startDate: "",
       endDate: "",
       premiumAmount: 0,
-    },
-  });
-
-  const claimForm = useForm<ClaimForm>({
-    defaultValues: {
-      policyID: 0,
-      incidentDate: "",
-      reportedDate: new Date().toISOString().slice(0, 10),
-      description: "",
-      claimAmount: 0,
-      workOrderID: "",
     },
   });
 
@@ -94,33 +71,11 @@ export default function MyInsurancePage() {
     }
   });
 
-  const submitClaim = claimForm.handleSubmit(async (f) => {
-    setMsg(null);
-    if (!f.policyID) {
-      setMsg("Chọn hợp đồng.");
-      return;
-    }
-    try {
-      await createClaim.mutateAsync({
-        policyID: f.policyID,
-        workOrderID: f.workOrderID ? Number(f.workOrderID) : undefined,
-        incidentDate: new Date(f.incidentDate).toISOString(),
-        reportedDate: new Date(f.reportedDate).toISOString(),
-        description: f.description,
-        claimAmount: Number(f.claimAmount),
-      });
-      setMsg("Đã gửi yêu cầu bồi thường.");
-      claimForm.reset();
-    } catch {
-      setMsg("Không gửi được yêu cầu.");
-    }
-  });
-
   return (
     <section>
       <h2 className={shell.title}>Bảo hiểm</h2>
       <p className={shell.sub}>
-        Xem hợp đồng, mua gói mới và gửi yêu cầu bồi thường.
+        Xem hợp đồng và mua gói mới.
       </p>
 
       <div
@@ -150,18 +105,6 @@ export default function MyInsurancePage() {
           onClick={() => setTab("new")}
         >
           Mua mới
-        </button>
-        <button
-          type="button"
-          className={`${shell.btn} ${shell.secondary}`}
-          style={
-            tab === "claims"
-              ? { background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }
-              : undefined
-          }
-          onClick={() => setTab("claims")}
-        >
-          Bồi thường
         </button>
       </div>
 
@@ -264,93 +207,6 @@ export default function MyInsurancePage() {
             </button>
           </form>
         </div>
-      )}
-
-      {tab === "claims" && (
-        <>
-          <div className={shell.card}>
-            <h3 className={shell.title} style={{ fontSize: "1rem" }}>
-              Gửi yêu cầu bồi thường
-            </h3>
-            <form onSubmit={submitClaim}>
-              <div className={shell.grid}>
-                <div className={shell.field}>
-                  <label>Hợp đồng</label>
-                  <select
-                    {...claimForm.register("policyID", { valueAsNumber: true })}
-                  >
-                    <option value={0}>— Chọn —</option>
-                    {policies.map((p) => (
-                      <option key={p.policyID} value={p.policyID}>
-                        {p.policyNumber} — {p.packageName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className={shell.field}>
-                  <label>Ngày sự cố</label>
-                  <input type="datetime-local" {...claimForm.register("incidentDate")} />
-                </div>
-                <div className={shell.field}>
-                  <label>Ngày báo cáo</label>
-                  <input type="date" {...claimForm.register("reportedDate")} />
-                </div>
-                <div className={shell.field}>
-                  <label>Số tiền yêu cầu</label>
-                  <input
-                    type="number"
-                    {...claimForm.register("claimAmount", { valueAsNumber: true })}
-                  />
-                </div>
-                <div className={shell.field}>
-                  <label>Phiếu sửa (tuỳ chọn)</label>
-                  <input {...claimForm.register("workOrderID")} placeholder="ID" />
-                </div>
-                <div className={shell.field} style={{ gridColumn: "1 / -1" }}>
-                  <label>Mô tả</label>
-                  <textarea {...claimForm.register("description")} />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className={`${shell.btn} ${shell.primary}`}
-                disabled={createClaim.isPending}
-              >
-                Gửi yêu cầu
-              </button>
-            </form>
-          </div>
-
-          <h3 className={shell.title} style={{ fontSize: "1.05rem", marginTop: "1.5rem" }}>
-            Yêu cầu đã gửi
-          </h3>
-          <div className={shell.tableWrap}>
-            <table className={shell.table}>
-              <thead>
-                <tr>
-                  <th>Mã</th>
-                  <th>Trạng thái</th>
-                  <th>Số tiền</th>
-                  <th>Ngày</th>
-                </tr>
-              </thead>
-              <tbody>
-                {claims.map((c) => (
-                  <tr key={c.claimID}>
-                    <td>{c.claimNumber}</td>
-                    <td>
-                      <span className={shell.badge}>{c.status}</span>
-                    </td>
-                    <td>{c.claimAmount?.toLocaleString("vi-VN")}</td>
-                    <td>
-                      {new Date(c.reportedDate).toLocaleDateString("vi-VN")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
       )}
     </section>
   );

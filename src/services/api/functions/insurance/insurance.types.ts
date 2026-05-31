@@ -82,38 +82,4 @@ export interface InsurancePolicyRequest {
   document?: File | null;
 }
 
-export interface InsuranceClaimRequest {
-  policyID: number;
-  workOrderID?: number | null;
-  incidentDate: string;
-  reportedDate: string;
-  description: string;
-  claimAmount: number;
-}
-
-export interface InsuranceClaimStatusRequest {
-  status: string;
-  approvedAmount?: number | null;
-  notes?: string | null;
-}
-
-export interface InsuranceClaimViewModel {
-  claimID: number;
-  claimNumber: string;
-  policyID: number;
-  policyNumber?: string | null;
-  workOrderID?: number | null;
-  workOrderNumber?: string | null;
-  incidentDate: string;
-  reportedDate: string;
-  description: string;
-  claimAmount: number;
-  approvedAmount?: number | null;
-  status: string;
-  processedDate?: string | null;
-  notes?: string | null;
-  createdDate: string;
-}
-
 export type PolicyListResult = PagedResult<InsurancePolicyViewModel>;
-export type ClaimListResult = PagedResult<InsuranceClaimViewModel>;

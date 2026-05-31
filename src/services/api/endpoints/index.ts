@@ -159,9 +159,6 @@ export const API = {
     policiesExpiring: "/insurance/policies/expiring",
     policy: (id: string | number) => `/insurance/policies/${id}`,
     policyCancel: (id: string | number) => `/insurance/policies/${id}/cancel`,
-    claims: "/insurance/claims",
-    claim: (id: string | number) => `/insurance/claims/${id}`,
-    claimStatus: (id: string | number) => `/insurance/claims/${id}/status`,
   },
   workshop: {
     customerVehicles: "/workshop/customer-vehicles",

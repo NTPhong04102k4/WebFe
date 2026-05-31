@@ -57,7 +57,6 @@ const navItems: NavItem[] = [
       { label: 'Công ty BH', to: '/admin/insurance/companies' },
       { label: 'Gói BH', to: '/admin/insurance/packages' },
       { label: 'Hợp đồng', to: '/admin/insurance/policies' },
-      { label: 'Yêu cầu BT', to: '/admin/insurance/claims' },
     ],
   },
   {

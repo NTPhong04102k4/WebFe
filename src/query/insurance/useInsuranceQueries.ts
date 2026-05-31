@@ -3,8 +3,6 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { SEARCH_STALE_MS } from "src/query/queryClient";
 import { insuranceApi } from "src/services/api/functions/insurance/insurance.api";
 import type {
-  InsuranceClaimRequest,
-  InsuranceClaimStatusRequest,
   InsuranceCompanyRequest,
   InsurancePackageRequest,
   InsurancePolicyRequest,
@@ -70,17 +68,6 @@ export function useExpiringPolicies(withinDays: number, enabled = true) {
   });
 }
 
-export function useClaimsList(page = 1, pageSize = 20, status?: string) {
-  const params = { page, pageSize, status };
-  return useQuery({
-    queryKey: insuranceKeys.claims(params),
-    queryFn: ({ signal }) =>
-      insuranceApi.listClaims({ page, pageSize, status }, { signal }),
-    staleTime: SEARCH_STALE_MS,
-    placeholderData: keepPreviousData,
-  });
-}
-
 export function useInsuranceCompanyMutations() {
   const qc = useQueryClient();
   const invalidate = () =>
@@ -116,21 +103,6 @@ export function useInsuranceMutations() {
     }),
     cancelPolicy: useMutation({
       mutationFn: (id: number) => insuranceApi.cancelPolicy(id),
-      onSuccess: invalidate,
-    }),
-    createClaim: useMutation({
-      mutationFn: (body: InsuranceClaimRequest) =>
-        insuranceApi.createClaim(body),
-      onSuccess: invalidate,
-    }),
-    patchClaimStatus: useMutation({
-      mutationFn: ({
-        id,
-        body,
-      }: {
-        id: number;
-        body: InsuranceClaimStatusRequest;
-      }) => insuranceApi.patchClaimStatus(id, body),
       onSuccess: invalidate,
     }),
     createPackage: useMutation({

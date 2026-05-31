@@ -4,10 +4,6 @@ import type { ApiRequestOptions } from "../../requestOptions";
 import { withSignal } from "../../requestOptions";
 
 import type {
-  ClaimListResult,
-  InsuranceClaimRequest,
-  InsuranceClaimStatusRequest,
-  InsuranceClaimViewModel,
   InsuranceCompanyRequest,
   InsuranceCompanyViewModel,
   InsurancePackageRequest,
@@ -190,38 +186,4 @@ export const insuranceApi = {
     return res.data;
   },
 
-  listClaims: async (
-    params: { page?: number; pageSize?: number; status?: string },
-    options?: ApiRequestOptions
-  ) => {
-    const res = await apiClient.get<ClaimListResult>(
-      API.insurance.claims,
-      withSignal({ params }, options)
-    );
-    return res.data;
-  },
-
-  getClaim: async (id: number, options?: ApiRequestOptions) => {
-    const res = await apiClient.get<InsuranceClaimViewModel>(
-      API.insurance.claim(id),
-      withSignal({}, options)
-    );
-    return res.data;
-  },
-
-  createClaim: async (body: InsuranceClaimRequest) => {
-    const res = await apiClient.post<InsuranceClaimViewModel | OperationResult<{ claimID: number; claimNumber: string }>>(
-      API.insurance.claims,
-      body
-    );
-    return unwrapOperation(res.data);
-  },
-
-  patchClaimStatus: async (id: number, body: InsuranceClaimStatusRequest) => {
-    const res = await apiClient.patch<unknown>(
-      API.insurance.claimStatus(id),
-      body
-    );
-    return res.data;
-  },
 };

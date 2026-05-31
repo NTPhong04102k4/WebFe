@@ -48,7 +48,6 @@ const PayrollPage                = lazy(() => import('@/pages/admin/HR/Payroll')
 const InsuranceCompaniesPage     = lazy(() => import('@/pages/admin/Insurance/Companies'))
 const InsurancePackagesPage      = lazy(() => import('@/pages/admin/Insurance/Packages'))
 const InsurancePoliciesPage      = lazy(() => import('@/pages/admin/Insurance/Policies'))
-const InsuranceClaimsPage        = lazy(() => import('@/pages/admin/Insurance/Claims'))
 const WorkshopAppointmentsPage   = lazy(() => import('@/pages/admin/Workshop/Appointments'))
 const CustomerVehiclesPage       = lazy(() => import('@/pages/admin/Workshop/CustomerVehicles'))
 const WorkOrdersPage             = lazy(() => import('@/pages/admin/Workshop/WorkOrders'))
@@ -133,8 +132,6 @@ export default function AppRouter() {
           <Route path="insurance/companies" element={<InsuranceCompaniesPage />} />
           <Route path="insurance/packages" element={<InsurancePackagesPage />} />
           <Route path="insurance/policies" element={<InsurancePoliciesPage />} />
-          <Route path="insurance/claims" element={<InsuranceClaimsPage />} />
-
           {/* Workshop */}
           <Route path="workshop/appointments" element={<WorkshopAppointmentsPage />} />
           <Route path="workshop/vehicles" element={<CustomerVehiclesPage />} />
