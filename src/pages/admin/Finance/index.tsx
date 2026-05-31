@@ -1,4 +1,5 @@
-import { TrendingUp, TrendingDown, DollarSign, ShoppingBag } from "lucide-react";
+import { useState } from "react";
+import { TrendingUp, TrendingDown, DollarSign, ShoppingBag, CalendarRange, RotateCcw } from "lucide-react";
 import { useFinanceRevenue, useFinancePayrolls } from "src/query/finance/useFinanceQueries";
 import { RevenueChart } from "./RevenueChart";
 import { PayrollTable } from "./PayrollTable";
@@ -11,17 +12,26 @@ function toISO(d: Date) {
 }
 
 const now = new Date();
-const monthStart = toISO(new Date(now.getFullYear(), now.getMonth(), 1));
-const monthEnd = toISO(new Date(now.getFullYear(), now.getMonth() + 1, 0));
-const currentPeriod = now.toISOString().slice(0, 7);
+const DEFAULT_FROM = toISO(new Date(now.getFullYear(), now.getMonth(), 1));
+const DEFAULT_TO = toISO(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+
+function groupByFromRange(from: string, to: string): string {
+  const days = (new Date(to).getTime() - new Date(from).getTime()) / 86400_000;
+  return days <= 31 ? "Day" : "Month";
+}
 
 export default function AdminFinancePage() {
+  const [fromDate, setFromDate] = useState(DEFAULT_FROM);
+  const [toDate, setToDate] = useState(DEFAULT_TO);
+
+  const isCurrentMonth = fromDate === DEFAULT_FROM && toDate === DEFAULT_TO;
+
   const revenueQ = useFinanceRevenue({
-    fromDate: monthStart,
-    toDate: monthEnd,
-    groupBy: "Month",
+    fromDate,
+    toDate,
+    groupBy: groupByFromRange(fromDate, toDate),
   });
-  const payrollQ = useFinancePayrolls({ period: currentPeriod, page: 1, pageSize: 100 });
+  const payrollQ = useFinancePayrolls({ fromDate, toDate, page: 1, pageSize: 1000 });
 
   const totalRevenue = revenueQ.data?.totalRevenue ?? 0;
   const totalOrders = revenueQ.data?.totalOrders ?? 0;
@@ -30,16 +40,21 @@ export default function AdminFinancePage() {
   const totalExpense = payrolls.reduce((s, p) => s + p.netSalary, 0);
   const profit = totalRevenue - totalExpense;
 
+  const handleReset = () => {
+    setFromDate(DEFAULT_FROM);
+    setToDate(DEFAULT_TO);
+  };
+
   const summaryCards = [
     {
-      label: "Tổng thu tháng này",
+      label: "Tổng thu",
       value: revenueQ.isLoading ? "…" : fmt(totalRevenue),
       icon: TrendingUp,
       gradient: "from-emerald-500 to-emerald-600",
       text: "text-emerald-600",
     },
     {
-      label: "Tổng chi tháng này",
+      label: "Tổng chi lương",
       value: payrollQ.isLoading ? "…" : fmt(totalExpense),
       icon: TrendingDown,
       gradient: "from-red-500 to-red-600",
@@ -54,7 +69,7 @@ export default function AdminFinancePage() {
       large: true,
     },
     {
-      label: "Số đơn hàng tháng",
+      label: "Số đơn hàng",
       value: revenueQ.isLoading ? "…" : totalOrders,
       icon: ShoppingBag,
       gradient: "from-purple-500 to-purple-600",
@@ -64,12 +79,44 @@ export default function AdminFinancePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <TrendingUp className="h-6 w-6 text-emerald-500" />
-        <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Thu - Chi</h1>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-          {currentPeriod}
-        </span>
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-6 w-6 text-emerald-500" />
+          <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Thu - Chi</h1>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            {isCurrentMonth ? fromDate.slice(0, 7) : `${fromDate} → ${toDate}`}
+          </span>
+        </div>
+
+        {/* Date range filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <CalendarRange className="h-4 w-4 text-slate-400" />
+          <input
+            type="date"
+            value={fromDate}
+            max={toDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          />
+          <span className="text-xs text-slate-400">đến</span>
+          <input
+            type="date"
+            value={toDate}
+            min={fromDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          />
+          {!isCurrentMonth && (
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs text-slate-500 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-800"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Tháng này
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -98,6 +145,7 @@ export default function AdminFinancePage() {
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <h2 className="mb-3 text-base font-semibold text-slate-800 dark:text-slate-100">
             Chi phí lương theo nhân viên
+            <span className="ml-2 text-xs font-normal text-slate-400">({fromDate} → {toDate})</span>
           </h2>
           <div className="space-y-2">
             {payrolls
@@ -128,8 +176,7 @@ export default function AdminFinancePage() {
         </div>
       )}
 
-      {/* Payroll Table */}
-      <PayrollTable totalExpense={totalExpense} />
+      <PayrollTable totalExpense={totalExpense} fromDate={fromDate} toDate={toDate} />
     </div>
   );
 }

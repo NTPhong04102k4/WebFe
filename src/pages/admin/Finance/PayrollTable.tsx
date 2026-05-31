@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2, CheckSquare, Eye } from "lucide-react";
 import { notify } from "src/components/core/Feedback/toast";
 import {
@@ -21,17 +21,40 @@ const PAGE_SIZE = 10;
 
 type Props = {
   totalExpense: number;
+  fromDate?: string;
+  toDate?: string;
 };
 
-export function PayrollTable({ totalExpense }: Props) {
-  const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
+function monthToRange(month: string) {
+  const [y, m] = month.split("-").map(Number);
+  return {
+    from: `${month}-01`,
+    to: new Date(y, m, 0).toISOString().slice(0, 10),
+  };
+}
+
+export function PayrollTable({ totalExpense, fromDate: fromProp, toDate: toProp }: Props) {
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (fromProp) {
+      setMonth(fromProp.slice(0, 7));
+      setPage(1);
+    }
+  }, [fromProp]);
+
+  const controlled = !!fromProp;
+  const { from: derivedFrom, to: derivedTo } = monthToRange(month);
+  const queryFromDate = fromProp ?? derivedFrom;
+  const queryToDate = toProp ?? derivedTo;
 
   const { data, isLoading } = useFinancePayrolls({
     page,
     pageSize: PAGE_SIZE,
-    period,
+    fromDate: queryFromDate,
+    toDate: queryToDate,
   });
   const { markPaid, deletePayroll } = useFinancePayrollMutations();
 
@@ -66,12 +89,18 @@ export function PayrollTable({ totalExpense }: Props) {
           <p className="text-xs text-slate-400">Tổng chi tháng: <span className="font-medium text-red-600">{fmt(totalExpense)}</span></p>
         </div>
         <div className="flex items-center gap-2">
-          <input
-            type="month"
-            value={period}
-            onChange={(e) => { setPeriod(e.target.value); setPage(1); }}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-          />
+          {controlled ? (
+            <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+              {queryFromDate} → {queryToDate}
+            </span>
+          ) : (
+            <input
+              type="month"
+              value={month}
+              onChange={(e) => { setMonth(e.target.value); setPage(1); }}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            />
+          )}
           <button
             onClick={() => setModalOpen(true)}
             className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"

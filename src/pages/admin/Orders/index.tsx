@@ -46,10 +46,13 @@ export default function AdminOrdersPage() {
   const { data, isLoading, isFetching, refetch } = useAdminOrders(params);
   const revenueQ = useRevenue({ fromDate: monthStart, toDate: monthEnd, groupBy: "Month" });
 
+  const pendingQ = useAdminOrders({ page: 1, pageSize: 1, status: "Pending" });
+  const processingQ = useAdminOrders({ page: 1, pageSize: 1, status: "Processing" });
+
   const orders = data?.data ?? [];
   const total = data?.totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const pendingCount = orders.filter((o) => o.orderStatus === "Pending" || o.orderStatus === "Processing").length;
+  const pendingCount = (pendingQ.data?.totalCount ?? 0) + (processingQ.data?.totalCount ?? 0);
 
   const exportCsv = () => {
     const header = "Mã đơn,Khách hàng,Email,Tổng tiền,Đơn hàng,Thanh toán,Ngày tạo";
@@ -88,7 +91,7 @@ export default function AdminOrdersPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           { label: "Tổng đơn hàng", value: total, hint: "Tất cả đơn", color: "text-blue-600" },
-          { label: "Cần xử lý", value: pendingCount, hint: "Pending + Processing", color: pendingCount > 0 ? "text-red-600" : "text-slate-700" },
+          { label: "Cần xử lý", value: pendingQ.isLoading || processingQ.isLoading ? "…" : pendingCount, hint: "Pending + Processing (toàn hệ thống)", color: pendingCount > 0 ? "text-red-600" : "text-slate-700" },
           { label: "Doanh thu tháng", value: revenueQ.data ? fmt(revenueQ.data.totalRevenue) : "…", hint: `${monthStart} – ${monthEnd}`, color: "text-green-600" },
           { label: "Tổng đơn tháng", value: revenueQ.data?.totalOrders ?? "…", hint: "Từ revenue API", color: "text-purple-600" },
         ].map((c) => (

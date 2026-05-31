@@ -112,7 +112,8 @@ export interface PayrollListParams {
   page?: number;
   pageSize?: number;
   staffId?: number;
-  period?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface PayrollRequest {
