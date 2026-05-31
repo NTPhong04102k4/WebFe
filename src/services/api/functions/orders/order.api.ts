@@ -276,6 +276,16 @@ export const orderApi = {
     return unwrap(res.data);
   },
 
+  /** POST /orders/payment/order/{orderNumber}/send-invoice — Admin,Staff gửi lại hóa đơn */
+  sendInvoice: async (orderNumber: string, options?: ApiRequestOptions) => {
+    const res = await apiClient.post<OperationResult | void>(
+      API.ordersPayment.sendInvoice(orderNumber),
+      undefined,
+      withSignal({}, options)
+    );
+    return res.data;
+  },
+
   /** GET /orders/payment/revenue-report */
   revenue: async (
     params: { fromDate?: string; toDate?: string; groupBy?: string },

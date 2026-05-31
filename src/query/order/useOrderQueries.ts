@@ -74,6 +74,12 @@ export function useRecordCash(orderNumber: string) {
   });
 }
 
+export function useSendInvoice(orderNumber: string) {
+  return useMutation({
+    mutationFn: () => orderApi.sendInvoice(orderNumber),
+  });
+}
+
 export function useRevenue(params: { fromDate?: string; toDate?: string; groupBy?: string }) {
   return useQuery({
     queryKey: orderKeys.revenue(params),

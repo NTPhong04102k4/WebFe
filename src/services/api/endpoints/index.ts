@@ -62,6 +62,9 @@ export const API = {
      * params: fromDate?, toDate?, groupBy? (Day|Month|Category)
      */
     revenueReport: "/orders/payment/revenue-report",
+    /** POST /orders/payment/order/{orderNumber}/send-invoice — Admin,Staff */
+    sendInvoice: (orderNumber: string) =>
+      `/orders/payment/order/${orderNumber}/send-invoice`,
   },
 
   chat: {

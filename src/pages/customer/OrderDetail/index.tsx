@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { formatCurrency } from "@/common/utils/formatCurrency";
 import { orderApi, type RecordCashInput, type CheckPaymentApiResponse, type PaymentStatus } from "@/services/api/functions/orders/order.api";
 import { useAuthStore } from "@/stores/authStore";
-import { useCheckPayment, useRecordCash } from "@/query/order/useOrderQueries";
+import { useCheckPayment, useRecordCash, useSendInvoice } from "@/query/order/useOrderQueries";
 import { useQuery } from "@tanstack/react-query";
 import { orderKeys } from "@/query/order/keys";
 
@@ -166,6 +166,8 @@ export default function CustomerOrderDetailPage() {
 
   const checkPayment = useCheckPayment(orderNumber);
   const recordCash = useRecordCash(orderNumber);
+  const sendInvoice = useSendInvoice(orderNumber);
+  const [invoiceSent, setInvoiceSent] = useState(false);
 
   const order = detail.data;
   const pay = payment.data;
@@ -247,7 +249,25 @@ export default function CustomerOrderDetailPage() {
 
             {/* Paid */}
             {order.paymentStatus === "Paid" && (
-              <p className="text-sm font-medium text-green-700">✓ Đơn hàng đã được thanh toán đủ.</p>
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-green-700">✓ Đơn hàng đã được thanh toán đủ.</p>
+                <button
+                  type="button"
+                  disabled={sendInvoice.isPending || invoiceSent}
+                  onClick={() =>
+                    sendInvoice.mutate(undefined, {
+                      onSuccess: () => setInvoiceSent(true),
+                    })
+                  }
+                  className="w-full rounded-lg border border-emerald-200 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                >
+                  {sendInvoice.isPending
+                    ? "Đang gửi..."
+                    : invoiceSent
+                    ? "✓ Đã gửi hóa đơn về email"
+                    : "Gửi hóa đơn về email"}
+                </button>
+              </div>
             )}
 
             {/* PartialPaid — progress bar từ checkResult hoặc order total */}

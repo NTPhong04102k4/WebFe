@@ -1,6 +1,7 @@
-import { X, Package, Car, Shield, Copy, Check } from "lucide-react";
+import { X, Package, Car, Shield, Copy, Check, Mail } from "lucide-react";
 import { useState } from "react";
-import { useOrderDetail } from "src/query/order/useOrderQueries";
+import { useOrderDetail, useSendInvoice } from "src/query/order/useOrderQueries";
+import { notify } from "src/components/core/Feedback/toast";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v);
@@ -22,7 +23,15 @@ type Props = {
 
 export function OrderDetailPanel({ orderNumber, onClose }: Props) {
   const { data: order, isLoading } = useOrderDetail(orderNumber);
+  const sendInvoice = useSendInvoice(orderNumber ?? "");
   const [copied, setCopied] = useState(false);
+
+  const handleSendInvoice = () => {
+    sendInvoice.mutate(undefined, {
+      onSuccess: () => notify.success("Đã gửi hóa đơn về email khách hàng"),
+      onError: () => notify.error("Gửi hóa đơn thất bại"),
+    });
+  };
 
   const copyOrderNumber = () => {
     if (!orderNumber) return;
@@ -124,10 +133,20 @@ export function OrderDetailPanel({ orderNumber, onClose }: Props) {
           )}
         </div>
 
-        <div className="border-t border-slate-200 p-4 dark:border-slate-700 flex justify-end">
+        <div className="border-t border-slate-200 p-4 dark:border-slate-700 flex items-center justify-between gap-2">
+          {order?.paymentStatus === "Paid" && (
+            <button
+              onClick={handleSendInvoice}
+              disabled={sendInvoice.isPending}
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-700 dark:text-emerald-400"
+            >
+              <Mail className="h-4 w-4" />
+              {sendInvoice.isPending ? "Đang gửi..." : "Gửi hóa đơn"}
+            </button>
+          )}
           <button
             onClick={onClose}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-300"
+            className="ml-auto rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-300"
           >
             Đóng
           </button>
