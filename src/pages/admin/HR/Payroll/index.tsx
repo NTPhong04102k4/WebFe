@@ -100,7 +100,7 @@ export default function AdminPayrollPage() {
       }
       setOpen(false);
     } catch {
-      notify.error("Luu bang luong that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -110,7 +110,7 @@ export default function AdminPayrollPage() {
       await deletePayroll.mutateAsync(payroll.payrollID);
       notify.success("Da xoa bang luong");
     } catch {
-      notify.error("Xoa bang luong that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -124,7 +124,7 @@ export default function AdminPayrollPage() {
       notify.success("Da danh dau da thanh toan");
       setPayOpen(null);
     } catch {
-      notify.error("Cap nhat thanh toan that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 

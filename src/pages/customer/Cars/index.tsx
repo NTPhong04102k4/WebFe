@@ -3,12 +3,14 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { carRouteFn } from '@/services/api/functions/Cars/Routes.Fn'
-import { useCartStore } from '@/stores/cartStore'
+import { useCart } from '@/hooks/useCart'
+import { useAuthStore } from '@/stores/authStore'
 import { formatCurrency } from '@/common/utils/formatCurrency'
 import type { CarResponse, CarResponseItem } from '@/shared/types/Reponse/Car'
 import { useBrandCarList } from '@/query/brand-car/useBrandCarQueries'
 import { useBodyTypeList } from '@/query/body-type/useBodyTypeQueries'
 import { SelectField } from '@/shared/components/Form/SelectField'
+import PremiumGateModal from '@/pages/customer/Premium/components/PremiumGateModal'
 
 function getImageSrc(car: CarResponseItem): string | undefined {
   const primary = car.primaryImagePath
@@ -20,7 +22,9 @@ function getImageSrc(car: CarResponseItem): string | undefined {
 }
 
 export default function CustomerCarsPage() {
-  const addItem = useCartStore((s) => s.addItem)
+  const { addCar, isInCart } = useCart()
+  const user = useAuthStore((s) => s.user)
+  const [showPremiumGate, setShowPremiumGate] = useState(false)
   const [searchParams] = useSearchParams()
   const { data: brandCars = [], isLoading: brandsLoading } = useBrandCarList()
   const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList()
@@ -87,8 +91,19 @@ export default function CustomerCarsPage() {
 
   const total = data?.totalCount ?? 0
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const cars = data?.data ?? []
+  // Backend cap kết quả khi user không có premium (free tier tối đa 10)
+  const isCapped = !isLoading && total > cars.length && !user
 
   return (
+    <>
+    {showPremiumGate && (
+      <PremiumGateModal
+        featureTitle="Xem toàn bộ danh sách xe"
+        featureDescription="Nâng cấp Premium để xem tất cả xe không giới hạn."
+        onClose={() => setShowPremiumGate(false)}
+      />
+    )}
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -192,7 +207,7 @@ export default function CustomerCarsPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {(data?.data ?? []).map((car) => {
+            {cars.map((car) => {
               const img = getImageSrc(car)
               return (
                 <div
@@ -210,6 +225,23 @@ export default function CustomerCarsPage() {
                       <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">
                         No image
                       </div>
+                    )}
+                    {/* Badge trạng thái */}
+                    {car.statusCode === "RESERVED" && (
+                      <span className="absolute left-2 top-2 rounded-md bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">
+                        Đang đặt cọc
+                      </span>
+                    )}
+                    {car.statusCode === "SOLD" && (
+                      <span className="absolute left-2 top-2 rounded-md bg-slate-700 px-2 py-0.5 text-xs font-semibold text-white">
+                        Đã bán
+                      </span>
+                    )}
+                    {/* Badge nổi bật */}
+                    {car.isFeature && car.statusCode === "AVAILABLE" && (
+                      <span className="absolute right-2 top-2 rounded-md bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
+                        Nổi bật
+                      </span>
                     )}
                   </div>
 
@@ -238,21 +270,38 @@ export default function CustomerCarsPage() {
                         >
                           Review
                         </Link>
-                        <button
-                          type="button"
-                          className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                          onClick={() =>
-                            addItem({
-                              type: 'car',
-                              id: car.carID,
-                              name: car.carName,
-                              price: car.salePrice ?? car.price,
-                              imagePath: img,
-                            })
-                          }
-                        >
-                          Thêm
-                        </button>
+                        {(() => {
+                          const unavailable = car.statusCode === "RESERVED" || car.statusCode === "SOLD";
+                          const inCart = isInCart('car', car.carID);
+                          const label = car.statusCode === "SOLD"
+                            ? "Đã bán"
+                            : car.statusCode === "RESERVED"
+                            ? "Đang đặt cọc"
+                            : inCart
+                            ? "Trong giỏ"
+                            : "Thêm";
+                          return (
+                            <button
+                              type="button"
+                              className={`rounded-lg px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 ${
+                                unavailable
+                                  ? "bg-slate-400"
+                                  : "bg-blue-600 hover:bg-blue-700"
+                              }`}
+                              onClick={() =>
+                                !unavailable && void addCar({
+                                  carId: car.carID,
+                                  name: car.carName,
+                                  price: car.salePrice ?? car.price,
+                                  imagePath: img,
+                                })
+                              }
+                              disabled={unavailable || inCart}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -284,8 +333,25 @@ export default function CustomerCarsPage() {
               Sau
             </button>
           </div>
+
+          {isCapped && (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center">
+              <p className="text-sm text-amber-800">
+                Đang xem <strong>{cars.length}</strong>/{total} xe.{' '}
+                <button
+                  type="button"
+                  className="font-semibold text-amber-700 underline"
+                  onClick={() => setShowPremiumGate(true)}
+                >
+                  Nâng cấp Premium
+                </button>{' '}
+                để xem toàn bộ danh sách.
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>
+    </>
   )
 }

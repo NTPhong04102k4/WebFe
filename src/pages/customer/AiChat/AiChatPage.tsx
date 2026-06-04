@@ -322,7 +322,7 @@ export default function AiChatPage() {
   // ── Auth & premium ─────────────────────────────────────────────────────────
   const isLoggedIn = useAuthStore((s) => !!s.accessToken);
   const subQuery = useMySubscription();
-  const isPremium = subQuery.data?.subscription?.status === "Active";
+  const isPremium = subQuery.data?.isActive === true;
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [sessionId, setSessionId] = useState<number | null>(null);

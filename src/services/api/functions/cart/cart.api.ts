@@ -5,7 +5,7 @@ import { withSignal } from "../../requestOptions";
 import type { OperationResult } from "src/services/types/common.types";
 
 export interface CartCarItem {
-  carId: number;
+  carID: number;
   carName: string;
   carBrand: string;
   salePrice: number;
@@ -16,7 +16,7 @@ export interface CartCarItem {
 }
 
 export interface CartAccessoryItem {
-  accessoryId: number;
+  accessoryID: number;
   accessoryName: string;
   unitPrice: number;
   quantity: number;

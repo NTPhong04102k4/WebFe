@@ -106,6 +106,17 @@ export function useUpdateOrderStatus() {
   });
 }
 
+export function useCancelOrder(orderNumber: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => orderApi.cancelOrder(orderNumber),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderNumber) });
+      queryClient.invalidateQueries({ queryKey: ["customer-orders"] });
+    },
+  });
+}
+
 export function useRevenue(params: { fromDate?: string; toDate?: string; groupBy?: string }) {
   return useQuery({
     queryKey: orderKeys.revenue(params),

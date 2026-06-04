@@ -149,7 +149,7 @@ export function use{Resource}Mutations() {
 
 - **Error toast**: KHÔNG thêm `notify.error` trong component — interceptor trong `src/services/api/index.ts` tự xử lý
 - **Naming**: ResourceName = PascalCase (`Workshop`), route key = camelCase (`workshop`), file folder = PascalCase
-- **Existing resources để tham khảo**: `src/services/api/functions/workshop/`, `src/query/workshop/`
+- **Existing resources để tham khảo**: `src/services/api/functions/Cars/Routes.Fn.ts`, `src/query/car/useCarQueries.ts`
 - **Types file**: Tạo `{resource}.types.ts` trong cùng folder với Routes.Fn.ts nếu chưa có, hoặc tìm trong `src/shared/types/`
 
 ## Hướng dẫn thực hiện

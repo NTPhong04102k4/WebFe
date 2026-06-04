@@ -164,8 +164,8 @@ export default function WorkOrdersPage() {
       notify.success("Đã tạo phiếu công việc");
       setCreateOpen(false);
       createForm.reset(createDefaults);
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -589,8 +589,8 @@ function WorkOrderActionModal({
       }
       notify.success("Đã lưu thay đổi");
       onClose();
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -704,8 +704,8 @@ function WorkOrderDetail({
       });
       await qc.invalidateQueries({ queryKey: workshopKeys.workOrder(workOrder.workOrderID) });
       notify.success("Đã xóa dịch vụ");
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -718,8 +718,8 @@ function WorkOrderDetail({
       });
       await qc.invalidateQueries({ queryKey: workshopKeys.workOrder(workOrder.workOrderID) });
       notify.success("Đã xóa phụ tùng");
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -822,8 +822,8 @@ function FeedbackSection({
         body: { rating, feedback: comment || null },
       });
       notify.success("Đã lưu đánh giá khách hàng");
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     } finally {
       setSaving(false);
     }

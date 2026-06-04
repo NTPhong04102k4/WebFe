@@ -52,7 +52,7 @@ export function PayrollFormModal({ open, onClose }: Props) {
       notify.success("Tạo phiếu lương thành công");
       onClose();
     } catch {
-      notify.error("Có lỗi khi tạo phiếu lương");
+      // interceptor đã hiện toast lỗi
     }
   };
 

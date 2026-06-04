@@ -4,6 +4,7 @@ import {
   type AddCarToCartInput,
   type AddAccessoryToCartInput,
   type UpdateCartItemInput,
+  type CartViewModel,
 } from "src/services/api/functions/cart/cart.api";
 import { cartKeys } from "./keys";
 
@@ -27,25 +28,77 @@ export function useCartMutations() {
       mutationFn: (body: AddCarToCartInput) => cartApi.addCar(body),
       onSuccess: invalidate,
     }),
+
     removeCar: useMutation({
       mutationFn: (carId: number) => cartApi.removeCar(carId),
-      onSuccess: invalidate,
+      onMutate: async (carId) => {
+        await qc.cancelQueries({ queryKey: cartKeys.detail() });
+        const prev = qc.getQueryData<CartViewModel>(cartKeys.detail());
+        qc.setQueryData<CartViewModel>(cartKeys.detail(), (old) =>
+          old ? { ...old, cars: old.cars.filter((c) => c.carId !== carId) } : old
+        );
+        return { prev };
+      },
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.prev !== undefined) qc.setQueryData(cartKeys.detail(), ctx.prev);
+      },
+      onSettled: invalidate,
     }),
+
     addAccessory: useMutation({
       mutationFn: (body: AddAccessoryToCartInput) => cartApi.addAccessory(body),
       onSuccess: invalidate,
     }),
+
     removeAccessory: useMutation({
       mutationFn: (accessoryId: number) => cartApi.removeAccessory(accessoryId),
-      onSuccess: invalidate,
+      onMutate: async (accessoryId) => {
+        await qc.cancelQueries({ queryKey: cartKeys.detail() });
+        const prev = qc.getQueryData<CartViewModel>(cartKeys.detail());
+        qc.setQueryData<CartViewModel>(cartKeys.detail(), (old) =>
+          old
+            ? { ...old, accessories: old.accessories.filter((a) => a.accessoryId !== accessoryId) }
+            : old
+        );
+        return { prev };
+      },
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.prev !== undefined) qc.setQueryData(cartKeys.detail(), ctx.prev);
+      },
+      onSettled: invalidate,
     }),
+
     updateItem: useMutation({
       mutationFn: (body: UpdateCartItemInput) => cartApi.updateItem(body),
-      onSuccess: invalidate,
+      onMutate: async ({ itemId, quantity }) => {
+        await qc.cancelQueries({ queryKey: cartKeys.detail() });
+        const prev = qc.getQueryData<CartViewModel>(cartKeys.detail());
+        qc.setQueryData<CartViewModel>(cartKeys.detail(), (old) =>
+          old
+            ? {
+                ...old,
+                accessories: old.accessories.map((a) =>
+                  a.accessoryId === itemId
+                    ? { ...a, quantity, totalPrice: a.unitPrice * quantity }
+                    : a
+                ),
+              }
+            : old
+        );
+        return { prev };
+      },
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.prev !== undefined) qc.setQueryData(cartKeys.detail(), ctx.prev);
+      },
+      onSettled: invalidate,
     }),
+
     clearCart: useMutation({
       mutationFn: () => cartApi.clear(),
-      onSuccess: invalidate,
+      onSuccess: () => {
+        qc.setQueryData(cartKeys.detail(), null);
+        invalidate();
+      },
     }),
   };
 }

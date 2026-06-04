@@ -70,7 +70,7 @@ export default function AdminInsurancePoliciesPage() {
       notify.success("Tao hop dong bao hiem thanh cong");
       setOpen(false);
     } catch {
-      notify.error("Tao hop dong bao hiem that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -80,7 +80,7 @@ export default function AdminInsurancePoliciesPage() {
       await cancelPolicy.mutateAsync(policy.policyID);
       notify.success("Da huy hop dong");
     } catch {
-      notify.error("Huy hop dong that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 

@@ -108,7 +108,7 @@ function ServiceReviewPanel({ workOrderId, technicianId, locationId }: {
       });
       notify.success("Đã gửi đánh giá dịch vụ");
     } catch {
-      notify.error("Gửi đánh giá thất bại");
+      // interceptor đã hiện toast lỗi
     }
   };
 

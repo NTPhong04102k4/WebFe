@@ -103,8 +103,8 @@ export function useBodyTypeManagement() {
       }
 
       closeModal();
-    } catch (e) {
-      notify.error(e instanceof Error ? e.message : "Luu kieu than xe that bai");
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   });
 

@@ -93,7 +93,7 @@ export function PremiumPlanFormModal({ open, editingPlan, onClose }: Props) {
       }
       onClose();
     } catch {
-      notify.error("Có lỗi xảy ra, vui lòng thử lại");
+      // interceptor đã hiện toast lỗi
     }
   };
 

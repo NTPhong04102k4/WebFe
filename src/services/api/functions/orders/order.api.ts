@@ -44,24 +44,53 @@ export interface OrderPreviewResult extends OrderCartPayload {
   totalAmount: number;
 }
 
+export interface OrderCarDetail {
+  carID: number;
+  carName: string;
+  carBrand: string;
+  carModel: string;
+  carVIN: string;
+  unitPrice: number;
+  discountAmount: number;
+  totalPrice: number;
+}
+
+export interface OrderAccessoryDetail {
+  accessoryID: number;
+  accessoryName: string;
+  accessoryCode: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
 export interface OrderViewModel {
   orderID: number;
   orderNumber: string;
   orderType: string;
   orderStatus: string;
   subTotal: number;
+  taxRate?: number;
   taxAmount?: number;
   discountAmount?: number;
   totalAmount: number;
   paymentMethod: string;
   paymentStatus: PaymentStatus;
   paymentDate?: string | null;
-  deliveryAddress?: string | null;
+  paymentReference?: string | null;
+  isInstallment?: boolean;
+  installmentMonths?: number | null;
+  monthlyPayment?: number | null;
+  downPayment?: number | null;
   customerName?: string | null;
   customerPhone?: string | null;
   customerEmail?: string | null;
-  cars?: unknown[];
-  accessories?: unknown[];
+  deliveryAddress?: string | null;
+  notes?: string | null;
+  createdDate?: string;
+  updatedDate?: string;
+  cars: OrderCarDetail[];
+  accessories: OrderAccessoryDetail[];
 }
 
 export interface OrderListResult {
@@ -307,6 +336,14 @@ export const orderApi = {
     const res = await apiClient.patch<OperationResult>(
       API.ordersPayment.orderStatus(id),
       body
+    );
+    return res.data;
+  },
+
+  /** POST /orders/payment/order/{orderNumber}/cancel — Customer (Pending + unpaid only) */
+  cancelOrder: async (orderNumber: string) => {
+    const res = await apiClient.post<OperationResult>(
+      API.ordersPayment.cancelOrder(orderNumber)
     );
     return res.data;
   },

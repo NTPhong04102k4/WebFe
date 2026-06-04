@@ -161,7 +161,7 @@ export default function AdminReviewsPage() {
                         setDeletingCarId(review.reviewID);
                         deleteCarReview.mutate(review.reviewID, {
                           onSuccess: () => { notify.success("Đã xóa đánh giá"); setDeletingCarId(null); },
-                          onError: () => { notify.error("Xóa thất bại"); setDeletingCarId(null); },
+                          onError: () => { setDeletingCarId(null); },
                         });
                       }}
                       disabled={deletingCarId === review.reviewID}
@@ -213,7 +213,7 @@ export default function AdminReviewsPage() {
                         setDeletingServiceId(review.reviewID);
                         deleteServiceReview.mutate(review.reviewID, {
                           onSuccess: () => { notify.success("Đã xóa đánh giá dịch vụ"); setDeletingServiceId(null); },
-                          onError: () => { notify.error("Xóa thất bại"); setDeletingServiceId(null); },
+                          onError: () => { setDeletingServiceId(null); },
                         });
                       }}
                       disabled={deletingServiceId === review.reviewID}

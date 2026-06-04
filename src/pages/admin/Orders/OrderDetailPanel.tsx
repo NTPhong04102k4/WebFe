@@ -2,7 +2,6 @@ import {
   X,
   Package,
   Car,
-  Shield,
   Copy,
   Check,
   Mail,
@@ -11,6 +10,7 @@ import {
   RefreshCw,
   Banknote,
   ClipboardEdit,
+  CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -38,7 +38,6 @@ const STATUS_COLORS: Record<string, string> = {
 const ORDER_STATUSES = ["Pending", "Processing", "Completed", "Cancelled"] as const;
 type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-const PRODUCT_ICONS: Record<string, typeof Car> = { Car, Accessory: Package, Insurance: Shield };
 
 type Props = {
   orderNumber: string | null;
@@ -73,7 +72,6 @@ function UpdateStatusModal({
           notify.success("Cập nhật trạng thái thành công");
           onClose();
         },
-        onError: () => notify.error("Cập nhật trạng thái thất bại"),
       }
     );
   };
@@ -172,7 +170,6 @@ function RecordCashModal({
           notify.success("Ghi nhận tiền mặt thành công");
           onClose();
         },
-        onError: () => notify.error("Ghi nhận tiền mặt thất bại"),
       }
     );
   };
@@ -256,7 +253,6 @@ export function OrderDetailPanel({ orderNumber, onClose }: Props) {
   const handleSendInvoice = () => {
     sendInvoice.mutate(undefined, {
       onSuccess: () => notify.success("Đã gửi hóa đơn về email khách hàng"),
-      onError: () => notify.error("Gửi hóa đơn thất bại"),
     });
   };
 
@@ -282,7 +278,6 @@ export function OrderDetailPanel({ orderNumber, onClose }: Props) {
           setCheckResult(res.data ?? null);
         }
       },
-      onError: () => notify.error("Đối soát thanh toán thất bại"),
     });
   };
 
@@ -350,32 +345,75 @@ export function OrderDetailPanel({ orderNumber, onClose }: Props) {
                 </div>
               </section>
 
-              {/* Sản phẩm */}
-              {Array.isArray((order as any).items) && (order as any).items.length > 0 && (
+              {/* Sản phẩm — xe */}
+              {order.cars?.length > 0 && (
                 <section>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Sản phẩm
+                    Xe
                   </h3>
                   <div className="space-y-2">
-                    {((order as any).items as Array<{
-                      productType: string;
-                      productName: string;
-                      quantity: number;
-                      unitPrice: number;
-                      totalPrice: number;
-                    }>).map((item, i) => {
-                      const Icon = PRODUCT_ICONS[item.productType] ?? Package;
-                      return (
-                        <div key={i} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
-                          <Icon className="h-4 w-4 shrink-0 text-slate-400" />
-                          <div className="flex-1 min-w-0">
-                            <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">{item.productName}</p>
-                            <p className="text-xs text-slate-400">x{item.quantity} · {fmt(item.unitPrice)}</p>
-                          </div>
-                          <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{fmt(item.totalPrice)}</span>
+                    {order.cars.map((car) => (
+                      <div key={car.carID} className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+                        <Car className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">{car.carName}</p>
+                          <p className="text-xs text-slate-400">{car.carBrand} · {car.carModel}</p>
+                          {car.carVIN && <p className="text-xs text-slate-400">VIN: {car.carVIN}</p>}
+                          {car.discountAmount > 0 && (
+                            <p className="text-xs text-green-600 dark:text-green-400">Giảm: -{fmt(car.discountAmount)}</p>
+                          )}
                         </div>
-                      );
-                    })}
+                        <span className="shrink-0 text-sm font-semibold text-slate-800 dark:text-slate-100">{fmt(car.totalPrice)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Sản phẩm — phụ kiện */}
+              {order.accessories?.length > 0 && (
+                <section>
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Phụ kiện
+                  </h3>
+                  <div className="space-y-2">
+                    {order.accessories.map((acc) => (
+                      <div key={acc.accessoryID} className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+                        <Package className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">{acc.accessoryName}</p>
+                          <p className="text-xs text-slate-400">Mã: {acc.accessoryCode} · x{acc.quantity} · {fmt(acc.unitPrice)}/cái</p>
+                        </div>
+                        <span className="shrink-0 text-sm font-semibold text-slate-800 dark:text-slate-100">{fmt(acc.totalPrice)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Thông tin trả góp */}
+              {order.isInstallment && (
+                <section>
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Trả góp
+                  </h3>
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-700 dark:bg-blue-900/20 space-y-1.5 text-sm">
+                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 mb-1">
+                      <CreditCard className="h-4 w-4" />
+                      <span className="font-medium">{order.installmentMonths} tháng</span>
+                    </div>
+                    {order.downPayment != null && (
+                      <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                        <span>Tiền đặt cọc</span>
+                        <span className="font-medium">{fmt(order.downPayment)}</span>
+                      </div>
+                    )}
+                    {order.monthlyPayment != null && (
+                      <div className="flex justify-between border-t border-blue-200 dark:border-blue-700 pt-1.5">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">Mỗi tháng trả</span>
+                        <span className="font-bold text-blue-700 dark:text-blue-300">{fmt(order.monthlyPayment)}</span>
+                      </div>
+                    )}
                   </div>
                 </section>
               )}

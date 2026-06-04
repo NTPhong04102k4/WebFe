@@ -68,7 +68,6 @@ export function PayrollTable({ totalExpense, fromDate: fromProp, toDate: toProp 
       { id: payroll.payrollID, body: { paymentStatus: "Paid", paidDate: new Date().toISOString().slice(0, 10) } },
       {
         onSuccess: () => notify.success("Đã đánh dấu đã trả lương"),
-        onError: () => notify.error("Có lỗi khi cập nhật"),
       }
     );
   };
@@ -77,7 +76,6 @@ export function PayrollTable({ totalExpense, fromDate: fromProp, toDate: toProp 
     if (!window.confirm(`Xóa phiếu lương của ${payroll.staffFullName}?`)) return;
     deletePayroll.mutate(payroll.payrollID, {
       onSuccess: () => notify.success("Đã xóa phiếu lương"),
-      onError: () => notify.error("Có lỗi khi xóa"),
     });
   };
 

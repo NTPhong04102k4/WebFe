@@ -303,7 +303,6 @@ export default function AdminCarsPage() {
       setDeleteConfirmCar(null)
       queryClient.invalidateQueries({ queryKey: ['admin-cars'] })
     },
-    onError: (e: any) => notify.error(e?.message ?? 'Xóa xe thất bại'),
   })
 
   const createMutation = useMutation({
@@ -313,7 +312,6 @@ export default function AdminCarsPage() {
       setModalOpen(false)
       queryClient.invalidateQueries({ queryKey: ['admin-cars'] })
     },
-    onError: (e: any) => notify.error(e?.message ?? 'Tạo xe thất bại'),
   })
 
   const updateMutation = useMutation({
@@ -325,7 +323,6 @@ export default function AdminCarsPage() {
       setEditingCar(null)
       queryClient.invalidateQueries({ queryKey: ['admin-cars'] })
     },
-    onError: (e: any) => notify.error(e?.message ?? 'Cập nhật xe thất bại'),
   })
 
   return (
@@ -874,8 +871,8 @@ export default function AdminCarsPage() {
                       if (!editingCar) throw new Error('Không có xe để cập nhật')
                       await updateMutation.mutateAsync({ id: editingCar.carID, fd })
                     }
-                  } catch (e: any) {
-                    notify.error(e?.message ?? 'Có lỗi xảy ra')
+                  } catch {
+                    // interceptor đã hiện toast lỗi
                   }
                 })}
               >

@@ -1,16 +1,15 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { notify } from "@/components/core/Feedback/toast";
 
 import { useAccessoryList } from "@/query/accessory/useAccessoryQueries";
 import { useCategoryList } from "@/query/category/useCategoryQueries";
 import { useBrandAccessoryList } from "@/query/brand-accessory/useBrandAccessoryQueries";
-import { useCartStore } from "@/stores/cartStore";
+import { useCart } from "@/hooks/useCart";
 import { formatCurrency } from "@/common/utils/formatCurrency";
 import { SelectField } from "@/shared/components/Form/SelectField";
 
 export default function CustomerAccessoriesPage() {
-  const addItem = useCartStore((state) => state.addItem);
+  const { addAccessory, isInCart } = useCart();
   const [page, setPage] = useState(1);
   const [categoryID, setCategoryID] = useState("");
   const [brandAccessoryID, setBrandAccessoryID] = useState("");
@@ -137,19 +136,18 @@ export default function CustomerAccessoriesPage() {
                       <button
                         type="button"
                         className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                        disabled={item.stockQuantity <= 0}
-                        onClick={() => {
-                          addItem({
-                            type: "accessory",
-                            id: item.accessoryID,
+                        disabled={item.stockQuantity <= 0 || isInCart("accessory", item.accessoryID)}
+                        onClick={() =>
+                          void addAccessory({
+                            accessoryId: item.accessoryID,
+                            quantity: 1,
                             name: item.accessoryName,
                             price: item.price,
                             imagePath: item.imagePath,
-                          });
-                          notify.success("Đã thêm vào giỏ hàng");
-                        }}
+                          })
+                        }
                       >
-                        Thêm
+                        {isInCart("accessory", item.accessoryID) ? "Trong giỏ" : "Thêm"}
                       </button>
                     </div>
                   </div>

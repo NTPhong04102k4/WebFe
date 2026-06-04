@@ -51,9 +51,6 @@ apiClient.interceptors.response.use(
       // suppressErrorHandling: true → caller handles success/error branching manually
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const suppress = (response.config as any).suppressErrorHandling === true;
-      if (d.success === true && d.message) {
-        notify.info(d.message);
-      }
       if (!suppress && d.success === false && d.message) {
         notify.error(d.message);
         return Promise.reject(new Error(d.message));
@@ -71,6 +68,8 @@ apiClient.interceptors.response.use(
           ? (errData.message as string | undefined)
           : undefined;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const suppress = (error.config as any)?.suppressErrorHandling === true;
       if (status === 401) {
         const token = useAuthStore.getState().accessToken;
         const shouldLogout = !token || isTokenExpired(token);
@@ -88,10 +87,10 @@ apiClient.interceptors.response.use(
               }),
             );
           }
-        } else if (serverMessage) {
+        } else if (serverMessage && !suppress) {
           notify.error(serverMessage);
         }
-      } else if (serverMessage) {
+      } else if (serverMessage && !suppress) {
         notify.error(serverMessage);
       }
     }

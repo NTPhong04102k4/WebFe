@@ -138,8 +138,8 @@ export default function ServiceCatalogPage() {
         notify.success("Da tao dich vu");
       }
       closeForm();
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -150,8 +150,8 @@ export default function ServiceCatalogPage() {
         body: { isActive: !service.isActive },
       });
       notify.success("Da cap nhat trang thai");
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -160,8 +160,8 @@ export default function ServiceCatalogPage() {
     try {
       await mutations.deleteService.mutateAsync(service.serviceID);
       notify.success("Da xoa dich vu");
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 

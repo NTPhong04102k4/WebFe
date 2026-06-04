@@ -71,6 +71,9 @@ export const API = {
     /** PATCH /orders/payment/order/{id}/status — Admin,SuperAdmin,Staff */
     orderStatus: (id: string | number) =>
       `/orders/payment/order/${id}/status`,
+    /** POST /orders/payment/order/{orderNumber}/cancel — Customer (Pending only) */
+    cancelOrder: (orderNumber: string) =>
+      `/orders/payment/order/${orderNumber}/cancel`,
   },
 
   finance: {
@@ -261,6 +264,12 @@ export const API = {
     adminSubscriptions: "/premium-plans/admin/subscriptions",
     /** POST /premium-plans/subscribe/activate — Customer */
     subscribeActivate: "/premium-plans/subscribe/activate",
+    /** GET — lấy lại QR của PENDING sub hiện có, không tạo mới */
+    subscribePendingQr: "/premium-plans/subscribe/pending-qr",
+    /** POST /premium-plans/subscribe/cancel-pending — Customer */
+    cancelPending: "/premium-plans/subscribe/cancel-pending",
+    /** GET /premium-plans/my-subscriptions — Customer, paginated history */
+    mySubscriptions: "/premium-plans/my-subscriptions",
   },
 
   review: {

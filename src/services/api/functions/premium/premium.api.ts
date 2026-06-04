@@ -4,19 +4,25 @@ import type { ApiRequestOptions } from "../../requestOptions";
 import { withSignal } from "../../requestOptions";
 import type { OperationResult } from "src/services/types/common.types";
 import type {
+  ActivateSubscriptionResult,
   AdminSubscriptionsQuery,
   AdminSubscriptionsResponse,
+  DeletePlanResult,
   PremiumPlan,
   PremiumPlanCreateRequest,
   PremiumPlanUpdateRequest,
   SubscribeRequest,
-  UserPremiumResponse,
+  SubscribeResponseData,
+  SubscriptionHistoryQuery,
+  SubscriptionHistoryResponse,
+  UserPremiumDto,
 } from "./premium.types";
 
 export const premiumApi = {
-  /** GET /premium-plans — Public */
-  getAllPlans: async (options?: ApiRequestOptions) => {
-    const res = await apiClient.get(API.premium.plans, withSignal({}, options));
+  /** GET /premium-plans — Public. Truyền isActive=true/false để lọc phía server */
+  getAllPlans: async (query?: { isActive?: boolean }, options?: ApiRequestOptions) => {
+    const params = query?.isActive !== undefined ? { isActive: query.isActive } : undefined;
+    const res = await apiClient.get(API.premium.plans, withSignal({ params }, options));
     const d = res.data as unknown;
 
     let raw: unknown[];
@@ -70,36 +76,67 @@ export const premiumApi = {
     });
   },
 
-  /** GET /premium-plans/my-subscription — Customer only */
-  getMySubscription: async (options?: ApiRequestOptions) => {
+  /** GET /premium-plans/my-subscription — Customer only
+   *  Trả về:
+   *  - UserPremiumDto nếu có (ACTIVE ưu tiên, sau đó PENDING)
+   *  - null nếu chưa đăng ký
+   */
+  getMySubscription: async (options?: ApiRequestOptions): Promise<UserPremiumDto | null> => {
     try {
-      const res = await apiClient.get<UserPremiumResponse | OperationResult<UserPremiumResponse>>(
+      const res = await apiClient.get<OperationResult<UserPremiumDto>>(
         API.premium.mySubscription,
         withSignal({ suppressErrorToast: true } as import("axios").AxiosRequestConfig, options)
       );
       const d = res.data;
-      if (d && typeof d === "object" && "data" in d && !("hasActiveSubscription" in d)) {
-        return (d as OperationResult<UserPremiumResponse>).data ?? { subscription: null, hasActiveSubscription: false };
+      if (d && typeof d === "object" && "data" in d) {
+        return (d as OperationResult<UserPremiumDto>).data ?? null;
       }
-      return d as UserPremiumResponse;
+      return (d as unknown as UserPremiumDto) ?? null;
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 404) {
-        return { subscription: null, hasActiveSubscription: false } as UserPremiumResponse;
-      }
+      if (status === 404) return null;
       throw err;
     }
   },
 
-  /** POST /premium-plans/subscribe — Customer only */
-  subscribe: async (req: SubscribeRequest) => {
-    const res = await apiClient.post<OperationResult>(API.premium.subscribe, req);
-    return res.data;
+  /** POST /premium-plans/subscribe — Customer only
+   *  Trả về QR SePay + subscription PENDING mới tạo
+   */
+  subscribe: async (req: SubscribeRequest): Promise<SubscribeResponseData> => {
+    const res = await apiClient.post<OperationResult<SubscribeResponseData>>(
+      API.premium.subscribe,
+      req
+    );
+    const d = res.data;
+    if (d && typeof d === "object" && "data" in d) {
+      return (d as OperationResult<SubscribeResponseData>).data as SubscribeResponseData;
+    }
+    return d as unknown as SubscribeResponseData;
+  },
+
+  /** GET /premium-plans/subscribe/pending-qr — Customer only
+   *  Lấy lại QR từ PENDING subscription hiện có, không tạo mới.
+   *  Dùng khi user đóng SubscribeModal nhầm.
+   */
+  getPendingQr: async (): Promise<SubscribeResponseData> => {
+    const res = await apiClient.get<OperationResult<SubscribeResponseData>>(
+      API.premium.subscribePendingQr
+    );
+    const d = res.data;
+    if (d && typeof d === "object" && "data" in d) {
+      return (d as OperationResult<SubscribeResponseData>).data as SubscribeResponseData;
+    }
+    return d as unknown as SubscribeResponseData;
   },
 
   /** POST /premium-plans/subscribe/activate — Customer only */
-  activateSubscription: async (body: { paymentReference: string }) => {
-    const res = await apiClient.post<OperationResult>(API.premium.subscribeActivate, body);
+  activateSubscription: async (
+    body: { paymentReference: string }
+  ): Promise<OperationResult<ActivateSubscriptionResult>> => {
+    const res = await apiClient.post<OperationResult<ActivateSubscriptionResult>>(
+      API.premium.subscribeActivate,
+      body
+    );
     return res.data;
   },
 
@@ -109,9 +146,38 @@ export const premiumApi = {
     return res.data;
   },
 
-  /** POST /premium-plans/renew — Customer only */
-  renewSubscription: async () => {
-    const res = await apiClient.post<OperationResult>(API.premium.renew, {});
+  /** POST /premium-plans/subscribe/cancel-pending — Customer only
+   *  Xóa đơn PENDING đang chờ thanh toán. 404 nếu không có PENDING nào.
+   */
+  cancelPendingSubscription: async () => {
+    const res = await apiClient.post<OperationResult>(API.premium.cancelPending, {});
+    return res.data;
+  },
+
+  /** POST /premium-plans/renew — Customer only
+   *  Logic giống /subscribe — trả về QR SePay + subscription PENDING mới
+   */
+  renewSubscription: async (): Promise<SubscribeResponseData> => {
+    const res = await apiClient.post<OperationResult<SubscribeResponseData>>(
+      API.premium.renew,
+      {}
+    );
+    const d = res.data;
+    if (d && typeof d === "object" && "data" in d) {
+      return (d as OperationResult<SubscribeResponseData>).data as SubscribeResponseData;
+    }
+    return d as unknown as SubscribeResponseData;
+  },
+
+  /** GET /premium-plans/my-subscriptions — Customer only, paginated subscription history */
+  getMySubscriptionHistory: async (
+    query: SubscriptionHistoryQuery = {},
+    options?: ApiRequestOptions
+  ): Promise<SubscriptionHistoryResponse> => {
+    const res = await apiClient.get<SubscriptionHistoryResponse>(
+      API.premium.mySubscriptions,
+      withSignal({ params: query }, options)
+    );
     return res.data;
   },
 
@@ -129,15 +195,17 @@ export const premiumApi = {
     return res.data;
   },
 
-  /** DELETE /premium-plans/{id} — Admin, SuperAdmin */
+  /** DELETE /premium-plans/{id} — Admin, SuperAdmin
+   *  data.isDeprecated=false → xóa sạch
+   *  data.isDeprecated=true  → còn user dùng, gói chuyển sang deprecated
+   */
   adminDeletePlan: async (id: number) => {
-    const res = await apiClient.delete<OperationResult>(API.premium.plan(id));
+    const res = await apiClient.delete<OperationResult<DeletePlanResult>>(API.premium.plan(id));
     return res.data;
   },
 
   /**
    * GET /premium-plans/admin/subscriptions
-   * Added in backend commit: feat/manage revenue premium plans
    * Response shape: { Data: [...], TotalCount, Page, PageSize }
    */
   adminGetSubscriptions: async (query: AdminSubscriptionsQuery = {}, options?: ApiRequestOptions) => {
@@ -145,7 +213,6 @@ export const premiumApi = {
       API.premium.adminSubscriptions,
       withSignal({ params: query }, options)
     );
-    // Backend trả { Data, TotalCount, Page, PageSize } (không wrap OperationResult)
     return res.data;
   },
 };

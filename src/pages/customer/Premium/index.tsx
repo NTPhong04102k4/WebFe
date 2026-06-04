@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { notify } from "@/components/core/Feedback/toast";
-
-
 import { usePremiumPlans, useMySubscription, usePremiumMutations } from "@/query/premium/usePremiumQueries";
 import { formatCurrency } from "@/common/utils/formatCurrency";
-import type { PremiumPlan, SubscriptionType } from "@/services/api/functions/premium/premium.types";
-import { parsePlanFeatures } from "@/services/api/functions/premium/premium.types";
+import type { PremiumPlan, SubscribeResponseData, SubscriptionType } from "@/services/api/functions/premium/premium.types";
+import { parsePlanFeatures, getPremiumErrorMessage } from "@/services/api/functions/premium/premium.types";
 import SubscribeModal from "./components/SubscribeModal";
+import QRPaymentPanel from "./components/QRPaymentPanel";
 
+function extractErrorCode(err: unknown): string | undefined {
+  return (err as { response?: { data?: { errorCode?: string } } })
+    ?.response?.data?.errorCode;
+}
 
 const TIER_STYLES: Record<string, { gradient: string; badge: string; ring: string }> = {
   Silver: {
@@ -30,7 +33,6 @@ const TIER_STYLES: Record<string, { gradient: string; badge: string; ring: strin
 function getStyle(tier?: string) {
   return TIER_STYLES[tier ?? "Silver"] ?? TIER_STYLES["Silver"];
 }
-
 
 function CheckIcon() {
   return (
@@ -105,7 +107,6 @@ function PlanCard({
             <span>{feature}</span>
           </li>
         ))}
-
         {plan.aiChatAccess && (
           <li className="flex items-start gap-2 text-sm text-slate-700">
             <CheckIcon />
@@ -143,35 +144,140 @@ function PlanCard({
   );
 }
 
+/** Modal QR dùng sau khi renew thành công */
+function RenewQRModal({
+  data,
+  onActivate,
+  onClose,
+  isPending,
+}: {
+  data: SubscribeResponseData;
+  onActivate: () => void;
+  onClose: () => void;
+  isPending: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h2 className="text-lg font-semibold text-slate-900">Thanh toán gia hạn</h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <QRPaymentPanel
+          data={data}
+          onActivate={onActivate}
+          isActivating={isPending}
+          onClose={onClose}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function PremiumPlansPage() {
   const [billingCycle, setBillingCycle] = useState<SubscriptionType>("Monthly");
   const [selectedPlan, setSelectedPlan] = useState<PremiumPlan | null>(null);
+  const [renewQrData, setRenewQrData] = useState<SubscribeResponseData | null>(null);
 
-  const plans = usePremiumPlans();
-
-
+  const plans = usePremiumPlans({ isActive: true });
   const mySubscription = useMySubscription();
-  const { renew, cancel } = usePremiumMutations();
+  const { renew, cancel, cancelPending, activateSubscription, getPendingQr } = usePremiumMutations();
 
-  const activePlans = (plans.data ?? []).filter((p) => p.isActive);
-  const currentSub = mySubscription.data?.subscription;
+  // Lọc bỏ deprecated plans — không nhận đăng ký mới
+  const activePlans = (plans.data ?? []).filter((p) => !p.deprecatedAt);
+  const currentSub = mySubscription.data;
 
-  const handleSubscribe = (plan: PremiumPlan) => {
-    setSelectedPlan(plan);
-  };
+  const isActive    = currentSub?.isActive === true;
+  const isPending   = currentSub != null && !currentSub.isActive && !!currentSub.paymentReference;
+  /** Đã hủy nhưng còn hiệu lực đến endDate */
+  const isCancelled = isActive && !!currentSub?.deprecatedAt;
 
   const handleCancel = () => {
     cancel.mutate(undefined, {
       onSuccess: () => notify.success("Đã hủy gia hạn tự động."),
-      onError: () => notify.error("Hủy thất bại. Vui lòng thử lại."),
     });
   };
 
   const handleRenew = () => {
     renew.mutate(undefined, {
-      onSuccess: () => notify.success("Gia hạn thành công!"),
-      onError: () => notify.error("Gia hạn thất bại. Vui lòng thử lại."),
+      onSuccess: (data) => setRenewQrData(data),
     });
+  };
+
+  const handleRefreshQR = () => {
+    // Dùng pending-qr thay vì re-subscribe để không xóa paymentReference cũ.
+    // Nếu user đã chuyển khoản với ref cũ, IPN vẫn hoạt động bình thường.
+    getPendingQr.mutate(undefined, {
+      onSuccess: (data) => setRenewQrData(data),
+    });
+  };
+
+  const handleCancelPending = () => {
+    cancelPending.mutate(undefined, {
+      onSuccess: () => notify.success("Đã hủy đơn chờ thanh toán."),
+    });
+  };
+
+  const handleActivatePending = () => {
+    if (!currentSub?.paymentReference) return;
+    activateSubscription.mutate(
+      { paymentReference: currentSub.paymentReference },
+      {
+        onSuccess: (result) => {
+          notify.success("Kích hoạt gói thành công!");
+          if (result?.data?.hasPendingOrders) {
+            notify.info(
+              "Bạn có đơn hàng đang chờ thanh toán — giới hạn đơn mới đã được áp dụng."
+            );
+          }
+        },
+        onError: (err) => {
+          const code = extractErrorCode(err);
+          if (code === "PaymentExpired") {
+            // Subscription đã hết hạn thanh toán — backend EC-EXPIRED-SUB-01 đã filter
+            // nhưng vẫn có race window. Invalidate để clear banner PENDING.
+            mySubscription.refetch();
+            notify.info("Phiên thanh toán đã hết hạn. Vui lòng đăng ký lại.");
+          } else if (code === "NotFound") {
+            notify.info("Chưa tìm thấy giao dịch. Vui lòng chờ vài giây và thử lại.");
+          } else {
+            notify.error(getPremiumErrorMessage(err));
+          }
+        },
+      }
+    );
+  };
+
+  const handleActivateRenew = () => {
+    if (!renewQrData?.subscription.paymentReference) return;
+    activateSubscription.mutate(
+      { paymentReference: renewQrData.subscription.paymentReference },
+      {
+        onSuccess: () => {
+          notify.success("Gia hạn thành công!");
+          setRenewQrData(null);
+        },
+        onError: (err) => {
+          const code = extractErrorCode(err);
+          if (code === "PaymentExpired") {
+            // QR gia hạn hết hạn → đóng modal, user cần tạo QR mới qua handleRenew
+            setRenewQrData(null);
+            notify.info("Phiên thanh toán đã hết hạn. Vui lòng nhấn 'Gia hạn' để tạo QR mới.");
+          } else if (code === "NotFound") {
+            notify.info("Chưa tìm thấy giao dịch. Vui lòng chờ vài giây và thử lại.");
+          } else {
+            notify.error(getPremiumErrorMessage(err));
+          }
+        },
+      }
+    );
   };
 
   return (
@@ -213,13 +319,14 @@ export default function PremiumPlansPage() {
         </div>
       </div>
 
-      {/* Current subscription banner */}
-      {currentSub && currentSub.status === "Active" && (
+      {/* Banner — ACTIVE bình thường */}
+      {isActive && !isCancelled && currentSub && (
         <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-blue-200 bg-blue-50 px-6 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="font-semibold text-blue-900">
-                Bạn đang sử dụng <span className="text-blue-700">{currentSub.planName}</span>
+                Bạn đang sử dụng{" "}
+                <span className="text-blue-700">{currentSub.planName}</span>
               </p>
               <p className="mt-0.5 text-sm text-blue-700">
                 Còn lại {currentSub.daysRemaining} ngày •{" "}
@@ -227,13 +334,15 @@ export default function PremiumPlansPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <button
-                onClick={handleRenew}
-                disabled={renew.isPending}
-                className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-              >
-                {renew.isPending ? "..." : "Gia hạn"}
-              </button>
+              {currentSub.daysRemaining <= 7 && (
+                <button
+                  onClick={handleRenew}
+                  disabled={renew.isPending}
+                  className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {renew.isPending ? "..." : "Gia hạn"}
+                </button>
+              )}
               {currentSub.autoRenew && (
                 <button
                   onClick={handleCancel}
@@ -243,6 +352,79 @@ export default function PremiumPlansPage() {
                   {cancel.isPending ? "..." : "Hủy gia hạn"}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Banner — ĐÃ HỦY, còn hiệu lực đến endDate */}
+      {isCancelled && currentSub && (
+        <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-slate-300 bg-slate-50 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="font-semibold text-slate-700">
+                Đã hủy —{" "}
+                <span className="text-slate-500">{currentSub.planName}</span>
+              </p>
+              <p className="mt-0.5 text-sm text-slate-500">
+                Còn hiệu lực đến{" "}
+                {new Date(currentSub.endDate).toLocaleDateString("vi-VN")} •{" "}
+                {currentSub.daysRemaining} ngày còn lại
+              </p>
+            </div>
+            {currentSub.daysRemaining <= 7 && (
+              <button
+                onClick={handleRenew}
+                disabled={renew.isPending}
+                className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {renew.isPending ? "..." : "Gia hạn"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Banner — PENDING (chờ thanh toán) */}
+      {isPending && currentSub && (
+        <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="font-semibold text-amber-900">
+                Đang chờ thanh toán —{" "}
+                <span className="text-amber-700">{currentSub.planName}</span>
+              </p>
+              <p className="mt-0.5 text-sm text-amber-700">
+                Nội dung chuyển khoản:{" "}
+                <strong className="font-mono">{currentSub.paymentReference}</strong>
+              </p>
+              <p className="mt-1 text-xs text-amber-600">
+                Số tiền: {formatCurrency(currentSub.price)} •{" "}
+                {currentSub.subscriptionType === "Monthly" ? "Hàng tháng" : "Hàng năm"}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleRefreshQR}
+                disabled={getPendingQr.isPending}
+                className="rounded-lg border border-amber-400 px-4 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+              >
+                {getPendingQr.isPending ? "..." : "Xem lại QR"}
+              </button>
+              <button
+                onClick={handleActivatePending}
+                disabled={activateSubscription.isPending}
+                className="rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                {activateSubscription.isPending ? "Đang kiểm tra..." : "Tôi đã chuyển khoản"}
+              </button>
+              <button
+                onClick={handleCancelPending}
+                disabled={cancelPending.isPending}
+                className="rounded-lg border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+              >
+                {cancelPending.isPending ? "..." : "Hủy đơn chờ"}
+              </button>
             </div>
           </div>
         </div>
@@ -260,8 +442,8 @@ export default function PremiumPlansPage() {
               key={plan.planID}
               plan={plan}
               billingCycle={billingCycle}
-              isCurrentPlan={currentSub?.planID === plan.planID && currentSub.status === "Active"}
-              onSubscribe={handleSubscribe}
+              isCurrentPlan={currentSub?.planID === plan.planID && isActive}
+              onSubscribe={setSelectedPlan}
             />
           ))}
         </div>
@@ -273,7 +455,7 @@ export default function PremiumPlansPage() {
         </p>
       )}
 
-      {/* FAQ nhanh */}
+      {/* FAQ */}
       <div className="mt-16 rounded-2xl bg-slate-50 p-8">
         <h2 className="text-xl font-bold text-slate-900">Câu hỏi thường gặp</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -303,9 +485,23 @@ export default function PremiumPlansPage() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal đăng ký mới */}
       {selectedPlan && (
-        <SubscribeModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} />
+        <SubscribeModal
+          plan={selectedPlan}
+          onClose={() => setSelectedPlan(null)}
+          initialSubscriptionType={billingCycle}
+        />
+      )}
+
+      {/* Modal QR gia hạn */}
+      {renewQrData && (
+        <RenewQRModal
+          data={renewQrData}
+          onActivate={handleActivateRenew}
+          onClose={() => setRenewQrData(null)}
+          isPending={activateSubscription.isPending}
+        />
       )}
     </div>
   );

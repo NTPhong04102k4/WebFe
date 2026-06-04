@@ -5,15 +5,17 @@ import type {
   PremiumPlanCreateRequest,
   PremiumPlanUpdateRequest,
   SubscribeRequest,
+  SubscriptionHistoryQuery,
 } from "src/services/api/functions/premium/premium.types";
+// UserPremiumDto và SubscribeResponseData được infer từ premiumApi — không cần import trực tiếp
 import { premiumKeys } from "./keys";
 import { useAuthStore } from "@/stores/authStore";
 
-/** GET /premium-plans — Public */
-export function usePremiumPlans() {
+/** GET /premium-plans — Public. isActive=true → chỉ gói active; undefined → tất cả */
+export function usePremiumPlans(query?: { isActive?: boolean }) {
   return useQuery({
-    queryKey: premiumKeys.plans(),
-    queryFn: ({ signal }) => premiumApi.getAllPlans({ signal }),
+    queryKey: premiumKeys.plans(query),
+    queryFn: ({ signal }) => premiumApi.getAllPlans(query, { signal }),
     staleTime: 5 * 60_000,
   });
 }
@@ -35,16 +37,33 @@ export function useMySubscription() {
   });
 }
 
+/** GET /premium-plans/my-subscriptions — Customer only, paginated */
+export function useMySubscriptionHistory(query: SubscriptionHistoryQuery = {}) {
+  const isCustomer = useAuthStore((s) => s.user?.role === "Customer");
+  return useQuery({
+    queryKey: premiumKeys.mySubscriptionHistory(query),
+    queryFn: ({ signal }) => premiumApi.getMySubscriptionHistory(query, { signal }),
+    enabled: isCustomer,
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
+  });
+}
+
 /** Mutations cho Customer: subscribe, cancel, renew */
 export function usePremiumMutations() {
   const qc = useQueryClient();
-  const invalidate = () =>
+  const invalidate = () => {
     qc.invalidateQueries({ queryKey: premiumKeys.mySubscription() });
+    qc.invalidateQueries({ queryKey: premiumKeys.mySubscriptionHistory() });
+  };
 
   return {
     subscribe: useMutation({
       mutationFn: (req: SubscribeRequest) => premiumApi.subscribe(req),
       onSuccess: invalidate,
+    }),
+    getPendingQr: useMutation({
+      mutationFn: () => premiumApi.getPendingQr(),
     }),
     activateSubscription: useMutation({
       mutationFn: (body: { paymentReference: string }) =>
@@ -53,6 +72,10 @@ export function usePremiumMutations() {
     }),
     cancel: useMutation({
       mutationFn: () => premiumApi.cancelSubscription(),
+      onSuccess: invalidate,
+    }),
+    cancelPending: useMutation({
+      mutationFn: () => premiumApi.cancelPendingSubscription(),
       onSuccess: invalidate,
     }),
     renew: useMutation({

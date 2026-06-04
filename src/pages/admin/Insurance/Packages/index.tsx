@@ -94,7 +94,7 @@ export default function AdminInsurancePackagesPage() {
       }
       setOpen(false);
     } catch {
-      notify.error("Luu goi bao hiem that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -104,7 +104,7 @@ export default function AdminInsurancePackagesPage() {
       await deletePackage.mutateAsync(item.packageID);
       notify.success("Da xoa goi bao hiem");
     } catch {
-      notify.error("Xoa goi bao hiem that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 

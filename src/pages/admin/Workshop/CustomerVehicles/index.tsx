@@ -152,8 +152,8 @@ export default function CustomerVehiclesPage() {
         notify.success("Da tao xe");
       }
       closeForm();
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -167,8 +167,8 @@ export default function CustomerVehiclesPage() {
       notify.success("Da cap nhat so km");
       setMileageVehicle(null);
       setMileage("");
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -177,8 +177,8 @@ export default function CustomerVehiclesPage() {
     try {
       await mutations.deleteVehicle.mutateAsync(id);
       notify.success("Da xoa xe");
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 

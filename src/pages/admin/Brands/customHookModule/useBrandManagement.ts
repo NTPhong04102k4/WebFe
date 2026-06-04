@@ -107,8 +107,8 @@ export function useBrandManagement() {
       }
 
       closeModal();
-    } catch (e) {
-      notify.error(e instanceof Error ? e.message : "Luu hang xe that bai");
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   });
 

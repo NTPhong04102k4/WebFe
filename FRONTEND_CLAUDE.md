@@ -1,5 +1,17 @@
 # CLAUDE.md — SoldCars Frontend (React + Vite + TypeScript)
 
+> ⚠️ **QUAN TRỌNG — ĐỌC TRƯỚC:**
+> File này chứa **domain spec** (UI modules, API endpoints, business rules) vẫn còn hữu ích.
+> Tuy nhiên các section sau **ĐÃ OUTDATED** — **KHÔNG dùng làm tham chiếu kiến trúc**:
+> - **"Folder Structure"** → đọc `webapp/CLAUDE.md` thay thế
+> - **"Axios Instance & Interceptors"** → instance thực tế là `apiClient` từ `src/services/api/index.ts`
+> - **"Auth Store"** → xem `src/stores/authStore.ts` trực tiếp
+> - **"API Files — Patterns"** → pattern thực tế dùng `Routes.ts` + `Routes.Fn.ts` trong `src/services/api/functions/`
+>
+> Kiến trúc thực tế được document trong **`webapp/CLAUDE.md`**.
+
+---
+
 ## Mục tiêu
 
 Xây dựng frontend **SoldCars** — hệ thống bán xe hơi gồm:
@@ -32,6 +44,8 @@ Không dùng Redux, không dùng class components.
 ---
 
 ## Folder Structure
+
+> ⚠️ **OUTDATED** — Cấu trúc dưới đây là kiến trúc CŨ. Cấu trúc thực tế xem `webapp/CLAUDE.md`.
 
 ```
 src/
@@ -143,6 +157,8 @@ src/
 
 ## Axios Instance & Interceptors
 
+> ⚠️ **OUTDATED** — Instance thực tế là `apiClient` (default export) tại `src/services/api/index.ts`. File và instance dưới đây là legacy.
+
 **File: `src/api/axiosInstance.ts`**
 
 ```typescript
@@ -192,6 +208,8 @@ export default api
 ---
 
 ## Auth Store (Zustand)
+
+> ⚠️ **OUTDATED** — Store thực tế phức tạp hơn (có `isStaff()`, `clearUser()`, version migration, `localPersistStorage`). Xem `src/stores/authStore.ts` trực tiếp.
 
 **File: `src/stores/authStore.ts`**
 
@@ -358,6 +376,8 @@ export interface UserProfile {
 ---
 
 ## API Files — Patterns
+
+> ⚠️ **OUTDATED** — Pattern thực tế dùng `Routes.ts` + `Routes.Fn.ts` trong `src/services/api/functions/[Resource]/`, với `apiClient` từ `src/services/api/index.ts`. Xem `webapp/CLAUDE.md`.
 
 Mỗi `*.api.ts` export typed async functions. Không dùng `any`.
 
@@ -623,7 +643,7 @@ const createMutation = useMutation({
     toast.success('Thêm thành công')
     closeDialog()
   },
-  onError: (err) => toast.error(extractError(err)),
+  // KHÔNG thêm onError toast — interceptor axios đã tự xử lý
 })
 ```
 

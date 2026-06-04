@@ -1,15 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs sed:*)",
-      "Bash(yarn test:*)",
+      "Bash(npm run *)",
       "Bash(npm install *)",
-      "Bash(npx npm *)",
-      "Bash(npx vite *)",
-      "Bash(mkdir -p /d/webapp/src/lib/db && echo \"ok\")"
+      "Bash(npx *)",
+      "Bash(yarn *)",
+      "Bash(xargs grep *)",
+      "Bash(git check-ignore *)"
     ],
     "additionalDirectories": [
-      "D:\\webapp\\src\\lib"
+      "D:\\DA\\webapp\\src"
     ]
   }
 }

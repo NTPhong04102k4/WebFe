@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { formatCurrency } from "@/common/utils/formatCurrency";
-import { orderApi, type RecordCashInput, type CheckPaymentApiResponse, type PaymentStatus } from "@/services/api/functions/orders/order.api";
+import { orderApi, type RecordCashInput, type CheckPaymentApiResponse, type PaymentStatus, type OrderCarDetail, type OrderAccessoryDetail } from "@/services/api/functions/orders/order.api";
 import { useAuthStore } from "@/stores/authStore";
-import { useCheckPayment, useRecordCash, useInvoicePdf } from "@/query/order/useOrderQueries";
+import { useCheckPayment, useRecordCash, useInvoicePdf, useCancelOrder } from "@/query/order/useOrderQueries";
 import { useQuery } from "@tanstack/react-query";
 import { orderKeys } from "@/query/order/keys";
 
@@ -135,6 +135,7 @@ export default function CustomerOrderDetailPage() {
   const [pollExpired, setPollExpired] = useState(false);
   const [checkResult, setCheckResult] = useState<CheckPaymentApiResponse | null>(null);
   const [showCashModal, setShowCashModal] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
@@ -167,10 +168,13 @@ export default function CustomerOrderDetailPage() {
   const checkPayment = useCheckPayment(orderNumber);
   const recordCash = useRecordCash(orderNumber);
   const invoicePdf = useInvoicePdf(orderNumber);
+  const cancelOrder = useCancelOrder(orderNumber);
 
   const order = detail.data;
   const pay = payment.data;
-  const isPending = order?.paymentStatus === "Pending" || order?.paymentStatus === "PartialPaid";
+  const isPending =
+    (order?.paymentStatus === "Pending" || order?.paymentStatus === "PartialPaid") &&
+    order?.orderStatus !== "Cancelled";
 
   useEffect(() => {
     setPollExpired(false);
@@ -207,39 +211,97 @@ export default function CustomerOrderDetailPage() {
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]">
 
           {/* Thông tin đơn hàng */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5">
-            <div className="flex items-start justify-between gap-3">
-              <h1 className="text-2xl font-bold text-slate-900">{order.orderNumber}</h1>
-              <PaymentStatusBadge status={order.paymentStatus} />
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-slate-500">Trạng thái:</span> <b>{order.orderStatus}</b></div>
-              <div><span className="text-slate-500">Loại đơn:</span> <b>{order.orderType}</b></div>
-              <div><span className="text-slate-500">Phương thức:</span> <b>{order.paymentMethod}</b></div>
-              {order.paymentDate && (
-                <div><span className="text-slate-500">Ngày TT:</span> <b>{new Date(order.paymentDate).toLocaleString("vi-VN")}</b></div>
-              )}
-            </div>
-            <div className="mt-5 border-t pt-4">
-              <div className="flex justify-between text-sm">
-                <span>Tạm tính</span>
-                <span>{formatCurrency(order.subTotal)}</span>
+          <div className="space-y-4">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
+              <div className="flex items-start justify-between gap-3">
+                <h1 className="text-2xl font-bold text-slate-900">{order.orderNumber}</h1>
+                <PaymentStatusBadge status={order.paymentStatus} />
               </div>
-              <div className="mt-2 flex justify-between text-sm">
-                <span>Thuế</span>
-                <span>{formatCurrency(order.taxAmount ?? 0)}</span>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-slate-500">Trạng thái:</span> <b>{order.orderStatus}</b></div>
+                <div><span className="text-slate-500">Loại đơn:</span> <b>{order.orderType}</b></div>
+                <div><span className="text-slate-500">Phương thức:</span> <b>{order.paymentMethod}</b></div>
+                {order.paymentDate && (
+                  <div><span className="text-slate-500">Ngày TT:</span> <b>{new Date(order.paymentDate).toLocaleString("vi-VN")}</b></div>
+                )}
               </div>
-              {order.discountAmount ? (
-                <div className="mt-2 flex justify-between text-sm">
-                  <span>Giảm giá</span>
-                  <span>-{formatCurrency(order.discountAmount)}</span>
+              <div className="mt-5 border-t pt-4">
+                <div className="flex justify-between text-sm">
+                  <span>Tạm tính</span>
+                  <span>{formatCurrency(order.subTotal)}</span>
                 </div>
-              ) : null}
-              <div className="mt-3 flex justify-between text-lg font-bold text-blue-700">
-                <span>Tổng đơn</span>
-                <span>{formatCurrency(order.totalAmount)}</span>
+                <div className="mt-2 flex justify-between text-sm">
+                  <span>Thuế</span>
+                  <span>{formatCurrency(order.taxAmount ?? 0)}</span>
+                </div>
+                {order.discountAmount ? (
+                  <div className="mt-2 flex justify-between text-sm">
+                    <span>Giảm giá</span>
+                    <span>-{formatCurrency(order.discountAmount)}</span>
+                  </div>
+                ) : null}
+                <div className="mt-3 flex justify-between text-lg font-bold text-blue-700">
+                  <span>Tổng đơn</span>
+                  <span>{formatCurrency(order.totalAmount)}</span>
+                </div>
               </div>
             </div>
+
+            {/* ── Sản phẩm trong đơn ── */}
+            {(order.cars?.length > 0 || order.accessories?.length > 0) && (
+              <div className="rounded-xl border border-slate-200 bg-white p-5">
+                <h2 className="mb-3 text-sm font-semibold text-slate-700">Sản phẩm</h2>
+                <div className="space-y-2">
+                  {order.cars?.map((car: OrderCarDetail) => (
+                    <div key={car.carID} className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-slate-900 truncate">{car.carName}</p>
+                        <p className="text-xs text-slate-500">{car.carBrand} · {car.carModel}</p>
+                        {car.carVIN && <p className="text-xs text-slate-400">VIN: {car.carVIN}</p>}
+                        {car.discountAmount > 0 && (
+                          <p className="text-xs text-green-600">Giảm: -{formatCurrency(car.discountAmount)}</p>
+                        )}
+                      </div>
+                      <span className="shrink-0 font-semibold text-slate-800">{formatCurrency(car.totalPrice)}</span>
+                    </div>
+                  ))}
+                  {order.accessories?.map((acc: OrderAccessoryDetail) => (
+                    <div key={acc.accessoryID} className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-slate-900 truncate">{acc.accessoryName}</p>
+                        <p className="text-xs text-slate-500">Mã: {acc.accessoryCode} · x{acc.quantity} · {formatCurrency(acc.unitPrice)}/cái</p>
+                      </div>
+                      <span className="shrink-0 font-semibold text-slate-800">{formatCurrency(acc.totalPrice)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Thông tin trả góp ── */}
+            {order.isInstallment && (
+              <div className="rounded-xl border border-blue-100 bg-blue-50 p-5">
+                <h2 className="mb-3 text-sm font-semibold text-blue-800">Thông tin trả góp</h2>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Kỳ hạn</span>
+                    <span className="font-medium text-slate-900">{order.installmentMonths} tháng</span>
+                  </div>
+                  {order.downPayment != null && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Tiền đặt cọc</span>
+                      <span className="font-medium text-slate-900">{formatCurrency(order.downPayment)}</span>
+                    </div>
+                  )}
+                  {order.monthlyPayment != null && (
+                    <div className="flex justify-between border-t border-blue-200 pt-2">
+                      <span className="font-semibold text-slate-700">Mỗi tháng trả</span>
+                      <span className="text-base font-bold text-blue-700">{formatCurrency(order.monthlyPayment)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Panel thanh toán */}
@@ -368,6 +430,17 @@ export default function CustomerOrderDetailPage() {
                 Ghi tiền mặt
               </button>
             )}
+
+            {/* Nút hủy đơn — Customer, chỉ khi Pending và chưa thanh toán */}
+            {order.paymentStatus === "Pending" && order.orderStatus === "Pending" && canViewOrder && (
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirm(true)}
+                className="w-full rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+              >
+                Hủy đơn hàng
+              </button>
+            )}
           </div>
         </div>
       ) : null}
@@ -378,6 +451,41 @@ export default function CustomerOrderDetailPage() {
           onSubmit={handleRecordCash}
           isPending={recordCash.isPending}
         />
+      )}
+
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl">
+            <div className="p-5">
+              <h3 className="text-base font-semibold text-slate-900">Xác nhận hủy đơn hàng</h3>
+              <p className="mt-2 text-sm text-slate-600">
+                Bạn có chắc muốn hủy đơn <strong>{orderNumber}</strong>? Xe đang giữ chỗ sẽ được
+                giải phóng. Thao tác này không thể hoàn tác.
+              </p>
+            </div>
+            <div className="flex gap-2 border-t px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirm(false)}
+                className="flex-1 rounded-lg border px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Không hủy
+              </button>
+              <button
+                type="button"
+                disabled={cancelOrder.isPending}
+                onClick={() =>
+                  cancelOrder.mutate(undefined, {
+                    onSuccess: () => setShowCancelConfirm(false),
+                  })
+                }
+                className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {cancelOrder.isPending ? "Đang hủy..." : "Hủy đơn"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

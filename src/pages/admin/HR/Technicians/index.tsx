@@ -93,7 +93,7 @@ export default function AdminTechniciansPage() {
       }
       setOpen(false);
     } catch {
-      notify.error("Luu ky thuat vien that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -103,7 +103,7 @@ export default function AdminTechniciansPage() {
       await deleteTechnician.mutateAsync(tech.technicianID);
       notify.success("Da xoa ky thuat vien");
     } catch {
-      notify.error("Xoa ky thuat vien that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 

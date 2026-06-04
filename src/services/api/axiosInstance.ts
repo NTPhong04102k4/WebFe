@@ -30,13 +30,7 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (res) => {
-    const d = res.data;
-    if (d && typeof d === "object" && d.success === true && d.message) {
-      notify.info(d.message);
-    }
-    return res;
-  },
+  (res) => res,
   async (error) => {
     const original = error.config;
     if (error.response?.status === 401 && !original._retry) {

@@ -26,12 +26,14 @@ ROUTING=react-router-v6
 
 ### State & Data
 ```
-GLOBAL_STATE=redux-toolkit
+GLOBAL_STATE=zustand
+  STORE_DIR=src/stores/              ← authStore, cartStore, uiStore
 SERVER_STATE=react-query
 HTTP_CLIENT=axios
-  AXIOS_INSTANCE=src/services/api/index.ts
+  AXIOS_INSTANCE=src/services/api/index.ts  (export: apiClient — dùng cái này)
+  AXIOS_LEGACY=src/services/api/axiosInstance.ts  (export: api — legacy, KHÔNG thêm mới)
 FORM_LIB=react-hook-form
-  VALIDATION=yup (primary), zod (secondary)
+  VALIDATION=zod
 ```
 
 ### Auth
@@ -49,12 +51,15 @@ MULTI_TENANT=no
 ```
 SRC_ROOT=src/
 
-COMPONENTS_DIR=src/shared/components/
-PAGES_DIR=src/pages/
-HOOKS_DIR=src/shared/hooks/
+COMPONENTS_DIR=src/components/        ← common/, core/, layout/, payment/
+PAGES_DIR=src/pages/                  ← admin/, customer/, auth/, account/, staff/
+HOOKS_DIR=src/query/{resource}/       ← keys.ts + use{Resource}Queries.ts (pattern mới)
+  HOOKS_LEGACY=src/shared/hooks/      ← một số resource cũ, không thêm vào đây
 SERVICES_DIR=src/services/api/functions/
 TYPES_DIR=src/shared/types/
-STORE_DIR=src/redux/
+  RESPONSE_TYPES=src/shared/types/Reponse/  ← "Reponse" typo cố ý, KHÔNG sửa
+  REQUEST_TYPES=src/shared/types/Request/
+STORE_DIR=src/stores/
 ASSETS_DIR=src/assets/
 ```
 
@@ -70,18 +75,17 @@ Ví dụ: src/services/api/functions/Cars/Routes.ts
 
 ### Hook pattern (quan trọng)
 ```
-Mỗi resource có folder trong HOOKS_DIR/{Resource}/index.ts
-Dùng React Query với queryKeys factory pattern.
+Mỗi resource có folder trong HOOKS_DIR/{resource}/
+  keys.ts                    ← query keys factory
+  use{Resource}Queries.ts    ← useQuery + useMutation hooks
 
-Ví dụ: src/shared/hooks/Car/index.ts
+Ví dụ: src/query/car/useCarQueries.ts
 ```
 
 ### Type pattern (quan trọng)
 ```
-TYPES_DIR/Response/{Resource}/index.ts   — API response types
-TYPES_DIR/Request/{Resource}/index.ts    — Request payload types
-
-Lưu ý: Thư mục gốc là "Response" (không phải "Reponse" — typo cũ trong codebase)
+TYPES_DIR/Reponse/{Resource}/index.ts   — API response types   ← "Reponse" typo cố ý, KHÔNG sửa
+TYPES_DIR/Request/{Resource}/index.ts   — Request payload types
 ```
 
 ---
@@ -89,12 +93,14 @@ Lưu ý: Thư mục gốc là "Response" (không phải "Reponse" — typo cũ t
 ## 4. API
 
 ```
-API_BASE_URL=https://localhost:7250
+API_BASE_URL=https://web-7012.onrender.com  (không có prefix /api)
 API_STYLE=rest
-RESPONSE_WRAPPER=no
+RESPONSE_WRAPPER=yes
+  WRAPPER_SHAPE={ success: boolean, message: string, data: T }  ← OperationResult<T>
+  LIST_SHAPE={ data: T[], totalCount: number, page: number, pageSize: number }
 PAGINATION_STYLE=page
-  PAGE_SHAPE={ pageIndex: number, pageSize: number, totalCount: number, items: T[] }
-ERROR_FORMAT={ message: string, statusCode: number }
+  PAGE_SHAPE={ data: T[], totalCount: number, page: number, pageSize: number }
+ERROR_FORMAT={ success: false, errorCode: string, message: string }
 ```
 
 ---

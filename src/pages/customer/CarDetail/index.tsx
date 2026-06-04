@@ -7,7 +7,7 @@ import { notify } from "@/components/core/Feedback/toast";
 import { formatCurrency } from "@/common/utils/formatCurrency";
 import { useCarDetail, useCarTechSpec } from "@/query/car/useCarQueries";
 import { useCarReviews, useCarReviewStats } from "@/query/review/useReviewQueries";
-import { useCartStore } from "@/stores/cartStore";
+import { useCart } from "@/hooks/useCart";
 import type { CarDetailResponse } from "@/shared/types/Reponse/Car";
 import type { CarDetailView } from "@/services/api/functions/Cars/Routes.Fn";
 
@@ -109,10 +109,14 @@ function CarInfoPanel({
   car,
   carName,
   onAddToCart,
+  alreadyInCart,
+  isPending,
 }: {
   car: CarDetailView;
   carName: string;
   onAddToCart: () => void;
+  alreadyInCart?: boolean;
+  isPending?: boolean;
 }) {
   const price = car.salePrice ?? car.price ?? 0;
 
@@ -138,11 +142,12 @@ function CarInfoPanel({
 
       <button
         type="button"
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
         onClick={onAddToCart}
+        disabled={alreadyInCart || isPending}
       >
         <ShoppingCart className="h-4 w-4" />
-        Thêm vào giỏ hàng
+        {isPending ? "Đang thêm..." : alreadyInCart ? "Đã trong giỏ hàng" : "Thêm vào giỏ hàng"}
       </button>
 
       <div className="mt-6 divide-y divide-slate-100">
@@ -383,7 +388,7 @@ function TechSpecSection({ techSpec }: { techSpec: ReturnType<typeof useCarTechS
 }
 
 export default function CustomerCarDetailPage() {
-  const addItem = useCartStore((state) => state.addItem);
+  const { addCar, isInCart, isAddingCar } = useCart();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const { id: routeId } = useParams();
@@ -403,15 +408,7 @@ export default function CustomerCarDetailPage() {
       notify.error("Không tìm thấy mã xe");
       return;
     }
-
-    addItem({
-      type: "car",
-      id: carId,
-      name: carName,
-      price,
-      imagePath: displayImage ?? undefined,
-    });
-    notify.success("Đã thêm vào giỏ hàng");
+    void addCar({ carId, name: carName, price, imagePath: displayImage ?? undefined });
   };
 
   return (
@@ -440,7 +437,13 @@ export default function CustomerCarDetailPage() {
               fallbackImage={car.primaryImagePath}
               onSelect={setActiveImageIndex}
             />
-            <CarInfoPanel car={car} carName={carName} onAddToCart={handleAddToCart} />
+            <CarInfoPanel
+              car={car}
+              carName={carName}
+              onAddToCart={handleAddToCart}
+              alreadyInCart={carId != null && isInCart("car", carId)}
+              isPending={isAddingCar}
+            />
           </div>
 
           <TechSpecSection techSpec={techSpec} />

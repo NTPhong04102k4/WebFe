@@ -276,8 +276,8 @@ export default function StaffPage() {
         notify.success("Da tao staff");
       }
       closeForm();
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -288,8 +288,8 @@ export default function StaffPage() {
         body: { isActive: !isActiveStaff(staff) },
       });
       notify.success("Da cap nhat trang thai");
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -298,8 +298,8 @@ export default function StaffPage() {
     try {
       await mutations.deleteStaff.mutateAsync(staffIdOf(staff));
       notify.success("Da xoa staff");
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -316,8 +316,8 @@ export default function StaffPage() {
       notify.success("Da doi mat khau");
       setPasswordTarget(null);
       passwordForm.reset();
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -337,8 +337,8 @@ export default function StaffPage() {
       notify.success("Da dat lai mat khau SuperAdmin");
       setRecoveryOpen(false);
       recoveryForm.reset();
-    } catch (error) {
-      notify.error(getErrorMessage(error));
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 

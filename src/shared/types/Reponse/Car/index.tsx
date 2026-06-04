@@ -55,6 +55,8 @@ export interface CarResponseItem {
   modelYear: number;
   bodyTypeID: number;
   statusID: number;
+  statusCode?: string | null;
+  statusLabel?: string | null;
   condition: string;
   locationID: number;
   price: number;

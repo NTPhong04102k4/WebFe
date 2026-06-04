@@ -102,8 +102,8 @@ export default function AdminHrSkillsPage() {
         notify.success("Tao ky nang thanh cong");
       }
       close();
-    } catch (err) {
-      notify.error(err instanceof Error ? err.message : "Luu ky nang that bai");
+    } catch {
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -113,7 +113,7 @@ export default function AdminHrSkillsPage() {
       await deleteSkill.mutateAsync(skill.skillID);
       notify.success("Da xoa ky nang");
     } catch {
-      notify.error("Xoa ky nang that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 

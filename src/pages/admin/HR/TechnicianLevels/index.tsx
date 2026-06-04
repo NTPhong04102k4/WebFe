@@ -82,7 +82,7 @@ export default function AdminTechnicianLevelsPage() {
       }
       setOpen(false);
     } catch {
-      notify.error("Luu cap bac that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -92,7 +92,7 @@ export default function AdminTechnicianLevelsPage() {
       await deleteLevel.mutateAsync(level.levelID);
       notify.success("Da xoa cap bac");
     } catch {
-      notify.error("Xoa cap bac that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 

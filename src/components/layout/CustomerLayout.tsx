@@ -9,9 +9,10 @@ import {
   X,
   MessageCircle,
   Bot,
+  Crown,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
-import { useCartStore } from "@/stores/cartStore";
+import { useCart } from "@/hooks/useCart";
 import { notify } from "@/components/core/Feedback/toast";
 import api from "@/services/api/axiosInstance";
 import { canAccessStaffBackend, getUserRoles } from "@/common/utils/roles";
@@ -26,7 +27,7 @@ export default function CustomerLayout() {
   const refreshToken = useAuthStore((s) => s.refreshToken);
   const setTokens = useAuthStore((s) => s.setTokens);
 
-  const cartCount = useCartStore((s) => s.totalCount());
+  const { totalCount: cartCount } = useCart();
   const navigate = useNavigate();
 
   // Chạy một lần khi layout mount — nếu access token đã expire thì thử refresh
@@ -186,6 +187,13 @@ export default function CustomerLayout() {
                       className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                     >
                       <ShoppingCart className="h-4 w-4" /> Đơn hàng của tôi
+                    </Link>
+                    <Link
+                      to="/premium/history"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <Crown className="h-4 w-4 text-amber-500" /> Gói Premium
                     </Link>
                     <Link
                       to="/appointments"

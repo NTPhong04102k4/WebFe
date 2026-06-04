@@ -21,8 +21,8 @@ const TIER_COLORS: Record<string, string> = {
 export default function PremiumGateModal({ featureTitle, featureDescription, onClose }: Props) {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<PremiumPlan | null>(null);
-  const plans = usePremiumPlans();
-  const activePlans = (plans.data ?? []).filter((p) => p.isActive);
+  const plans = usePremiumPlans({ isActive: true });
+  const activePlans = (plans.data ?? []).filter((p) => !p.deprecatedAt);
 
   if (selectedPlan) {
     return (

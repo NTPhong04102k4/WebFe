@@ -106,7 +106,7 @@ export default function AdminInsuranceCompaniesPage() {
       }
       setOpen(false);
     } catch {
-      notify.error("Luu cong ty bao hiem that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 
@@ -116,7 +116,7 @@ export default function AdminInsuranceCompaniesPage() {
       await deleteCompany.mutateAsync(company.companyID);
       notify.success("Da xoa cong ty bao hiem");
     } catch {
-      notify.error("Xoa cong ty bao hiem that bai");
+      // interceptor đã hiện toast lỗi
     }
   };
 
