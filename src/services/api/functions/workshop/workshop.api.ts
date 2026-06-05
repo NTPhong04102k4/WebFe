@@ -24,6 +24,7 @@ import type {
   WorkOrderPartItemRequest,
   WorkOrderPaymentInfoViewModel,
   WorkOrderPaymentRequest,
+  WorkOrderDeliveryRequest,
   WorkOrderQueryRequest,
   WorkOrderRequest,
   WorkOrderServiceItemRequest,
@@ -271,6 +272,21 @@ export const workshopApi = {
     const res = await apiClient.post<WorkshopOperationResult>(
       API.workshop.workOrderPay(id),
       body
+    );
+    return res.data;
+  },
+
+  deliverWorkOrder: async (id: number, body: WorkOrderDeliveryRequest) => {
+    const res = await apiClient.post<WorkshopOperationResult>(
+      API.workshop.workOrderDeliver(id),
+      body
+    );
+    return res.data;
+  },
+
+  confirmDelivery: async (id: number) => {
+    const res = await apiClient.post<WorkshopOperationResult>(
+      API.workshop.workOrderConfirmDelivery(id)
     );
     return res.data;
   },

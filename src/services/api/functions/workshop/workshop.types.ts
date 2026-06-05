@@ -144,6 +144,10 @@ export interface AppointmentViewModel {
   customerNote?: string | null;
   staffNote?: string | null;
   cancelReason?: string | null;
+  depositRequired: boolean;
+  depositAmount: number;
+  depositStatus: "None" | "Pending" | "Paid";
+  depositTransactionRef?: string | null;
   createdDate: string;
   services?: AppointmentServiceViewModel[];
 }
@@ -187,9 +191,32 @@ export interface WorkOrderPartItemRequest {
 }
 
 export interface WorkOrderPaymentRequest {
+  /** Deposit | Final | Full */
+  paymentType: "Deposit" | "Final" | "Full";
+  /** Cash | Transfer | Mixed */
+  paymentMethod: "Cash" | "Transfer" | "Mixed";
+  cashAmount: number;
+  transferAmount: number;
+  discountAmount?: number;
+  transactionRef?: string | null;
+  note?: string | null;
+}
+
+export interface WorkOrderDeliveryRequest {
+  handoverNote?: string | null;
+}
+
+export interface WorkOrderPaymentViewModel {
+  workOrderPaymentID: number;
+  paymentType: string;
   paymentMethod: string;
-  amountPaid: number;
-  discountAmount?: number | null;
+  cashAmount: number;
+  transferAmount: number;
+  amount: number;
+  transactionRef?: string | null;
+  receivedByStaffName?: string | null;
+  paidDate: string;
+  note?: string | null;
 }
 
 export interface WorkOrderPaymentInfoViewModel {
@@ -284,15 +311,21 @@ export interface WorkOrderViewModel {
   discountAmount: number;
   taxAmount: number;
   totalAmount: number;
+  depositPaid: number;
   paymentStatus: string;
   paymentMethod?: string | null;
   paidDate?: string | null;
+  deliveredDateTime?: string | null;
+  deliveredByStaffName?: string | null;
+  customerConfirmedAt?: string | null;
+  handoverNote?: string | null;
   customerRating?: number | null;
   customerFeedback?: string | null;
   warrantyMonths?: number | null;
   createdDate: string;
   services?: WorkOrderServiceViewModel[];
   parts?: WorkOrderPartViewModel[];
+  payments?: WorkOrderPaymentViewModel[];
 }
 
 export interface AppointmentCheckInRequest {

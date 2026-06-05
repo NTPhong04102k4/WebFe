@@ -11,6 +11,7 @@ import type {
   AssignTechnicianRequest,
   CustomerVehicleRequest,
   CustomerVehicleUpdateMileageRequest,
+  WorkOrderDeliveryRequest,
   WorkOrderFeedbackRequest,
   WorkOrderPartItemRequest,
   WorkOrderPaymentRequest,
@@ -252,6 +253,20 @@ export function useWorkshopMutations() {
         id: number;
         body: WorkOrderPaymentRequest;
       }) => workshopApi.payWorkOrder(id, body),
+      onSuccess: invalidateAll,
+    }),
+    deliverWorkOrder: useMutation({
+      mutationFn: ({
+        id,
+        body,
+      }: {
+        id: number;
+        body: WorkOrderDeliveryRequest;
+      }) => workshopApi.deliverWorkOrder(id, body),
+      onSuccess: invalidateAll,
+    }),
+    confirmDelivery: useMutation({
+      mutationFn: ({ id }: { id: number }) => workshopApi.confirmDelivery(id),
       onSuccess: invalidateAll,
     }),
     feedbackWorkOrder: useMutation({

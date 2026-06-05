@@ -104,7 +104,6 @@ const createDefaults: CreateForm = {
 
 const workStatuses = ["Open", "InProgress", "WaitingParts", "QualityCheck", "Completed", "Delivered", "Cancelled"];
 const priorities = ["Low", "Normal", "High", "Urgent"];
-const paymentMethods = ["Cash", "Card", "Transfer", "VNPay", "Momo"];
 
 function tone(status: string) {
   if (status === "Completed" || status === "Delivered") return "green" as const;
@@ -534,7 +533,17 @@ function WorkOrderActionModal({
   const [technicianID, setTechnicianID] = useState("");
   const [service, setService] = useState({ serviceID: "", technicianID: "", laborHours: "1", unitPrice: "0", notes: "" });
   const [part, setPart] = useState({ accessoryID: "", accessoryName: "", quantity: "1", unitPrice: "0", installedByTechnicianID: "", notes: "" });
-  const [payment, setPayment] = useState({ paymentMethod: "Cash", amountPaid: String(action.workOrder.totalAmount ?? 0), discountAmount: "0" });
+  const netTotal = (action.workOrder.totalAmount ?? 0) - (action.workOrder.discountAmount ?? 0);
+  const remaining = Math.max(0, netTotal - (action.workOrder.depositPaid ?? 0));
+  const [payment, setPayment] = useState({
+    paymentType: "Full" as "Deposit" | "Final" | "Full",
+    paymentMethod: "Cash" as "Cash" | "Transfer" | "Mixed",
+    cashAmount: String(remaining),
+    transferAmount: "0",
+    discountAmount: "0",
+    transactionRef: "",
+    note: "",
+  });
 
   const save = async () => {
     const id = action.workOrder.workOrderID;
@@ -581,9 +590,13 @@ function WorkOrderActionModal({
         await mutations.payWorkOrder.mutateAsync({
           id,
           body: {
+            paymentType: payment.paymentType,
             paymentMethod: payment.paymentMethod,
-            amountPaid: Number(payment.amountPaid || 0),
+            cashAmount: Number(payment.cashAmount || 0),
+            transferAmount: Number(payment.transferAmount || 0),
             discountAmount: Number(payment.discountAmount || 0),
+            transactionRef: payment.transactionRef || null,
+            note: payment.note || null,
           },
         });
       }
@@ -603,7 +616,7 @@ function WorkOrderActionModal({
     }>
       {action.type === "status" ? (
         <div className="space-y-4">
-          <Select label="Trạng thái" value={status} onChange={setStatus} options={workStatuses.map(s => ({ value: s, label: STATUS_LABELS[s] ?? s }))} />
+          <Select label="Trạng thái" value={status} onChange={(v) => setStatus(v as typeof status)} options={workStatuses.map(s => ({ value: s, label: STATUS_LABELS[s] ?? s }))} />
           <Input label="Km ra" type="number" min={0} value={mileageOut} onChange={(e) => setMileageOut(e.target.value)} />
           <TextareaField label="Chẩn đoán" value={diagnosis} onChange={setDiagnosis} />
           <TextareaField label="Công việc đã làm" value={workPerformed} onChange={setWorkPerformed} />
@@ -675,10 +688,65 @@ function WorkOrderActionModal({
       ) : null}
 
       {action.type === "pay" ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Select label="Phương thức" value={payment.paymentMethod} onChange={(value) => setPayment((s) => ({ ...s, paymentMethod: value }))} options={paymentMethods.map(m => ({ value: m, label: PAYMENT_METHOD_LABELS[m] ?? m }))} />
-          <Input label="Số tiền trả" type="number" min={0} value={payment.amountPaid} onChange={(e) => setPayment((s) => ({ ...s, amountPaid: e.target.value }))} />
-          <Input label="Giảm giá" type="number" min={0} value={payment.discountAmount} onChange={(e) => setPayment((s) => ({ ...s, discountAmount: e.target.value }))} />
+        <div className="space-y-4">
+          {/* Tóm tắt */}
+          <div className="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-800">
+            <div className="flex justify-between"><span className="text-slate-500">Tổng phiếu</span><span className="font-medium">{formatMoney(action.workOrder.totalAmount)}</span></div>
+            {(action.workOrder.depositPaid ?? 0) > 0 && (
+              <div className="flex justify-between text-green-600"><span>Đã cọc</span><span>- {formatMoney(action.workOrder.depositPaid)}</span></div>
+            )}
+            <div className="mt-1 flex justify-between border-t pt-1 font-semibold"><span>Còn lại</span><span className="text-blue-700">{formatMoney(remaining)}</span></div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Select label="Loại thanh toán" value={payment.paymentType}
+              onChange={(value) => setPayment((s) => ({ ...s, paymentType: value as typeof s.paymentType }))}
+              options={[
+                { value: "Full", label: "Thanh toán toàn bộ" },
+                { value: "Deposit", label: "Đặt cọc" },
+                { value: "Final", label: "Thanh toán phần còn lại" },
+              ]}
+            />
+            <Select label="Phương thức" value={payment.paymentMethod}
+              onChange={(value) => {
+                const method = value as typeof payment.paymentMethod;
+                setPayment((s) => ({
+                  ...s,
+                  paymentMethod: method,
+                  cashAmount: method === "Transfer" ? "0" : s.cashAmount,
+                  transferAmount: method === "Cash" ? "0" : s.transferAmount,
+                }));
+              }}
+              options={[
+                { value: "Cash", label: "Tiền mặt" },
+                { value: "Transfer", label: "Chuyển khoản" },
+                { value: "Mixed", label: "Kết hợp (Tiền mặt + CK)" },
+              ]}
+            />
+            {(payment.paymentMethod === "Cash" || payment.paymentMethod === "Mixed") && (
+              <Input label="Tiền mặt (VND)" type="number" min={0}
+                value={payment.cashAmount}
+                onChange={(e) => setPayment((s) => ({ ...s, cashAmount: e.target.value }))}
+              />
+            )}
+            {(payment.paymentMethod === "Transfer" || payment.paymentMethod === "Mixed") && (
+              <Input label="Chuyển khoản (VND)" type="number" min={0}
+                value={payment.transferAmount}
+                onChange={(e) => setPayment((s) => ({ ...s, transferAmount: e.target.value }))}
+              />
+            )}
+            <Input label="Giảm giá" type="number" min={0} value={payment.discountAmount}
+              onChange={(e) => setPayment((s) => ({ ...s, discountAmount: e.target.value }))}
+            />
+            <Input label="Mã giao dịch" value={payment.transactionRef}
+              onChange={(e) => setPayment((s) => ({ ...s, transactionRef: e.target.value }))}
+            />
+            <div className="sm:col-span-2">
+              <Input label="Ghi chú" value={payment.note}
+                onChange={(e) => setPayment((s) => ({ ...s, note: e.target.value }))}
+              />
+            </div>
+          </div>
         </div>
       ) : null}
     </Modal>
@@ -789,11 +857,108 @@ function WorkOrderDetail({
         </Table>
       </Section>
 
-      {/* Section đánh giá khách hàng — chỉ hiện khi Completed */}
-      {workOrder.status === "Completed" && (
+      {/* Lịch sử thanh toán */}
+      {(workOrder.payments ?? []).length > 0 && (
+        <Section title="Lịch sử thanh toán">
+          <Table headers={["Loại", "Phương thức", "Tiền mặt", "Chuyển khoản", "Tổng", "Mã GD", "Nhân viên", "Ngày"]}>
+            {(workOrder.payments ?? []).map((p) => (
+              <tr key={p.workOrderPaymentID} className="text-xs">
+                <td className="py-1.5">{p.paymentType === "Deposit" ? "Cọc" : p.paymentType === "Final" ? "Còn lại" : "Toàn bộ"}</td>
+                <td>{p.paymentMethod === "Cash" ? "Tiền mặt" : p.paymentMethod === "Transfer" ? "Chuyển khoản" : "Kết hợp"}</td>
+                <td>{p.cashAmount > 0 ? formatMoney(p.cashAmount) : "-"}</td>
+                <td>{p.transferAmount > 0 ? formatMoney(p.transferAmount) : "-"}</td>
+                <td className="font-medium text-blue-700">{formatMoney(p.amount)}</td>
+                <td className="text-slate-500">{p.transactionRef ?? "-"}</td>
+                <td>{p.receivedByStaffName ?? "-"}</td>
+                <td>{formatDate(p.paidDate)}</td>
+              </tr>
+            ))}
+          </Table>
+          {(workOrder.depositPaid ?? 0) > 0 && workOrder.paymentStatus !== "Paid" && (
+            <div className="mt-2 text-sm text-slate-600">
+              Đã cọc: <strong>{formatMoney(workOrder.depositPaid)}</strong>
+              {" · "}Còn lại:{" "}
+              <strong className="text-orange-600">
+                {formatMoney(Math.max(0, workOrder.totalAmount - workOrder.discountAmount - workOrder.depositPaid))}
+              </strong>
+            </div>
+          )}
+        </Section>
+      )}
+
+      {/* Bàn giao xe */}
+      {workOrder.status === "Completed" && !workOrder.deliveredDateTime && (
+        <DeliverSection workOrder={workOrder} mutations={mutations} />
+      )}
+      {workOrder.deliveredDateTime && (
+        <Section title="Bàn giao xe">
+          <div className="grid gap-2 sm:grid-cols-2 text-sm">
+            <Info label="Thời gian bàn giao" value={formatDate(workOrder.deliveredDateTime)} />
+            <Info label="Nhân viên bàn giao" value={workOrder.deliveredByStaffName ?? "-"} />
+            {workOrder.handoverNote && <Info label="Ghi chú" value={workOrder.handoverNote} />}
+            {workOrder.customerConfirmedAt
+              ? <Info label="Khách xác nhận" value={formatDate(workOrder.customerConfirmedAt)} />
+              : <div className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-700">Khách chưa xác nhận nhận xe</div>
+            }
+          </div>
+        </Section>
+      )}
+
+      {/* Section đánh giá khách hàng — chỉ hiện khi Completed hoặc Delivered */}
+      {(workOrder.status === "Completed" || workOrder.status === "Delivered") && (
         <FeedbackSection workOrder={workOrder} mutations={mutations} />
       )}
     </div>
+  );
+}
+
+// ─── Section bàn giao xe ───────────────────────────────────────────────────────
+function DeliverSection({
+  workOrder,
+  mutations,
+}: {
+  workOrder: WorkOrderViewModel;
+  mutations: ReturnType<typeof useWorkshopMutations>;
+}) {
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleDeliver = async () => {
+    setSaving(true);
+    try {
+      await mutations.deliverWorkOrder.mutateAsync({ id: workOrder.workOrderID, body: { handoverNote: note || null } });
+      notify.success("Đã bàn giao xe cho khách");
+    } catch {
+      // interceptor đã hiện toast
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Section title="Bàn giao xe">
+      <div className="space-y-3">
+        <p className="text-sm text-slate-600">Phiếu đã hoàn thành. Xác nhận bàn giao xe cho khách hàng.</p>
+        <label className="block">
+          <span className="text-xs font-medium text-slate-600">Ghi chú bàn giao (tuỳ chọn)</span>
+          <textarea
+            rows={2}
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Tình trạng xe khi bàn giao, lưu ý cho khách..."
+          />
+        </label>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={handleDeliver}
+          className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+        >
+          {saving ? "Đang xử lý..." : "Xác nhận bàn giao xe"}
+        </button>
+      </div>
+    </Section>
   );
 }
 
