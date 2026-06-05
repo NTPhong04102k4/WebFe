@@ -267,7 +267,7 @@ export default function ServiceCatalogPage() {
         </div>
       </div>
 
-      <Modal open={formOpen} onClose={closeForm} title={editing ? "Sua dich vu" : "Them dich vu"} size="xl" footer={
+      <Modal open={formOpen} onClose={closeForm} title={editing ? "Sua dich vu" : "Them dich vu"} size="xl" closeOnBackdrop={false} footer={
         <div className="flex justify-end gap-2">
           <ActionButton onClick={closeForm}>Huy</ActionButton>
           <ActionButton variant="primary" onClick={handleSubmit(saveService)} disabled={mutations.createService.isPending || mutations.updateService.isPending}>Luu</ActionButton>

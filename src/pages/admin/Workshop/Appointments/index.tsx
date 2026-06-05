@@ -238,20 +238,24 @@ export default function WorkshopAppointmentsPage() {
 
   const saveStatus = async () => {
     if (!statusTarget) return;
-    if (nextStatus === "Cancelled") {
-      await mutations.cancelAppointment.mutateAsync({
-        id: statusTarget.appointmentID,
-        body: { status: "Cancelled", cancelReason: cancelReason || null },
-      });
-    } else {
-      await mutations.patchAppointmentStatus.mutateAsync({
-        id: statusTarget.appointmentID,
-        body: { status: nextStatus as AppointmentStatus },
-      });
+    try {
+      if (nextStatus === "Cancelled") {
+        await mutations.cancelAppointment.mutateAsync({
+          id: statusTarget.appointmentID,
+          body: { status: "Cancelled", cancelReason: cancelReason || null },
+        });
+      } else {
+        await mutations.patchAppointmentStatus.mutateAsync({
+          id: statusTarget.appointmentID,
+          body: { status: nextStatus as AppointmentStatus },
+        });
+      }
+      notify.success("Đã cập nhật trạng thái");
+      setStatusTarget(null);
+      setCancelReason("");
+    } catch {
+      // interceptor đã hiện toast lỗi, giữ modal mở để user có thể thử lại
     }
-    notify.success("Đã cập nhật trạng thái");
-    setStatusTarget(null);
-    setCancelReason("");
   };
 
   // ── Tính năng A: Check-in ─────────────────────────────────────────────────
@@ -565,6 +569,7 @@ export default function WorkshopAppointmentsPage() {
         }}
         title="Tạo lịch hẹn"
         size="xl"
+        closeOnBackdrop={false}
         footer={
           <div className="flex justify-end gap-2">
             <ActionButton
@@ -743,6 +748,7 @@ export default function WorkshopAppointmentsPage() {
         onClose={() => setCheckInTarget(null)}
         title="Check-in & Tạo phiếu công việc"
         size="lg"
+        closeOnBackdrop={false}
         footer={
           <div className="flex justify-end gap-2">
             <ActionButton onClick={() => setCheckInTarget(null)}>Hủy</ActionButton>

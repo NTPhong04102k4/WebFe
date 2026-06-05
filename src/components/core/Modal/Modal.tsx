@@ -29,11 +29,17 @@ export function Modal({
   size = "md",
   closeOnBackdrop = true,
 }: ModalProps) {
+  // Dùng ref để Escape listener luôn gọi onClose mới nhất mà không cần re-register mỗi render
+  const onCloseRef = React.useRef(onClose);
+  React.useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   React.useEffect(() => {
     if (!open) return undefined;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onCloseRef.current();
     };
 
     document.addEventListener("keydown", handleKeyDown);
@@ -44,7 +50,7 @@ export function Modal({
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [onClose, open]);
+  }, [open]); // chỉ phụ thuộc vào open, không phụ thuộc onClose
 
   if (!open) return null;
 
@@ -53,7 +59,9 @@ export function Modal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       role="dialog"
       aria-modal="true"
-      onMouseDown={(event) => {
+      onClick={(event) => {
+        // onClick thay vì onMouseDown: chỉ đóng khi cả mousedown lẫn mouseup đều trên backdrop
+        // tránh đóng modal khi user đang kéo text trong form
         if (closeOnBackdrop && event.target === event.currentTarget) onClose();
       }}
     >

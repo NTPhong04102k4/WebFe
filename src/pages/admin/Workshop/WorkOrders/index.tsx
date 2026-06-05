@@ -254,7 +254,7 @@ export default function WorkOrdersPage() {
       </div>
 
       {/* Modal tạo phiếu */}
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Tạo phiếu công việc" size="xl" footer={
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Tạo phiếu công việc" size="xl" closeOnBackdrop={false} footer={
         <div className="flex justify-end gap-2">
           <ActionButton onClick={() => setCreateOpen(false)}>Hủy</ActionButton>
           <ActionButton variant="primary" onClick={handleSubmit(createWorkOrder)} disabled={mutations.createWorkOrder.isPending}>Tạo phiếu</ActionButton>
@@ -608,7 +608,7 @@ function WorkOrderActionModal({
   };
 
   return (
-    <Modal open onClose={onClose} title={`Thao tác ${action.workOrder.workOrderNumber}`} size="lg" footer={
+    <Modal open onClose={onClose} title={`Thao tác ${action.workOrder.workOrderNumber}`} size="lg" closeOnBackdrop={false} footer={
       <div className="flex justify-end gap-2">
         <ActionButton onClick={onClose}>Hủy</ActionButton>
         <ActionButton variant="primary" onClick={save}>Lưu</ActionButton>

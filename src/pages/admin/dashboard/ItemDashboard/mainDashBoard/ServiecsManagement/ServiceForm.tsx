@@ -97,9 +97,9 @@ const ServiceForm: React.FC = () => {
       };
 
       if (isEditMode && categoryId) {
-        await updateAsync({ id: categoryId, data: submitData });
+        await updateCategory.mutateAsync({ id: categoryId, data: submitData });
       } else {
-        await createAsync(submitData);
+        await createCategory.mutateAsync(submitData);
       }
 
       navigate(-1);
@@ -114,13 +114,13 @@ const ServiceForm: React.FC = () => {
 
   // Handle mutation errors
   useEffect(() => {
-    if (createError) {
+    if (createCategory.error) {
       setError("Tạo danh mục thất bại");
     }
-    if (updateError) {
+    if (updateCategory.error) {
       setError("Cập nhật danh mục thất bại");
     }
-  }, [createError, updateError]);
+  }, [createCategory.error, updateCategory.error]);
 
   return (
     <Container>
