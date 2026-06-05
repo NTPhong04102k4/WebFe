@@ -58,8 +58,7 @@ export default function VerifyOtpPage() {
     setLoading(true)
     try {
       const res = await verifyOtpAsync({ email, otpCode: code })
-      const d = res.data?.data
-      if (d?.token) {
+      if (res.data?.success) {
         notify.success('Xác thực thành công! Vui lòng đăng nhập.')
         navigate('/auth/login', { replace: true })
       } else {

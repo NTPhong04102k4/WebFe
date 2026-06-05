@@ -51,7 +51,11 @@ function CompareModal({ cars, onClose }: { cars: CarResponseItem[]; onClose: () 
                     : Array.isArray(car.imagePaths) ? car.imagePaths[0] : undefined
                   return (
                     <th key={car.carID} className="min-w-[180px] px-4 py-3 text-left">
-                      {img && <img src={img} alt={car.carName} className="mb-2 h-24 w-full rounded-lg object-cover" />}
+                      {img && (
+                        <div className="mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-slate-100">
+                          <img src={img} alt={car.carName} className="h-full w-full object-fill" />
+                        </div>
+                      )}
                       <div className="font-semibold text-slate-900 line-clamp-2">{car.carName}</div>
                       <div className="mt-1 text-lg font-bold text-blue-700">{formatCurrency(car.salePrice ?? car.price)}</div>
                     </th>
