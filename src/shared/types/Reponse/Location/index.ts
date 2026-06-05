@@ -15,3 +15,7 @@ export interface LocationResponse {
   longitude: string | null;
   managerName: string | null;
 }
+
+export interface NearbyLocationResponse extends LocationResponse {
+  distanceKm: number;
+}

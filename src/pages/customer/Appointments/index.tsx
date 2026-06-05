@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { formatCurrency } from "@/common/utils/formatCurrency";
@@ -12,6 +12,8 @@ import {
 import { useServiceCatalog } from "src/query/service-catalog/useServiceCatalogQueries";
 import { useLocation } from "src/shared/hooks/location";
 import { EmptyState } from "src/components/core/Feedback/EmptyState";
+import { locationRouteFn } from "src/services/api/functions/Location/Routes.Fn";
+import type { NearbyLocationResponse } from "src/shared/types/Reponse/Location";
 import { Modal } from "src/components/core/Modal";
 import { Select } from "src/components/core/Select";
 import { Input } from "src/components/core/Form";
@@ -46,7 +48,7 @@ function BookingModal({
   const { data: categoriesData } = useCategoryList();
   const categories = categoriesData ?? [];
 
-  const { locations, loading: locLoading, error: locError } = useLocation();
+  const { locations, loading: locLoading } = useLocation();
 
   const { createAppointment } = useWorkshopMutations();
 
@@ -57,6 +59,38 @@ function BookingModal({
   const [appointmentType, setAppointmentType] = useState("Maintenance");
   const [customerNote, setCustomerNote] = useState("");
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+
+  const [nearbyLocations, setNearbyLocations] = useState<NearbyLocationResponse[] | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+
+  const handleFindNearby = useCallback(() => {
+    if (!navigator.geolocation) { notify.error("Trình duyệt không hỗ trợ định vị."); return; }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const results = await locationRouteFn.getNearby(
+            pos.coords.latitude,
+            pos.coords.longitude,
+            50,
+            "Workshop"
+          );
+          setNearbyLocations(results);
+          if (results.length > 0 && !locationID) {
+            setLocationID(String(results[0].locationID));
+          }
+        } catch {
+          notify.error("Không tìm được showroom gần bạn.");
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      () => {
+        notify.error("Không lấy được vị trí. Vui lòng cho phép truy cập GPS.");
+        setGeoLoading(false);
+      }
+    );
+  }, [locationID]);
 
   // Pre-select service from URL param
   useEffect(() => {
@@ -286,19 +320,40 @@ function BookingModal({
               { value: "Inspection", label: "Kiểm tra" },
             ]}
           />
-          <Select
-            label="Chi nhánh"
-            required
-            placeholder={locLoading ? "Đang tải..." : "— Chọn chi nhánh —"}
-            value={locationID}
-            onChange={(e) => setLocationID(e.target.value)}
-            disabled={locLoading}
-            error={locError ? "Không tải được danh sách chi nhánh" : undefined}
-            options={locations.map((loc) => ({
-              value: String(loc.locationID),
-              label: `${loc.locationName} — ${loc.address}, ${loc.city}`,
-            }))}
-          />
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-700">Chi nhánh <span className="text-red-500">*</span></span>
+              <button
+                type="button"
+                onClick={handleFindNearby}
+                disabled={geoLoading}
+                className="flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 disabled:opacity-50"
+              >
+                {geoLoading ? "Đang tìm..." : "📍 Gần tôi"}
+              </button>
+            </div>
+            <select
+              required
+              value={locationID}
+              onChange={(e) => setLocationID(e.target.value)}
+              disabled={locLoading}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+            >
+              <option value="">{locLoading ? "Đang tải..." : "— Chọn chi nhánh —"}</option>
+              {(nearbyLocations ?? locations).map((loc) => {
+                const dist = "distanceKm" in loc ? (loc as NearbyLocationResponse).distanceKm : null;
+                return (
+                  <option key={loc.locationID} value={String(loc.locationID)}>
+                    {loc.locationName}
+                    {dist != null ? ` — ${dist.toFixed(1)} km` : ` — ${loc.address}, ${loc.city}`}
+                  </option>
+                );
+              })}
+            </select>
+            {nearbyLocations && nearbyLocations.length === 0 && (
+              <p className="mt-1 text-xs text-amber-600">Không có chi nhánh nào trong vòng 50 km. Hiển thị tất cả.</p>
+            )}
+          </div>
         </div>
 
         {/* Ghi chú */}

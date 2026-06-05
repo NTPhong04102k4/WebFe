@@ -1,6 +1,7 @@
-import { LocationResponse } from "src/shared/types/Reponse/Location";
+import { LocationResponse, NearbyLocationResponse } from "src/shared/types/Reponse/Location";
 import type { OperationResult } from "src/services/types/common.types";
 import apiClient from "../..";
+import { API } from "../../endpoints";
 import { locationRoute } from "./Routes";
 
 function normalizeLocation(loc: any): LocationResponse {
@@ -44,5 +45,15 @@ export const locationRouteFn = {
       `${locationRoute.getLocation}/${id}`
     );
     return normalizeLocation(unwrapLocation(response.data));
+  },
+
+  /** GET /common/locations/nearby?lat=X&lng=Y&radius=R&type=T */
+  getNearby: async (lat: number, lng: number, radius = 50, type?: string): Promise<NearbyLocationResponse[]> => {
+    const response = await apiClient.get<OperationResult<NearbyLocationResponse[]>>(
+      API.common.locationsNearby,
+      { params: { lat, lng, radius, type } }
+    );
+    const raw = extractArray(response.data);
+    return raw.map((loc) => ({ ...normalizeLocation(loc), distanceKm: loc.distanceKm ?? 0 }));
   },
 };
