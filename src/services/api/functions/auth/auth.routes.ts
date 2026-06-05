@@ -11,4 +11,6 @@ export const AUTH_ROUTES = {
   GOOGLE_LOGIN: API.auth.googleLogin,
   FACEBOOK_LOGIN: API.auth.facebookLogin,
   LOGOUT: API.auth.logout,
+  FORGOT_PASSWORD: API.auth.forgotPassword,
+  RESET_PASSWORD: API.auth.resetPassword,
 } as const;

@@ -14,3 +14,11 @@ export interface VerifyOtpRequest {
 export interface ResendOtpRequest {
   email: string;
 }
+export interface ForgotPasswordRequest {
+  email: string;
+}
+export interface ResetPasswordRequest {
+  email: string;
+  temporaryPassword: string;
+  newPassword: string;
+}

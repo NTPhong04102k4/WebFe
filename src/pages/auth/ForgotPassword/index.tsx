@@ -1,47 +1,24 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Mail, ArrowLeft } from 'lucide-react'
 import { notify } from "@/components/core/Feedback/toast"
+import { useAuthQuery } from '@/query/auth/useAuthQuery'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [sent, setSent] = useState(false)
+  const { forgotPasswordAsync, isForgotPasswordLoading } = useAuthQuery()
+  const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email) return
-    setLoading(true)
     try {
-      // Backend chưa có endpoint reset-password, hiển thị thông báo chung
-      await new Promise((r) => setTimeout(r, 800))
-      setSent(true)
-      notify.success('Hướng dẫn đặt lại mật khẩu đã được gửi!')
+      await forgotPasswordAsync({ email })
+      notify.success('Mã tạm thời đã được gửi! Kiểm tra hộp thư của bạn.')
+      navigate(`/auth/reset-password?email=${encodeURIComponent(email)}`)
     } catch {
-      notify.error('Gửi yêu cầu thất bại, vui lòng thử lại')
-    } finally {
-      setLoading(false)
+      // interceptor đã xử lý error toast
     }
-  }
-
-  if (sent) {
-    return (
-      <div className="text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100">
-          <Mail className="h-7 w-7 text-green-600" />
-        </div>
-        <h2 className="mb-2 text-xl font-bold text-slate-800">Đã gửi email!</h2>
-        <p className="mb-6 text-sm text-slate-500">
-          Kiểm tra hộp thư <strong>{email}</strong> để đặt lại mật khẩu.
-        </p>
-        <Link
-          to="/auth/login"
-          className="text-sm font-medium text-blue-600 hover:underline"
-        >
-          ← Quay lại đăng nhập
-        </Link>
-      </div>
-    )
   }
 
   return (
@@ -51,7 +28,7 @@ export default function ForgotPasswordPage() {
       </Link>
       <h2 className="mb-1 text-2xl font-bold text-slate-800">Quên mật khẩu</h2>
       <p className="mb-6 text-sm text-slate-500">
-        Nhập email để nhận hướng dẫn đặt lại mật khẩu.
+        Nhập email để nhận mã tạm thời đặt lại mật khẩu.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -69,15 +46,15 @@ export default function ForgotPasswordPage() {
 
         <button
           type="submit"
-          disabled={loading || !email}
+          disabled={isForgotPasswordLoading || !email}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
         >
-          {loading ? (
+          {isForgotPasswordLoading ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
             <Mail className="h-4 w-4" />
           )}
-          Gửi hướng dẫn
+          Gửi mã tạm thời
         </button>
       </form>
     </div>

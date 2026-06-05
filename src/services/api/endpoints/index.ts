@@ -24,6 +24,8 @@ export const API = {
     adminStaffStatus: (staffId: string | number) =>
       `/auth/admin/staff/${staffId}/status`,
     superAdminRecoverPassword: "/auth/admin/superadmin/recover-password",
+    forgotPassword: "/auth/forgot-password",
+    resetPassword: "/auth/reset-password",
   },
   user: {
     detail: "/user/detail",

@@ -38,6 +38,7 @@ const LoginPage           = lazy(() => import('@/pages/auth/Login'))
 const RegisterPage        = lazy(() => import('@/pages/auth/Register'))
 const VerifyOtpPage       = lazy(() => import('@/pages/auth/VerifyOtp'))
 const ForgotPasswordPage  = lazy(() => import('@/pages/auth/ForgotPassword'))
+const ResetPasswordPage   = lazy(() => import('@/pages/auth/ResetPassword'))
 const AdminLoginPage      = lazy(() => import('@/pages/auth/AdminLogin'))
 
 // ── Admin pages ───────────────────────────────────────────────────────────────
@@ -123,6 +124,7 @@ export default function AppRouter() {
           <Route path="register" element={<RegisterPage />} />
           <Route path="verify-otp" element={<VerifyOtpPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="reset-password" element={<ResetPasswordPage />} />
           <Route path="admin/login" element={<AdminLoginPage />} />
         </Route>
 

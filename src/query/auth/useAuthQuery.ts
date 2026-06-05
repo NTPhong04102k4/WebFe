@@ -95,6 +95,16 @@ export const useAuthQuery = () => {
     mutationFn: authAPI.resendOtp,
   });
 
+  // ─── Forgot password mutation ──────────────────────────────────────────────
+  const forgotPasswordMutation = useMutation({
+    mutationFn: authAPI.forgotPassword,
+  });
+
+  // ─── Reset password mutation ───────────────────────────────────────────────
+  const resetPasswordMutation = useMutation({
+    mutationFn: authAPI.resetPassword,
+  });
+
   // ─── Logout mutation ───────────────────────────────────────────────────────
   const logoutMutation = useMutation({
     mutationFn: () => authAPI.logout(refreshToken ?? undefined),
@@ -183,6 +193,14 @@ export const useAuthQuery = () => {
     isResendOtpLoading: resendOtpMutation.isPending,
     resendOtpError: resendOtpMutation.error,
 
+    forgotPassword: forgotPasswordMutation.mutate,
+    forgotPasswordAsync: forgotPasswordMutation.mutateAsync,
+    isForgotPasswordLoading: forgotPasswordMutation.isPending,
+
+    resetPassword: resetPasswordMutation.mutate,
+    resetPasswordAsync: resetPasswordMutation.mutateAsync,
+    isResetPasswordLoading: resetPasswordMutation.isPending,
+
     logout: logoutMutation.mutate,
     isLogoutLoading: logoutMutation.isPending,
 
@@ -197,6 +215,8 @@ export const useAuthQuery = () => {
       registerMutation.isPending ||
       verifyOtpMutation.isPending ||
       resendOtpMutation.isPending ||
+      forgotPasswordMutation.isPending ||
+      resetPasswordMutation.isPending ||
       logoutMutation.isPending,
 
     error:
@@ -205,6 +225,8 @@ export const useAuthQuery = () => {
       registerMutation.error ||
       verifyOtpMutation.error ||
       resendOtpMutation.error ||
+      forgotPasswordMutation.error ||
+      resetPasswordMutation.error ||
       profileQuery.error,
   };
 };

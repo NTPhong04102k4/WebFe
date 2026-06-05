@@ -1,7 +1,9 @@
 import {
+  ForgotPasswordRequest,
   LoginRequest,
   RegisterRequest,
   ResendOtpRequest,
+  ResetPasswordRequest,
   VerifyOtpRequest,
 } from "src/shared/types/Request/auth/user";
 import apiClient from "../../index";
@@ -46,6 +48,12 @@ export const authAPI = {
    */
   logout: (refreshToken?: string) =>
     apiClient.post(AUTH_ROUTES.LOGOUT, refreshToken ? { refreshToken } : {}),
+
+  forgotPassword: (data: ForgotPasswordRequest) =>
+    apiClient.post(AUTH_ROUTES.FORGOT_PASSWORD, data),
+
+  resetPassword: (data: ResetPasswordRequest) =>
+    apiClient.post(AUTH_ROUTES.RESET_PASSWORD, data),
 
   // ─── Admin authentication ─────────────────────────────────────────────────
   adminLogin: (data: AdminLoginRequest) =>
