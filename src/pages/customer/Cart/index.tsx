@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PremiumGateModal from "@/pages/customer/Premium/components/PremiumGateModal";
 
 import { formatCurrency } from "@/common/utils/formatCurrency";
@@ -9,6 +9,8 @@ import {
   createOrderInputFromCart,
   createOrderPreviewInputFromCart,
   orderApi,
+  type ApplyPromoResult,
+  type InstallmentPlanViewModel,
   type OrderPreviewResult,
 } from "@/services/api/functions/orders/order.api";
 import { cartApi, type CartViewModel } from "@/services/api/functions/cart/cart.api";
@@ -101,6 +103,12 @@ export default function CustomerCartPage() {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("BANK_TRANSFER");
+  const [isInstallment, setIsInstallment] = useState(false);
+  const [installmentMonths, setInstallmentMonths] = useState<number | null>(null);
+  const [downPayment, setDownPayment] = useState<string>("");
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<ApplyPromoResult | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
   const [showPremiumGate, setShowPremiumGate] = useState(false);
   const [previewResult, setPreviewResult] = useState<OrderPreviewResult | null>(null);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -120,6 +128,54 @@ export default function CustomerCartPage() {
     () => selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
     [selectedItems],
   );
+
+  const selectedCarTotal = useMemo(
+    () =>
+      selectedItems
+        .filter((i) => i.type === "car")
+        .reduce((sum, i) => sum + i.price, 0),
+    [selectedItems],
+  );
+  const hasCarInSelection = selectedCarTotal > 0;
+
+  const downPaymentNum = parseFloat(downPayment.replace(/\D/g, "")) || 0;
+
+  const installmentPlansQuery = useQuery({
+    queryKey: ["installment-plans", selectedCarTotal, downPaymentNum],
+    queryFn: () =>
+      orderApi.installmentPlans(
+        selectedCarTotal > 0 ? selectedCarTotal : undefined,
+        downPaymentNum > 0 ? downPaymentNum : undefined,
+      ),
+    enabled: isInstallment && hasCarInSelection,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const installmentPlans: InstallmentPlanViewModel[] = installmentPlansQuery.data ?? [];
+
+  const selectedPlan = installmentPlans.find((p) => p.months === installmentMonths) ?? null;
+
+  const minDownPayment = selectedPlan?.minDownPayment ?? null;
+  const downPaymentError =
+    selectedPlan && minDownPayment !== null && downPaymentNum < minDownPayment
+      ? `Tối thiểu ${formatCurrency(minDownPayment)} (${selectedPlan.minDownPaymentPct}%)`
+      : null;
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) return;
+    const total = previewResult?.totalAmount ?? selectedTotal;
+    if (total <= 0) { notify.error("Vui lòng chọn sản phẩm trước khi áp dụng mã."); return; }
+    setPromoLoading(true);
+    try {
+      const result = await orderApi.applyPromo(promoCode.trim(), total);
+      setAppliedPromo(result ?? null);
+      if (result) notify.success(`Áp dụng thành công! Giảm ${formatCurrency(result.discountAmount)}`);
+    } catch {
+      setAppliedPromo(null);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
 
   const preview = useMutation({
     mutationFn: (vars: { items: CartItem[] }) =>
@@ -154,9 +210,17 @@ export default function CustomerCartPage() {
       const latestPreview = await orderApi.preview(
         createOrderPreviewInputFromCart(selectedItems),
       );
+      if (isInstallment) {
+        if (!installmentMonths) throw new Error("Vui lòng chọn kỳ hạn trả góp.");
+        if (downPaymentNum <= 0) throw new Error("Vui lòng nhập số tiền đặt cọc.");
+        if (downPaymentError) throw new Error(downPaymentError);
+      }
       return orderApi.create(
         createOrderInputFromCart(selectedItems, {
           paymentMethod,
+          isInstallment,
+          installmentMonths: isInstallment ? installmentMonths : null,
+          downPayment: isInstallment ? downPaymentNum : null,
           deliveryAddress: deliveryAddress.trim() || null,
           notes: notes.trim() || null,
           previewToken: latestPreview.previewToken,
@@ -410,10 +474,18 @@ export default function CustomerCartPage() {
                         <span>{formatCurrency(previewResult.taxAmount)}</span>
                       </div>
                     ) : null}
+                    {appliedPromo && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Mã {appliedPromo.code}</span>
+                        <span>- {formatCurrency(appliedPromo.discountAmount)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between border-t pt-2 font-semibold">
                       <span className="text-slate-900">Tổng đơn thật</span>
                       <span className="text-blue-700">
-                        {formatCurrency(previewResult.totalAmount)}
+                        {formatCurrency(appliedPromo
+                          ? appliedPromo.finalAmount
+                          : previewResult.totalAmount)}
                       </span>
                     </div>
                   </>
@@ -457,15 +529,173 @@ export default function CustomerCartPage() {
               ) : null}
 
               <label className="mt-4 block">
-                <span className="text-sm font-medium text-slate-700">Phương thức</span>
+                <span className="text-sm font-medium text-slate-700">Phương thức thanh toán</span>
                 <select
                   className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
                   value={paymentMethod}
-                  onChange={(event) => setPaymentMethod(event.target.value)}
+                  onChange={(event) => {
+                    setPaymentMethod(event.target.value);
+                    if (event.target.value !== "BANK_TRANSFER") setIsInstallment(false);
+                  }}
                 >
-                  <option value="BANK_TRANSFER">Chuyển khoản</option>
+                  <option value="BANK_TRANSFER">Chuyển khoản ngân hàng</option>
+                  <option value="CASH">Tiền mặt tại showroom</option>
                 </select>
               </label>
+
+              {/* Trả góp — chỉ hiện khi có xe trong giỏ */}
+              {hasCarInSelection && paymentMethod === "BANK_TRANSFER" && (
+                <div className="mt-4 rounded-lg border border-slate-200 p-3">
+                  <label className="flex cursor-pointer items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700">Đăng ký trả góp</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isInstallment}
+                      onClick={() => {
+                        setIsInstallment((v) => !v);
+                        setInstallmentMonths(null);
+                        setDownPayment("");
+                      }}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        isInstallment ? "bg-blue-600" : "bg-slate-200"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                          isInstallment ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </label>
+
+                  {isInstallment && (
+                    <div className="mt-3 space-y-3">
+                      <div>
+                        <span className="text-xs text-slate-500">Giá trị xe chọn</span>
+                        <p className="font-semibold text-blue-700">{formatCurrency(selectedCarTotal)}</p>
+                      </div>
+
+                      <label className="block">
+                        <span className="text-xs font-medium text-slate-600">Kỳ hạn</span>
+                        <select
+                          className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                          value={installmentMonths ?? ""}
+                          onChange={(e) => {
+                            setInstallmentMonths(e.target.value ? Number(e.target.value) : null);
+                            setDownPayment("");
+                          }}
+                        >
+                          <option value="">-- Chọn kỳ hạn --</option>
+                          {installmentPlansQuery.isLoading ? (
+                            <option disabled>Đang tải...</option>
+                          ) : (
+                            installmentPlans.map((p) => (
+                              <option key={p.months} value={p.months}>
+                                {p.label} — {p.annualRatePercent}%/năm
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </label>
+
+                      {selectedPlan && (
+                        <>
+                          <label className="block">
+                            <span className="text-xs font-medium text-slate-600">
+                              Tiền đặt cọc
+                              {minDownPayment ? ` (tối thiểu ${formatCurrency(minDownPayment)})` : ""}
+                            </span>
+                            <input
+                              type="number"
+                              min={minDownPayment ?? 0}
+                              step={1000000}
+                              className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm ${
+                                downPaymentError ? "border-red-400" : ""
+                              }`}
+                              placeholder="Nhập số tiền (VND)"
+                              value={downPayment}
+                              onChange={(e) => setDownPayment(e.target.value)}
+                            />
+                            {downPaymentError && (
+                              <p className="mt-1 text-xs text-red-500">{downPaymentError}</p>
+                            )}
+                          </label>
+
+                          {selectedPlan.monthlyPayment && downPaymentNum >= (minDownPayment ?? 0) && (
+                            <div className="rounded-lg bg-blue-50 p-3 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-slate-600">Trả mỗi tháng</span>
+                                <span className="font-semibold text-blue-700">
+                                  {formatCurrency(
+                                    downPaymentNum > 0
+                                      ? (() => {
+                                          const principal = selectedCarTotal - downPaymentNum;
+                                          const r = selectedPlan.annualRatePercent / 100 / 12;
+                                          return principal > 0
+                                            ? Math.round(
+                                                (principal * r) /
+                                                  (1 - Math.pow(1 + r, -selectedPlan.months)),
+                                              )
+                                            : 0;
+                                        })()
+                                      : selectedPlan.monthlyPayment,
+                                  )}
+                                </span>
+                              </div>
+                              {selectedPlan.totalRepayment && (
+                                <div className="mt-1 flex justify-between text-xs text-slate-500">
+                                  <span>Tổng trả</span>
+                                  <span>{formatCurrency(selectedPlan.totalRepayment)}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Mã giảm giá */}
+              <div className="mt-4">
+                <span className="text-sm font-medium text-slate-700">Mã giảm giá</span>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    type="text"
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm uppercase"
+                    placeholder="Nhập mã..."
+                    value={promoCode}
+                    onChange={(e) => {
+                      setPromoCode(e.target.value.toUpperCase());
+                      if (appliedPromo) setAppliedPromo(null);
+                    }}
+                    onKeyDown={(e) => e.key === "Enter" && void handleApplyPromo()}
+                  />
+                  <button
+                    type="button"
+                    disabled={promoLoading || !promoCode.trim()}
+                    onClick={() => void handleApplyPromo()}
+                    className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    {promoLoading ? "..." : "Áp dụng"}
+                  </button>
+                </div>
+                {appliedPromo && (
+                  <div className="mt-2 rounded-lg bg-green-50 px-3 py-2 text-sm">
+                    <div className="flex justify-between text-green-700">
+                      <span>{appliedPromo.description ?? appliedPromo.code}</span>
+                      <span>- {formatCurrency(appliedPromo.discountAmount)}</span>
+                    </div>
+                    <div className="mt-1 flex justify-between font-semibold">
+                      <span className="text-slate-600">Sau giảm giá</span>
+                      <span className="text-blue-700">{formatCurrency(appliedPromo.finalAmount)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <label className="mt-4 block">
                 <span className="text-sm font-medium text-slate-700">Địa chỉ giao hàng</span>
                 <textarea

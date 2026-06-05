@@ -164,7 +164,9 @@ function unwrap<T>(payload: T | OperationResult<T>): T {
 
 export function createOrderInputFromCart(
   items: CartItem[],
-  input: Pick<CreateOrderInput, "paymentMethod" | "deliveryAddress" | "notes" | "previewToken">
+  input: Pick<CreateOrderInput,
+    "paymentMethod" | "deliveryAddress" | "notes" | "previewToken" |
+    "isInstallment" | "installmentMonths" | "downPayment">
 ): CreateOrderInput {
   const payload = createOrderPreviewInputFromCart(items);
   const orderType = resolveOrderType(payload);
@@ -173,7 +175,9 @@ export function createOrderInputFromCart(
     ...payload,
     orderType,
     paymentMethod: input.paymentMethod,
-    isInstallment: false,
+    isInstallment: input.isInstallment ?? false,
+    installmentMonths: input.isInstallment ? (input.installmentMonths ?? null) : null,
+    downPayment: input.isInstallment ? (input.downPayment ?? null) : null,
     deliveryAddress: input.deliveryAddress,
     notes: input.notes,
     previewToken: input.previewToken,
@@ -203,6 +207,26 @@ export interface AdminOrderListParams {
   keyword?: string;
   fromDate?: string;
   toDate?: string;
+}
+
+export interface ApplyPromoResult {
+  code: string;
+  description?: string | null;
+  discountType: "Percent" | "Fixed";
+  discountValue: number;
+  discountAmount: number;
+  finalAmount: number;
+}
+
+export interface InstallmentPlanViewModel {
+  months: number;
+  annualRatePercent: number;
+  label: string;
+  minDownPaymentPct: number;
+  minDownPayment?: number | null;
+  monthlyPayment?: number | null;
+  totalInterest?: number | null;
+  totalRepayment?: number | null;
 }
 
 export interface RevenueDataPoint {
@@ -346,6 +370,24 @@ export const orderApi = {
       API.ordersPayment.cancelOrder(orderNumber)
     );
     return res.data;
+  },
+
+  /** POST /orders/payment/promo/apply — validate mã + tính discount */
+  applyPromo: async (code: string, orderTotal: number) => {
+    const res = await apiClient.post<OperationResult<ApplyPromoResult>>(
+      API.ordersPayment.promoApply,
+      { code, orderTotal }
+    );
+    return unwrap(res.data);
+  },
+
+  /** GET /orders/payment/installment-plans?carPrice=X&downPayment=Y — Public */
+  installmentPlans: async (carPrice?: number, downPayment?: number) => {
+    const res = await apiClient.get<OperationResult<InstallmentPlanViewModel[]>>(
+      API.ordersPayment.installmentPlans,
+      { params: { carPrice, downPayment } }
+    );
+    return unwrap(res.data) ?? [];
   },
 
   /** GET /orders/payment/revenue-report */

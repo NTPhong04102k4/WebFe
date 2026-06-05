@@ -74,6 +74,10 @@ export const API = {
     /** POST /orders/payment/order/{orderNumber}/cancel — Customer (Pending only) */
     cancelOrder: (orderNumber: string) =>
       `/orders/payment/order/${orderNumber}/cancel`,
+    /** GET /orders/payment/installment-plans — Public */
+    installmentPlans: "/orders/payment/installment-plans",
+    /** POST /orders/payment/promo/apply — Public */
+    promoApply: "/orders/payment/promo/apply",
   },
 
   finance: {
@@ -159,11 +163,13 @@ export const API = {
     bodytypeUpdate: "/common/bodytype/update",
     location: "/common/location",
     locations: "/common/locations",
+    locationsNearby: "/common/locations/nearby",
   },
   hr: {
     payrolls: "/hr/payrolls",
     payroll: (id: string | number) => `/hr/payrolls/${id}`,
     payrollPay: (id: string | number) => `/hr/payrolls/${id}/pay`,
+    payrollRecalculate: "/hr/payrolls/recalculate",
     skills: {
       list: "/hr/skills",
       detail: (id: string | number) => `/hr/skills/${id}`,
@@ -228,6 +234,8 @@ export const API = {
     workOrderParts: (id: string | number) =>
       `/workshop/work-orders/${id}/parts`,
     workOrderPay: (id: string | number) => `/workshop/work-orders/${id}/pay`,
+    workOrderDeliver: (id: string | number) => `/workshop/work-orders/${id}/deliver`,
+    workOrderConfirmDelivery: (id: string | number) => `/workshop/work-orders/${id}/confirm-delivery`,
     workOrderPaymentInfo: (id: string | number) =>
       `/workshop/work-orders/${id}/payment-info`,
     workOrderFeedback: (id: string | number) =>
