@@ -267,4 +267,14 @@ export const hrApi = {
   deletePayroll: async (id: number, options?: ApiRequestOptions) => {
     await apiClient.delete(API.hr.payroll(id), withSignal({}, options));
   },
+
+  /** POST /hr/payrolls/recalculate?year=X&month=Y */
+  recalculatePayroll: async (year: number, month: number) => {
+    const res = await apiClient.post<OperationResult<{ updated: number; period: string }>>(
+      API.hr.payrollRecalculate,
+      undefined,
+      { params: { year, month } }
+    );
+    return res.data;
+  },
 };

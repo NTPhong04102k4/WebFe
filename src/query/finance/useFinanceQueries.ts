@@ -70,5 +70,10 @@ export function useFinancePayrollMutations() {
       mutationFn: (id: number) => hrApi.deletePayroll(id),
       onSuccess: invalidate,
     }),
+    recalculatePayroll: useMutation({
+      mutationFn: ({ year, month }: { year: number; month: number }) =>
+        hrApi.recalculatePayroll(year, month),
+      onSuccess: invalidate,
+    }),
   };
 }

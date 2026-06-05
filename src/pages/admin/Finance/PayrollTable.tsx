@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, CheckSquare, Eye } from "lucide-react";
+import { Plus, Trash2, CheckSquare, Eye, Calculator } from "lucide-react";
 import { notify } from "src/components/core/Feedback/toast";
 import {
   useFinancePayrolls,
@@ -56,7 +56,21 @@ export function PayrollTable({ totalExpense, fromDate: fromProp, toDate: toProp 
     fromDate: queryFromDate,
     toDate: queryToDate,
   });
-  const { markPaid, deletePayroll } = useFinancePayrollMutations();
+  const { markPaid, deletePayroll, recalculatePayroll } = useFinancePayrollMutations();
+
+  const handleRecalculate = () => {
+    const [y, m] = month.split("-").map(Number);
+    if (!window.confirm(`Tính lại lương từ WorkOrder cho tháng ${month}?\nSẽ cập nhật giờ làm, jobs hoàn thành, hoa hồng từ dữ liệu thực tế.`)) return;
+    recalculatePayroll.mutate(
+      { year: y, month: m },
+      {
+        onSuccess: (res) => {
+          const d = (res as { data?: { updated?: number } })?.data;
+          notify.success(`Đã tính lương cho ${d?.updated ?? 0} kỹ thuật viên`);
+        },
+      }
+    );
+  };
 
   const payrolls = data?.data ?? [];
   const total = data?.totalCount ?? 0;
@@ -99,6 +113,15 @@ export function PayrollTable({ totalExpense, fromDate: fromProp, toDate: toProp 
               className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             />
           )}
+          <button
+            onClick={handleRecalculate}
+            disabled={recalculatePayroll.isPending}
+            title="Tính lại lương từ dữ liệu WorkOrder thực tế trong tháng"
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+          >
+            <Calculator className="h-4 w-4" />
+            {recalculatePayroll.isPending ? "Đang tính..." : "Tính lương tự động"}
+          </button>
           <button
             onClick={() => setModalOpen(true)}
             className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
