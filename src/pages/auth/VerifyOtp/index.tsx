@@ -60,8 +60,8 @@ export default function VerifyOtpPage() {
       const res = await verifyOtpAsync({ email, otpCode: code })
       const d = res.data?.data
       if (d?.token) {
-        notify.success('Xác thực thành công! Chào mừng bạn.')
-        navigate('/', { replace: true })
+        notify.success('Xác thực thành công! Vui lòng đăng nhập.')
+        navigate('/auth/login', { replace: true })
       } else {
         notify.error(res.data?.message ?? 'Xác thực thất bại')
         setDigits(Array(OTP_LENGTH).fill(''))

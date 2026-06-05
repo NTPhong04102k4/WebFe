@@ -274,62 +274,62 @@ export default function CustomerLayout() {
       {/* Content */}
       <main className="flex-1 overflow-y-auto flex flex-col min-h-0">
         <Outlet />
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-slate-900 text-slate-400">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-            <div>
-              <div className="mb-3 flex items-center gap-2 text-white">
-                <Car className="h-5 w-5 text-blue-400" />
-                <span className="font-bold">SoldCars</span>
+        {/* Footer — cuộn xuống cuối trang mới thấy */}
+        <footer className="mt-auto border-t border-slate-200 bg-slate-900 text-slate-400">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+              <div>
+                <div className="mb-3 flex items-center gap-2 text-white">
+                  <Car className="h-5 w-5 text-blue-400" />
+                  <span className="font-bold">SoldCars</span>
+                </div>
+                <p className="text-sm leading-relaxed">
+                  Hệ thống mua bán xe hơi uy tín, chất lượng hàng đầu Việt Nam.
+                </p>
               </div>
-              <p className="text-sm leading-relaxed">
-                Hệ thống mua bán xe hơi uy tín, chất lượng hàng đầu Việt Nam.
-              </p>
+              <div>
+                <h4 className="mb-3 font-semibold text-white">Liên kết nhanh</h4>
+                <ul className="space-y-2 text-sm">
+                  <li>
+                    <Link to="/cars" className="hover:text-white">
+                      Xe hơi
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/accessories" className="hover:text-white">
+                      Phụ kiện
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/appointments" className="hover:text-white">
+                      Đặt lịch hẹn
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="mb-3 font-semibold text-white">Hỗ trợ</h4>
+                <ul className="space-y-2 text-sm">
+                  <li>
+                    <Link to="/ai-chat" className="hover:text-white">
+                      AI Chatbot
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/chat" className="hover:text-white">
+                      Chat trực tiếp
+                    </Link>
+                  </li>
+                </ul>
+              </div>
             </div>
-            <div>
-              <h4 className="mb-3 font-semibold text-white">Liên kết nhanh</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link to="/cars" className="hover:text-white">
-                    Xe hơi
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/accessories" className="hover:text-white">
-                    Phụ kiện
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/appointments" className="hover:text-white">
-                    Đặt lịch hẹn
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="mb-3 font-semibold text-white">Hỗ trợ</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link to="/ai-chat" className="hover:text-white">
-                    AI Chatbot
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/chat" className="hover:text-white">
-                    Chat trực tiếp
-                  </Link>
-                </li>
-              </ul>
+            <div className="mt-8 border-t border-slate-700 pt-6 text-center text-xs">
+              © {new Date().getFullYear()} SoldCars. All rights reserved.
             </div>
           </div>
-          <div className="mt-8 border-t border-slate-700 pt-6 text-center text-xs">
-            © {new Date().getFullYear()} SoldCars. All rights reserved.
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </main>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
-import { X, GitCompare } from 'lucide-react'
+import { X, GitCompare, Eye, Star, ShoppingCart } from 'lucide-react'
 
 import { carRouteFn } from '@/services/api/functions/Cars/Routes.Fn'
 import { useCart } from '@/hooks/useCart'
@@ -304,30 +304,29 @@ export default function CustomerCarsPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {cars.map((car) => {
               const img = getImageSrc(car)
               return (
                 <div
                   key={car.carID}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                  className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
                 >
                   <div className="relative aspect-[4/3] bg-slate-100">
                     {img ? (
                       <img
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-fill"
                         src={img}
                         alt={car.carName}
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">
+                      <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
                         No image
                       </div>
                     )}
-                    {/* Badge trạng thái */}
                     {car.statusCode === "RESERVED" && (
                       <span className="absolute left-2 top-2 rounded-md bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">
-                        Đang đặt cọc
+                        Đặt cọc
                       </span>
                     )}
                     {car.statusCode === "SOLD" && (
@@ -335,7 +334,6 @@ export default function CustomerCarsPage() {
                         Đã bán
                       </span>
                     )}
-                    {/* Badge nổi bật */}
                     {car.isFeature && car.statusCode === "AVAILABLE" && (
                       <span className="absolute right-2 top-2 rounded-md bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
                         Nổi bật
@@ -343,59 +341,64 @@ export default function CustomerCarsPage() {
                     )}
                   </div>
 
-                  <div className="p-4">
-                    <h3 className="line-clamp-2 text-base font-semibold text-slate-900">
+                  <div className="p-3">
+                    <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
                       {car.carName}
                     </h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Năm: {car.modelYear} • Tình trạng: {car.condition}
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {car.modelYear} • {car.condition}
                     </p>
 
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <div className="text-lg font-bold text-blue-700">
+                    <div className="mt-2 flex items-center justify-between gap-1.5">
+                      <div className="text-sm font-bold text-blue-700">
                         {formatCurrency(car.salePrice ?? car.price)}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <Link
                           to={`/cars/${car.carID}`}
-                          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                          title="Chi tiết"
+                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-700 hover:bg-slate-50"
                         >
-                          Chi tiết
+                          <Eye className="h-3.5 w-3.5" />
                         </Link>
                         <Link
                           to={`/reviews/${car.carID}`}
-                          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100"
+                          title="Review"
+                          className="rounded-lg border border-amber-200 bg-amber-50 p-1.5 text-amber-700 hover:bg-amber-100"
                         >
-                          Review
+                          <Star className="h-3.5 w-3.5" />
                         </Link>
                         <button
                           type="button"
                           title="So sánh"
                           onClick={() => toggleCompare(car)}
-                          className={`rounded-lg border px-2 py-2 text-sm font-medium transition-colors ${
+                          className={`rounded-lg border p-1.5 transition-colors ${
                             inCompare(car.carID)
                               ? "border-green-400 bg-green-50 text-green-700"
                               : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
                           }`}
                         >
-                          <GitCompare className="h-4 w-4" />
+                          <GitCompare className="h-3.5 w-3.5" />
                         </button>
                         {(() => {
                           const unavailable = car.statusCode === "RESERVED" || car.statusCode === "SOLD";
                           const inCart = isInCart('car', car.carID);
-                          const label = car.statusCode === "SOLD"
+                          const cartTitle = car.statusCode === "SOLD"
                             ? "Đã bán"
                             : car.statusCode === "RESERVED"
                             ? "Đang đặt cọc"
                             : inCart
                             ? "Trong giỏ"
-                            : "Thêm";
+                            : "Thêm vào giỏ";
                           return (
                             <button
                               type="button"
-                              className={`rounded-lg px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 ${
+                              title={cartTitle}
+                              className={`rounded-lg p-1.5 text-white disabled:cursor-not-allowed disabled:opacity-50 ${
                                 unavailable
                                   ? "bg-slate-400"
+                                  : inCart
+                                  ? "bg-green-600"
                                   : "bg-blue-600 hover:bg-blue-700"
                               }`}
                               onClick={() =>
@@ -408,7 +411,7 @@ export default function CustomerCarsPage() {
                               }
                               disabled={unavailable || inCart}
                             >
-                              {label}
+                              <ShoppingCart className="h-3.5 w-3.5" />
                             </button>
                           );
                         })()}
