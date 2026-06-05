@@ -110,6 +110,7 @@ export default function AppRouter() {
         >
           <Route index element={<Navigate to="garage" replace />} />
           <Route path="garage" element={<AccountGaragePage />} />
+          <Route path="orders" element={<OrdersPage />} />
           <Route path="appointments" element={<AccountAppointmentsPage />} />
           <Route path="work-orders" element={<AccountWorkOrdersPage />} />
           <Route path="insurance" element={<AccountInsurancePage />} />

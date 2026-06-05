@@ -5,6 +5,7 @@ import shell from "./account-shell.module.scss";
 
 const links = [
   { to: "/account/garage", label: "Xe của tôi" },
+  { to: "/account/orders", label: "Đơn hàng" },
   { to: "/account/appointments", label: "Lịch hẹn" },
   { to: "/account/work-orders", label: "Phiếu sửa chữa" },
   { to: "/account/insurance", label: "Bảo hiểm" },
