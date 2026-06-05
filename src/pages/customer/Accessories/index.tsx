@@ -42,8 +42,8 @@ export default function CustomerAccessoriesPage() {
   const brandOptions = useMemo(
     () =>
       brands.map((item: any) => ({
-        value: String(item.brandAccessoryID ?? item.id),
-        label: item.brandName ?? item.brandAccessoryName ?? item.name,
+        value: String(item.brandAccessoryID),
+        label: item.name,
       })),
     [brands]
   );
