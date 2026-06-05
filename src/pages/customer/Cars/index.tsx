@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
+import { X, GitCompare } from 'lucide-react'
 
 import { carRouteFn } from '@/services/api/functions/Cars/Routes.Fn'
 import { useCart } from '@/hooks/useCart'
@@ -11,6 +12,88 @@ import { useBrandCarList } from '@/query/brand-car/useBrandCarQueries'
 import { useBodyTypeList } from '@/query/body-type/useBodyTypeQueries'
 import { SelectField } from '@/shared/components/Form/SelectField'
 import PremiumGateModal from '@/pages/customer/Premium/components/PremiumGateModal'
+
+// ── Compare Modal ──────────────────────────────────────────────────────────────
+const COMPARE_ROWS: { label: string; key: keyof CarResponseItem }[] = [
+  { label: "Giá bán", key: "salePrice" },
+  { label: "Năm SX", key: "modelYear" },
+  { label: "Tình trạng", key: "condition" },
+  { label: "Động cơ (cc)", key: "engineSize" },
+  { label: "Nhiên liệu", key: "fuelType" },
+  { label: "Hộp số", key: "transmission" },
+  { label: "Dẫn động", key: "driveType" },
+  { label: "Số chỗ", key: "seats" },
+  { label: "Số cửa", key: "doors" },
+  { label: "Màu sắc", key: "color" },
+  { label: "Số km", key: "mileage" },
+]
+
+function CompareModal({ cars, onClose }: { cars: CarResponseItem[]; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl max-h-[90vh]">
+        <div className="flex items-center justify-between border-b p-4">
+          <h2 className="text-lg font-semibold text-slate-800">So sánh xe</h2>
+          <button onClick={onClose} className="rounded-lg p-1 hover:bg-slate-100">
+            <X className="h-5 w-5 text-slate-500" />
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                <th className="sticky left-0 w-36 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase text-slate-500">
+                  Thông số
+                </th>
+                {cars.map((car) => {
+                  const img = typeof car.primaryImagePath === 'string' ? car.primaryImagePath
+                    : Array.isArray(car.imagePaths) ? car.imagePaths[0] : undefined
+                  return (
+                    <th key={car.carID} className="min-w-[180px] px-4 py-3 text-left">
+                      {img && <img src={img} alt={car.carName} className="mb-2 h-24 w-full rounded-lg object-cover" />}
+                      <div className="font-semibold text-slate-900 line-clamp-2">{car.carName}</div>
+                      <div className="mt-1 text-lg font-bold text-blue-700">{formatCurrency(car.salePrice ?? car.price)}</div>
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARE_ROWS.map(({ label, key }, i) => (
+                <tr key={key} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                  <td className="sticky left-0 bg-inherit px-4 py-2.5 text-xs font-medium text-slate-500">{label}</td>
+                  {cars.map((car) => {
+                    const val = car[key]
+                    const display = key === "salePrice"
+                      ? formatCurrency(Number(val))
+                      : key === "mileage"
+                      ? Number(val).toLocaleString("vi-VN") + " km"
+                      : String(val ?? "—")
+                    return (
+                      <td key={car.carID} className="px-4 py-2.5 font-medium text-slate-800">{display}</td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex justify-center gap-3 border-t p-4">
+          {cars.map((car) => (
+            <Link
+              key={car.carID}
+              to={`/cars/${car.carID}`}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Xem {car.carName}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function getImageSrc(car: CarResponseItem): string | undefined {
   const primary = car.primaryImagePath
@@ -25,6 +108,18 @@ export default function CustomerCarsPage() {
   const { addCar, isInCart } = useCart()
   const user = useAuthStore((s) => s.user)
   const [showPremiumGate, setShowPremiumGate] = useState(false)
+  const [compareList, setCompareList] = useState<CarResponseItem[]>([])
+  const [showCompare, setShowCompare] = useState(false)
+
+  const toggleCompare = (car: CarResponseItem) => {
+    setCompareList((prev) => {
+      if (prev.some((c) => c.carID === car.carID))
+        return prev.filter((c) => c.carID !== car.carID)
+      if (prev.length >= 3) return prev // max 3
+      return [...prev, car]
+    })
+  }
+  const inCompare = (carID: number) => compareList.some((c) => c.carID === carID)
   const [searchParams] = useSearchParams()
   const { data: brandCars = [], isLoading: brandsLoading } = useBrandCarList()
   const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList()
@@ -103,6 +198,9 @@ export default function CustomerCarsPage() {
         featureDescription="Nâng cấp Premium để xem tất cả xe không giới hạn."
         onClose={() => setShowPremiumGate(false)}
       />
+    )}
+    {showCompare && compareList.length >= 2 && (
+      <CompareModal cars={compareList} onClose={() => setShowCompare(false)} />
     )}
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -270,6 +368,18 @@ export default function CustomerCarsPage() {
                         >
                           Review
                         </Link>
+                        <button
+                          type="button"
+                          title="So sánh"
+                          onClick={() => toggleCompare(car)}
+                          className={`rounded-lg border px-2 py-2 text-sm font-medium transition-colors ${
+                            inCompare(car.carID)
+                              ? "border-green-400 bg-green-50 text-green-700"
+                              : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                          }`}
+                        >
+                          <GitCompare className="h-4 w-4" />
+                        </button>
                         {(() => {
                           const unavailable = car.statusCode === "RESERVED" || car.statusCode === "SOLD";
                           const inCart = isInCart('car', car.carID);
@@ -352,6 +462,50 @@ export default function CustomerCarsPage() {
         </>
       )}
     </div>
+
+    {/* Floating compare bar */}
+    {compareList.length > 0 && (
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white shadow-lg">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-3">
+            <GitCompare className="h-5 w-5 text-blue-600" />
+            <span className="text-sm font-medium text-slate-700">
+              So sánh ({compareList.length}/3):
+            </span>
+            <div className="flex gap-2">
+              {compareList.map((car) => (
+                <span
+                  key={car.carID}
+                  className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700"
+                >
+                  {car.carName}
+                  <button type="button" onClick={() => toggleCompare(car)} className="ml-1 hover:text-blue-900">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCompareList([])}
+              className="text-xs text-slate-500 hover:text-slate-700"
+            >
+              Xóa tất cả
+            </button>
+            <button
+              type="button"
+              disabled={compareList.length < 2}
+              onClick={() => setShowCompare(true)}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              So sánh ngay
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   )
 }
