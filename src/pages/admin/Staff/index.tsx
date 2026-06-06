@@ -182,6 +182,7 @@ export default function StaffPage() {
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [editing, setEditing] = useState<StaffResponse | null>(null);
   const [passwordTarget, setPasswordTarget] = useState<StaffResponse | null>(null);
+  const [confirmDeleteStaff, setConfirmDeleteStaff] = useState<StaffResponse | null>(null);
 
   const { data, isLoading } = useStaffList(query);
   const { data: locations = [], isLoading: locationsLoading } = useLocationList();
@@ -246,7 +247,7 @@ export default function StaffPage() {
     const locationID = Number(values.locationID);
     const roleID = Number(values.roleID);
     if (!locationID || !roleID) {
-      notify.info("Chọn location và role hợp lệ");
+      notify.info("Vui lòng chọn chi nhánh và chức vụ hợp lệ");
       return;
     }
 
@@ -260,7 +261,7 @@ export default function StaffPage() {
           roleID,
         };
         await mutations.updateStaff.mutateAsync({ staffId: staffIdOf(editing), body });
-        notify.success("Da cap nhat staff");
+        notify.success("Đã cập nhật nhân viên");
       } else {
         const body: CreateStaffRequest = {
           username: values.username.trim(),
@@ -273,7 +274,7 @@ export default function StaffPage() {
           createBy: currentUserId ?? 0,
         };
         await mutations.createStaff.mutateAsync(body);
-        notify.success("Da tao staff");
+        notify.success("Đã tạo nhân viên");
       }
       closeForm();
     } catch {
@@ -287,17 +288,17 @@ export default function StaffPage() {
         staffId: staffIdOf(staff),
         body: { isActive: !isActiveStaff(staff) },
       });
-      notify.success("Da cap nhat trang thai");
+      notify.success("Đã cập nhật trạng thái");
     } catch {
       // interceptor đã hiện toast lỗi
     }
   };
 
   const deleteStaff = async (staff: StaffResponse) => {
-    if (!window.confirm(`Xoa mem staff ${staff.fullName}?`)) return;
     try {
       await mutations.deleteStaff.mutateAsync(staffIdOf(staff));
-      notify.success("Da xoa staff");
+      notify.success("Đã xóa nhân viên");
+      setConfirmDeleteStaff(null);
     } catch {
       // interceptor đã hiện toast lỗi
     }
@@ -313,7 +314,7 @@ export default function StaffPage() {
           newPassword: values.newPassword,
         },
       });
-      notify.success("Da doi mat khau");
+      notify.success("Đã đổi mật khẩu");
       setPasswordTarget(null);
       passwordForm.reset();
     } catch {
@@ -334,7 +335,7 @@ export default function StaffPage() {
         confirmPassword: values.confirmPassword,
       };
       await mutations.recoverSuperAdminPassword.mutateAsync(body);
-      notify.success("Da dat lai mat khau SuperAdmin");
+      notify.success("Đã đặt lại mật khẩu SuperAdmin");
       setRecoveryOpen(false);
       recoveryForm.reset();
     } catch {
@@ -391,7 +392,7 @@ export default function StaffPage() {
           const isSelf = sameStaff(currentUserId, staff);
           return (
             <div className="flex flex-wrap gap-2">
-              <ActionButton onClick={() => openEdit(staff)}>Sua</ActionButton>
+              <ActionButton onClick={() => openEdit(staff)}>Sửa</ActionButton>
               <ActionButton
                 onClick={() => {
                   setPasswordTarget(staff);
@@ -399,7 +400,7 @@ export default function StaffPage() {
                 }}
               >
                 <KeyRound className="mr-2 h-4 w-4" />
-                Mat khau
+                Mật khẩu
               </ActionButton>
               <ActionButton disabled={isSelf} onClick={() => toggleStatus(staff)}>
                 {isActiveStaff(staff) ? (
@@ -407,11 +408,11 @@ export default function StaffPage() {
                 ) : (
                   <Unlock className="mr-2 h-4 w-4" />
                 )}
-                {isActiveStaff(staff) ? "Khoa" : "Mo"}
+                {isActiveStaff(staff) ? "Khóa" : "Mở"}
               </ActionButton>
-              <ActionButton variant="danger" disabled={isSelf} onClick={() => deleteStaff(staff)}>
+              <ActionButton variant="danger" disabled={isSelf} onClick={() => setConfirmDeleteStaff(staff)}>
                 <Trash2 className="mr-2 h-4 w-4" />
-                Xoa
+                Xóa
               </ActionButton>
             </div>
           );
@@ -424,8 +425,8 @@ export default function StaffPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Quan ly Staff"
-        description="Tao, cap nhat, khoa/mo khoa, doi mat khau va xoa mem staff/admin."
+        title="Quản lý Nhân viên"
+        description="Tạo, cập nhật, khóa/mở khóa, đổi mật khẩu và xóa nhân viên/admin."
         action={
           <div className="flex flex-wrap gap-2">
             <ActionButton onClick={() => setRecoveryOpen(true)}>
@@ -441,19 +442,19 @@ export default function StaffPage() {
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <MetricCard label="Tong staff" value={totalCount} tone="blue" />
-        <MetricCard label="Active tren trang" value={activeCount} tone="green" />
-        <MetricCard label="Inactive tren trang" value={inactiveCount} tone="red" />
+        <MetricCard label="Tổng nhân viên" value={totalCount} tone="blue" />
+        <MetricCard label="Đang hoạt động" value={activeCount} tone="green" />
+        <MetricCard label="Đã khóa" value={inactiveCount} tone="red" />
       </div>
 
       <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:grid-cols-5">
         <Input
-          label="Tu khoa"
+          label="Từ khóa"
           value={draft.keyword}
           onChange={(event) =>
             setDraft((state) => ({ ...state, keyword: event.target.value }))
           }
-          placeholder="Ten, username, email"
+          placeholder="Tên, username, email"
         />
         <SelectBox
           label="Role"
@@ -486,22 +487,22 @@ export default function StaffPage() {
           })}
         </SelectBox>
         <SelectBox
-          label="Trang thai"
+          label="Trạng thái"
           value={draft.isActive}
           onChange={(value) => setDraft((state) => ({ ...state, isActive: value }))}
         >
-          <option value="">Tat ca</option>
-          <option value="true">Active</option>
-          <option value="false">Inactive</option>
+          <option value="">Tất cả</option>
+          <option value="true">Đang hoạt động</option>
+          <option value="false">Đã khóa</option>
         </SelectBox>
         <div className="flex items-end gap-2">
           <ActionButton variant="primary" onClick={applyFilter}>
             <Search className="mr-2 h-4 w-4" />
-            Loc
+            Lọc
           </ActionButton>
           <ActionButton onClick={clearFilter}>
             <RotateCcw className="mr-2 h-4 w-4" />
-            Xoa
+            Xóa lọc
           </ActionButton>
         </div>
       </div>
@@ -511,14 +512,14 @@ export default function StaffPage() {
         columns={columns}
         getRowId={(row) => String(staffIdOf(row))}
         loading={isLoading}
-        emptyTitle="Chua co staff"
-        emptyDescription="Thu thay doi bo loc hoac tao staff moi."
+        emptyTitle="Chưa có nhân viên"
+        emptyDescription="Thử thay đổi bộ lọc hoặc tạo nhân viên mới."
         enablePagination={false}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600 dark:text-slate-300">
         <span>
-          Tong {totalCount} staff, pageSize {query.pageSize ?? DEFAULT_PAGE_SIZE}
+          Tổng {totalCount} nhân viên
         </span>
         <div className="flex items-center gap-2">
           <ActionButton
@@ -527,7 +528,7 @@ export default function StaffPage() {
               setQuery((state) => ({ ...state, page: (state.page ?? 1) - 1 }))
             }
           >
-            Truoc
+            Trước
           </ActionButton>
           <span className="px-2 py-2">
             Trang {query.page ?? 1}/{totalPages}
@@ -546,17 +547,17 @@ export default function StaffPage() {
       <Modal
         open={formOpen}
         onClose={closeForm}
-        title={editing ? "Cap nhat staff" : "Tao staff"}
+        title={editing ? "Cập nhật nhân viên" : "Tạo nhân viên mới"}
         size="lg"
         footer={
           <div className="flex justify-end gap-2">
-            <ActionButton onClick={closeForm}>Huy</ActionButton>
+            <ActionButton onClick={closeForm}>Huỷ</ActionButton>
             <ActionButton
               variant="primary"
               onClick={form.handleSubmit(saveStaff)}
               disabled={mutations.createStaff.isPending || mutations.updateStaff.isPending}
             >
-              Luu
+              Lưu
             </ActionButton>
           </div>
         }
@@ -623,29 +624,29 @@ export default function StaffPage() {
       <Modal
         open={passwordTarget !== null}
         onClose={() => setPasswordTarget(null)}
-        title={`Doi mat khau${passwordTarget ? ` - ${passwordTarget.fullName}` : ""}`}
+        title={`Đổi mật khẩu${passwordTarget ? ` — ${passwordTarget.fullName}` : ""}`}
         footer={
           <div className="flex justify-end gap-2">
-            <ActionButton onClick={() => setPasswordTarget(null)}>Huy</ActionButton>
+            <ActionButton onClick={() => setPasswordTarget(null)}>Huỷ</ActionButton>
             <ActionButton
               variant="primary"
               onClick={passwordForm.handleSubmit(savePassword)}
               disabled={mutations.updateStaffPassword.isPending}
             >
-              Luu
+              Lưu
             </ActionButton>
           </div>
         }
       >
         <div className="space-y-4">
           <Input
-            label="Current password"
+            label="Mật khẩu hiện tại"
             type="password"
-            helperText="Bat buoc khi doi mat khau cua chinh minh; SuperAdmin doi staff khac co the bo trong."
+            helperText="Bắt buộc khi đổi mật khẩu của chính mình. SuperAdmin đổi cho người khác có thể để trống."
             {...passwordForm.register("currentPassword")}
           />
           <Input
-            label="New password"
+            label="Mật khẩu mới"
             type="password"
             required
             {...passwordForm.register("newPassword", { required: true })}
@@ -656,16 +657,16 @@ export default function StaffPage() {
       <Modal
         open={recoveryOpen}
         onClose={() => setRecoveryOpen(false)}
-        title="Khoi phuc mat khau SuperAdmin"
+        title="Khôi phục mật khẩu SuperAdmin"
         footer={
           <div className="flex justify-end gap-2">
-            <ActionButton onClick={() => setRecoveryOpen(false)}>Huy</ActionButton>
+            <ActionButton onClick={() => setRecoveryOpen(false)}>Huỷ</ActionButton>
             <ActionButton
               variant="primary"
               onClick={recoveryForm.handleSubmit(recoverSuperAdmin)}
               disabled={mutations.recoverSuperAdminPassword.isPending}
             >
-              Dat lai mat khau
+              Đặt lại mật khẩu
             </ActionButton>
           </div>
         }
@@ -678,19 +679,44 @@ export default function StaffPage() {
             {...recoveryForm.register("recoveryCode", { required: true })}
           />
           <Input
-            label="New password"
+            label="Mật khẩu mới"
             type="password"
             required
             {...recoveryForm.register("newPassword", { required: true })}
           />
           <Input
-            label="Confirm password"
+            label="Xác nhận mật khẩu"
             type="password"
             required
             {...recoveryForm.register("confirmPassword", { required: true })}
           />
         </div>
       </Modal>
+
+      {/* Confirm xóa nhân viên */}
+      {confirmDeleteStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl dark:bg-slate-900">
+            <div className="px-6 py-5">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Xác nhận xóa nhân viên</h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                Bạn có chắc muốn xóa nhân viên{" "}
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  {confirmDeleteStaff.fullName}
+                </span>? Hành động này không thể hoàn tác.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-6 py-3 dark:border-slate-700">
+              <ActionButton onClick={() => setConfirmDeleteStaff(null)} disabled={mutations.deleteStaff.isPending}>
+                Huỷ
+              </ActionButton>
+              <ActionButton variant="danger" disabled={mutations.deleteStaff.isPending} onClick={() => deleteStaff(confirmDeleteStaff)}>
+                {mutations.deleteStaff.isPending ? "Đang xóa..." : "Xóa"}
+              </ActionButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

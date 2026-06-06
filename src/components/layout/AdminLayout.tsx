@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Car, ChevronDown, ChevronRight, LayoutDashboard, LogOut,
   Menu, Package, ShoppingBag, Users, Wrench, Shield, Star,
-  UserCog, MapPin, X, Briefcase, Moon, Sun, Sparkles, TrendingUp, MessageSquare,
+  UserCog, MapPin, X, Briefcase, Moon, Sun, Sparkles, TrendingUp, MessageSquare, Bell,
 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { resolveAppTheme, useUiPreferenceStore } from '@/stores/uiStore'
@@ -80,6 +80,7 @@ const navItems: NavItem[] = [
       { label: 'Đăng ký của KH', to: '/admin/subscriptions' },
     ],
   },
+  { label: 'Broadcast', icon: <Bell className="h-4 w-4" />, to: '/admin/broadcast' },
   {
     label: 'Quản lý Staff',
     icon: <UserCog className="h-4 w-4" />,

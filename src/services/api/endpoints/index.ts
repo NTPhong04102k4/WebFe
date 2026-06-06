@@ -133,12 +133,13 @@ export const API = {
     detail: (id: string | number) => `/cars/${id}`,
     techSpecGet: (id: string | number) => `/cars/${id}/tech-spec`,
     paging: "/cars",
+    statuses: "/cars/statuses",
     create: "/car/create",
     edit: "/car/edit",
     delete: (id: string | number) => `/cars/${id}`,
     techSpecDetailItem: "/car/techSpec/DetailItem",
-    techSpecCreate: "/car/techSpec/create",
-    techSpecEdit: "/car/techSpec/edit",
+    techSpecCreate: (id: string | number) => `/cars/${id}/tech-spec`,
+    techSpecEdit: (id: string | number) => `/cars/${id}/tech-spec`,
   },
   accessory: {
     detail: (id: string | number) => `/accessories/${id}`,
@@ -310,6 +311,11 @@ export const API = {
     adminAll: "/reviews/admin",
     adminPending: "/reviews/admin/pending",
     adminModerate: (id: string | number) => `/reviews/admin/${id}/moderate`,
+  },
+  broadcast: {
+    list: "/admin/broadcasts",
+    detail: (id: string | number) => `/admin/broadcasts/${id}`,
+    send: (id: string | number) => `/admin/broadcasts/${id}/send`,
   },
 } as const;
 

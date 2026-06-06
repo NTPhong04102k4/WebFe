@@ -28,6 +28,8 @@ export default function AdminReviewsPage() {
   const [dateRange, setDateRange] = useState<DateTimeRangeValue>({ fromDate: "", toDate: "" });
   const [deletingCarId, setDeletingCarId] = useState<number | null>(null);
   const [deletingServiceId, setDeletingServiceId] = useState<number | null>(null);
+  const [confirmCarId, setConfirmCarId] = useState<number | null>(null);
+  const [confirmServiceId, setConfirmServiceId] = useState<number | null>(null);
 
   const fromDate = dateRange.fromDate ? dateRange.fromDate.slice(0, 10) : undefined;
   const toDate = dateRange.toDate ? dateRange.toDate.slice(0, 10) : undefined;
@@ -157,17 +159,11 @@ export default function AdminReviewsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => {
-                        setDeletingCarId(review.reviewID);
-                        deleteCarReview.mutate(review.reviewID, {
-                          onSuccess: () => { notify.success("Đã xóa đánh giá"); setDeletingCarId(null); },
-                          onError: () => { setDeletingCarId(null); },
-                        });
-                      }}
+                      onClick={() => setConfirmCarId(review.reviewID)}
                       disabled={deletingCarId === review.reviewID}
                       className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40 dark:border-red-700 dark:text-red-400"
                     >
-                      {deletingCarId === review.reviewID ? "…" : "Xóa"}
+                      {deletingCarId === review.reviewID ? "Đang xóa..." : "Xóa"}
                     </button>
                   </td>
                 </tr>
@@ -209,17 +205,11 @@ export default function AdminReviewsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => {
-                        setDeletingServiceId(review.reviewID);
-                        deleteServiceReview.mutate(review.reviewID, {
-                          onSuccess: () => { notify.success("Đã xóa đánh giá dịch vụ"); setDeletingServiceId(null); },
-                          onError: () => { setDeletingServiceId(null); },
-                        });
-                      }}
+                      onClick={() => setConfirmServiceId(review.reviewID)}
                       disabled={deletingServiceId === review.reviewID}
                       className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40 dark:border-red-700 dark:text-red-400"
                     >
-                      {deletingServiceId === review.reviewID ? "…" : "Xóa"}
+                      {deletingServiceId === review.reviewID ? "Đang xóa..." : "Xóa"}
                     </button>
                   </td>
                 </tr>
@@ -242,6 +232,82 @@ export default function AdminReviewsPage() {
               className="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-600 disabled:opacity-40 dark:border-slate-600 dark:text-slate-300">
               Sau
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm xóa đánh giá xe */}
+      {confirmCarId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl dark:bg-slate-900">
+            <div className="px-6 py-5">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Xác nhận xóa đánh giá</h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                Bạn có chắc muốn xóa đánh giá này? Hành động này không thể hoàn tác.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-6 py-3 dark:border-slate-700">
+              <button
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                onClick={() => setConfirmCarId(null)}
+                disabled={deletingCarId === confirmCarId}
+              >
+                Huỷ
+              </button>
+              <button
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                disabled={deletingCarId === confirmCarId}
+                onClick={() => {
+                  const id = confirmCarId;
+                  setConfirmCarId(null);
+                  setDeletingCarId(id);
+                  deleteCarReview.mutate(id, {
+                    onSuccess: () => { notify.success("Đã xóa đánh giá"); setDeletingCarId(null); },
+                    onError: () => setDeletingCarId(null),
+                  });
+                }}
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm xóa đánh giá dịch vụ */}
+      {confirmServiceId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl dark:bg-slate-900">
+            <div className="px-6 py-5">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Xác nhận xóa đánh giá</h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                Bạn có chắc muốn xóa đánh giá dịch vụ này? Hành động này không thể hoàn tác.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-6 py-3 dark:border-slate-700">
+              <button
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                onClick={() => setConfirmServiceId(null)}
+                disabled={deletingServiceId === confirmServiceId}
+              >
+                Huỷ
+              </button>
+              <button
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                disabled={deletingServiceId === confirmServiceId}
+                onClick={() => {
+                  const id = confirmServiceId;
+                  setConfirmServiceId(null);
+                  setDeletingServiceId(id);
+                  deleteServiceReview.mutate(id, {
+                    onSuccess: () => { notify.success("Đã xóa đánh giá dịch vụ"); setDeletingServiceId(null); },
+                    onError: () => setDeletingServiceId(null),
+                  });
+                }}
+              >
+                Xóa
+              </button>
+            </div>
           </div>
         </div>
       )}

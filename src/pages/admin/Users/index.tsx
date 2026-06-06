@@ -18,13 +18,13 @@ function getUserListErrorMessage(error: unknown) {
     const body = response?.data;
     const message = typeof body === "string" ? body : body?.message ?? body?.errorCode;
 
-    if (response?.status === 401) return "401 Unauthorized: token admin khong hop le hoac chua duoc gui len server.";
-    if (response?.status === 403) return "403 Forbidden: tai khoan hien tai khong co quyen xem danh sach user.";
-    if (response?.status === 404) return "404 Not Found: backend chua co endpoint danh sach user theo contract.";
-    if (response?.status) return `${response.status}: ${message ?? "Khong lay duoc danh sach user."}`;
+    if (response?.status === 401) return "Phiên đăng nhập hết hạn hoặc không có quyền truy cập. Vui lòng đăng nhập lại.";
+    if (response?.status === 403) return "Tài khoản hiện tại không có quyền xem danh sách người dùng.";
+    if (response?.status === 404) return "Không tìm thấy dữ liệu người dùng. Vui lòng liên hệ quản trị viên.";
+    if (response?.status) return `Lỗi ${response.status}: ${message ?? "Không lấy được danh sách người dùng."}`;
   }
 
-  return "Khong lay duoc danh sach user. Kiem tra backend hoac ket noi API.";
+  return "Không lấy được danh sách người dùng. Vui lòng kiểm tra kết nối và thử lại.";
 }
 
 export default function AdminUsersPage() {
@@ -71,7 +71,7 @@ export default function AdminUsersPage() {
 
       {!userManager.error && userManager.users.length === 0 && !userManager.isLoading ? (
         <div className="rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900">
-          <EmptyState title="Khong co nguoi dung" description="Chua co user phu hop voi bo loc hien tai." />
+          <EmptyState title="Không có người dùng" description="Chưa có người dùng phù hợp với bộ lọc hiện tại." />
         </div>
       ) : (
         <UserTable

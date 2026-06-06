@@ -68,6 +68,7 @@ const AdminPremiumPlansPage      = lazy(() => import('@/pages/admin/PremiumPlans
 const AdminSubscriptionsPage     = lazy(() => import('@/pages/admin/Subscriptions/index'))
 const AdminFinancePage           = lazy(() => import('@/pages/admin/Finance/index'))
 const AdminSupportChatPage       = lazy(() => import('@/pages/admin/SupportChat/index'))
+const AdminBroadcastPage         = lazy(() => import('@/pages/admin/Broadcast/index'))
 
 function Fallback() {
   return (
@@ -169,6 +170,7 @@ export default function AppRouter() {
           <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
           <Route path="finance" element={<AdminFinancePage />} />
           <Route path="support" element={<AdminSupportChatPage />} />
+          <Route path="broadcast" element={<AdminBroadcastPage />} />
 
           {/* SuperAdmin only */}
           <Route

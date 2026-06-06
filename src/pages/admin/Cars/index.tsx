@@ -10,6 +10,8 @@ import { formatCurrency } from '@/common/utils/formatCurrency'
 import type { CarResponse, CarResponseItem } from '@/shared/types/Reponse/Car'
 import { useBrandCarList } from '@/query/brand-car/useBrandCarQueries'
 import { useBodyTypeList } from '@/query/body-type/useBodyTypeQueries'
+import { useCarStatusList } from '@/query/car/useCarQueries'
+import { useLocationList } from '@/query/location/useLocationQueries'
 import { SelectField } from '@/shared/components/Form/SelectField'
 
 type CarCondition = 'New' | 'Used' | 'Certified' | string
@@ -98,6 +100,8 @@ export default function AdminCarsPage() {
   const user = useAuthStore((s) => s.user)
   const { data: brandCars = [], isLoading: brandsLoading } = useBrandCarList()
   const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList()
+  const { data: carStatuses = [] } = useCarStatusList()
+  const { data: locations = [] } = useLocationList()
 
   const [page, setPage] = useState(1)
   const pageSize = 10
@@ -160,6 +164,23 @@ export default function AdminCarsPage() {
         label: body.bodyName,
       })),
     [bodyTypes]
+  )
+
+  const carStatusOptions = useMemo(
+    () =>
+      carStatuses
+        .filter((s) => s.isActive)
+        .map((s) => ({ value: String(s.statusID), label: s.statusName })),
+    [carStatuses]
+  )
+
+  const locationOptions = useMemo(
+    () =>
+      locations.map((loc) => ({
+        value: String(loc.locationID),
+        label: loc.locationName,
+      })),
+    [locations]
   )
 
   const { data, isLoading, error } = useQuery<CarResponse, Error>({
@@ -653,22 +674,20 @@ export default function AdminCarsPage() {
                   {...register('bodyTypeID', { required: 'Vui lòng chọn kiểu thân xe' })}
                 />
 
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-slate-700">Status ID</span>
-                  <input
-                    inputMode="numeric"
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    {...register('statusID')}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-slate-700">Location ID</span>
-                  <input
-                    inputMode="numeric"
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                    {...register('locationID')}
-                  />
-                </label>
+                <SelectField
+                  label="Trạng thái xe"
+                  options={carStatusOptions}
+                  placeholder="Chọn trạng thái"
+                  disabled={carStatusOptions.length === 0}
+                  {...register('statusID')}
+                />
+                <SelectField
+                  label="Chi nhánh / Vị trí"
+                  options={locationOptions}
+                  placeholder="Chọn chi nhánh"
+                  disabled={locationOptions.length === 0}
+                  {...register('locationID')}
+                />
 
                 <label className="flex flex-col gap-1">
                   <span className="text-sm font-medium text-slate-700">Tình trạng</span>

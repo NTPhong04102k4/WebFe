@@ -8,6 +8,14 @@ import type {
 } from "src/shared/types/Request/Car";
 import { carKeys } from "./keys";
 
+export function useCarStatusList() {
+  return useQuery({
+    queryKey: carKeys.statuses(),
+    queryFn: ({ signal }) => carRouteFn.getStatuses({ signal }),
+    staleTime: 60 * 60_000,
+  });
+}
+
 export function useCarList(params: CarPagingRequest) {
   return useQuery({
     queryKey: carKeys.list(params),

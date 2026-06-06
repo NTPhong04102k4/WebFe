@@ -197,7 +197,6 @@ export default function WorkshopAppointmentsPage() {
       .filter((r) => r.serviceID !== "")
       .map((r) => ({
         serviceID: Number(r.serviceID),
-        estimatedPrice: Number(r.estimatedPrice || 0),
         notes: r.notes || null,
       }));
 

@@ -8,4 +8,5 @@ export const carKeys = {
   detail: (id: number) => [...carKeys.details(), id] as const,
   techSpecs: () => [...carKeys.all, "tech-spec"] as const,
   techSpec: (id: number) => [...carKeys.techSpecs(), id] as const,
+  statuses: () => [...carKeys.all, "statuses"] as const,
 };

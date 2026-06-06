@@ -41,7 +41,6 @@ export function BookingModal({ open, preselectedServices, onClose }: Props) {
         customerNote: customerNote.trim() || null,
         services: preselectedServices.map((service) => ({
           serviceID: service.serviceId,
-          estimatedPrice: service.price,
         })),
       }),
     onSuccess: () => {

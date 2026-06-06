@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ShoppingCart, Star } from "lucide-react";
+import { ShoppingCart, Star, ShieldCheck, Shield, Wind, Navigation, Sun, Sparkles, Bluetooth } from "lucide-react";
 
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { notify } from "@/components/core/Feedback/toast";
@@ -44,6 +44,16 @@ function DetailRow({ label, value }: { label: string; value?: string | number | 
     </div>
   );
 }
+
+const CAR_FEATURES = [
+  { key: 'airConditioning' as const, Icon: Wind, label: 'Điều hòa không khí', description: 'Làm mát / sưởi ấm cabin tự động', colors: 'bg-blue-50 text-blue-700' },
+  { key: 'abs' as const, Icon: ShieldCheck, label: 'Phanh ABS', description: 'Không bó cứng bánh khi phanh gấp', colors: 'bg-green-50 text-green-700' },
+  { key: 'esp' as const, Icon: Shield, label: 'Cân bằng điện tử', description: 'Giữ xe ổn định khi vào cua / trơn trượt', colors: 'bg-indigo-50 text-indigo-700' },
+  { key: 'navigationSystem' as const, Icon: Navigation, label: 'Định vị GPS', description: 'Dẫn đường tích hợp, không cần điện thoại', colors: 'bg-orange-50 text-orange-700' },
+  { key: 'sunRoof' as const, Icon: Sun, label: 'Cửa sổ trời', description: 'Lấy sáng và gió tự nhiên từ trần xe', colors: 'bg-amber-50 text-amber-700' },
+  { key: 'leatherSeats' as const, Icon: Sparkles, label: 'Ghế bọc da', description: 'Sang trọng, êm ái và dễ lau chùi', colors: 'bg-violet-50 text-violet-700' },
+  { key: 'bluetoothConnectivity' as const, Icon: Bluetooth, label: 'Kết nối Bluetooth', description: 'Nghe nhạc & gọi điện rảnh tay qua loa xe', colors: 'bg-cyan-50 text-cyan-700' },
+];
 
 function BoolBadge({ label, value }: { label: string; value?: boolean | null }) {
   const active = value === true;
@@ -111,14 +121,17 @@ function CarInfoPanel({
   onAddToCart,
   alreadyInCart,
   isPending,
+  spec,
 }: {
   car: CarDetailView;
   carName: string;
   onAddToCart: () => void;
   alreadyInCart?: boolean;
   isPending?: boolean;
+  spec?: CarDetailResponse;
 }) {
   const price = car.salePrice ?? car.price ?? 0;
+  const activeFeatures = spec ? CAR_FEATURES.filter((f) => spec[f.key] === true) : [];
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
@@ -162,6 +175,23 @@ function CarInfoPanel({
         <DetailRow label="Số km" value={car.mileage != null ? `${car.mileage.toLocaleString("vi-VN")} km` : null} />
       </div>
 
+      {activeFeatures.length > 0 && (
+        <div className="mt-5">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Tính năng nổi bật</p>
+          <div className="grid grid-cols-2 gap-2">
+            {activeFeatures.slice(0, 6).map(({ key, Icon, label, description, colors }) => (
+              <div key={key} className={`flex items-start gap-2 rounded-xl p-2.5 ${colors}`}>
+                <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold leading-tight">{label}</p>
+                  <p className="mt-0.5 text-xs leading-tight opacity-70">{description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {car.shortDescription ? (
         <p className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">{car.shortDescription}</p>
       ) : null}
@@ -191,10 +221,17 @@ function TechSpecGrid({ spec }: { spec: CarDetailResponse }) {
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Động cơ & Hiệu năng</h3>
         <div className="divide-y divide-slate-100">
           <DetailRow label="Mã động cơ" value={spec.engineCode} />
+          <DetailRow label="Loại động cơ" value={spec.engineType} />
+          <DetailRow label="Nạp khí" value={spec.aspiration} />
+          {spec.hybridType ? <DetailRow label="Hybrid" value={spec.hybridType} /> : null}
           <DetailRow label="Số xy lanh" value={spec.cylinders} />
           <DetailRow label="Công suất tối đa" value={spec.maxPower_hp != null ? `${spec.maxPower_hp} HP` : null} />
           <DetailRow label="Mô-men xoắn" value={spec.maxTorque_nm != null ? `${spec.maxTorque_nm} Nm` : null} />
           <DetailRow label="Tốc độ tối đa" value={spec.topSpeed_kmh != null ? `${spec.topSpeed_kmh} km/h` : null} />
+          <DetailRow
+            label="Tăng tốc 0–100 km/h"
+            value={spec.acceleration_0_100_sec != null ? `${spec.acceleration_0_100_sec} giây` : null}
+          />
           <DetailRow
             label="Dung tích bình xăng"
             value={spec.fuelTankCapacity_l != null ? `${spec.fuelTankCapacity_l} L` : null}
@@ -205,17 +242,29 @@ function TechSpecGrid({ spec }: { spec: CarDetailResponse }) {
       <div>
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">An toàn & Tiện nghi</h3>
         <div className="mb-3 divide-y divide-slate-100">
+          <DetailRow
+            label="Tiêu hao đô thị"
+            value={spec.fuelConsumption_city_l100km != null ? `${spec.fuelConsumption_city_l100km} L/100km` : null}
+          />
+          <DetailRow
+            label="Tiêu hao cao tốc"
+            value={spec.fuelConsumption_highway_l100km != null ? `${spec.fuelConsumption_highway_l100km} L/100km` : null}
+          />
+          <DetailRow
+            label="Tiêu hao hỗn hợp"
+            value={spec.fuelConsumption_combined_l100km != null ? `${spec.fuelConsumption_combined_l100km} L/100km` : null}
+          />
           <DetailRow label="Xếp hạng an toàn" value={spec.safetyRating} />
           <DetailRow label="Túi khí" value={spec.airbags != null ? `${spec.airbags} túi` : null} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <BoolBadge label="ABS" value={spec.abs} />
-          <BoolBadge label="ESP" value={spec.esp} />
-          <BoolBadge label="Điều hòa" value={spec.airConditioning} />
+          <BoolBadge label="Phanh ABS" value={spec.abs} />
+          <BoolBadge label="Cân bằng điện tử" value={spec.esp} />
+          <BoolBadge label="Điều hòa không khí" value={spec.airConditioning} />
           <BoolBadge label="Cửa sổ trời" value={spec.sunRoof} />
-          <BoolBadge label="Ghế da" value={spec.leatherSeats} />
-          <BoolBadge label="GPS" value={spec.navigationSystem} />
-          <BoolBadge label="Bluetooth" value={spec.bluetoothConnectivity} />
+          <BoolBadge label="Ghế bọc da" value={spec.leatherSeats} />
+          <BoolBadge label="Định vị GPS" value={spec.navigationSystem} />
+          <BoolBadge label="Kết nối Bluetooth" value={spec.bluetoothConnectivity} />
         </div>
       </div>
     </div>
@@ -443,6 +492,7 @@ export default function CustomerCarDetailPage() {
               onAddToCart={handleAddToCart}
               alreadyInCart={carId != null && isInCart("car", carId)}
               isPending={isAddingCar}
+              spec={techSpec.data ?? undefined}
             />
           </div>
 

@@ -26,6 +26,7 @@ import type { AppointmentServiceItem } from "src/services/api/functions/workshop
 
 interface SelectedService extends AppointmentServiceItem {
   serviceName: string;
+  price: number;
 }
 
 function BookingModal({
@@ -126,7 +127,7 @@ function BookingModal({
       setSelectedServices([
         {
           serviceID: svc.serviceID,
-          estimatedPrice: svc.price,
+          price: svc.price,
           notes: null,
           serviceName: svc.serviceName,
         },
@@ -213,7 +214,7 @@ function BookingModal({
       ...prev,
       {
         serviceID: svc.serviceID,
-        estimatedPrice: svc.price,
+        price: svc.price,
         notes: null,
         serviceName: svc.serviceName,
       },
@@ -255,7 +256,6 @@ function BookingModal({
         customerNote: customerNote.trim() || null,
         services: selectedServices.map((s) => ({
           serviceID: s.serviceID,
-          estimatedPrice: s.estimatedPrice,
           notes: s.notes,
         })),
       });
@@ -314,7 +314,7 @@ function BookingModal({
                       {s.serviceName}
                     </span>
                     <span className="ml-2 text-slate-500">
-                      {formatCurrency(s.estimatedPrice)}
+                      {formatCurrency(s.price)}
                     </span>
                   </div>
                   <button

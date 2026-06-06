@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getToken, onMessage } from 'firebase/messaging';
 import { getFirebaseMessaging } from "@/config/firebase";
 import { userRouteFn } from "@/services/api/functions/user/Routes.Fn";
 import { useAuthStore } from "@/stores/authStore";
@@ -12,9 +12,12 @@ const VAPID_KEY =
 
 export function useFcmToken() {
   const accessToken = useAuthStore((s) => s.accessToken);
+  const role = useAuthStore((s) => s.user?.role);
 
   useEffect(() => {
     if (!accessToken) return;
+    // Chỉ Customer mới có FcmToken trên backend — Staff/Admin không có endpoint này
+    if (role !== "Customer") return;
 
     let unsubscribeForeground: (() => void) | undefined;
 
@@ -28,7 +31,7 @@ export function useFcmToken() {
       const fcmToken = await getToken(messaging, { vapidKey: VAPID_KEY });
       if (!fcmToken) return;
 
-      await userRouteFn.registerFcmToken(fcmToken).catch(() => {});
+      await userRouteFn.registerFcmToken(fcmToken);
 
       unsubscribeForeground = onMessage(messaging, (payload) => {
         const title = payload.notification?.title ?? "Thông báo";
@@ -42,5 +45,5 @@ export function useFcmToken() {
     return () => {
       unsubscribeForeground?.();
     };
-  }, [accessToken]);
+  }, [accessToken, role]);
 }

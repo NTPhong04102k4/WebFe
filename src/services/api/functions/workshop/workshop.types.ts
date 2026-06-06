@@ -78,7 +78,6 @@ export interface MaintenanceHistoryViewModel {
 
 export interface AppointmentServiceItem {
   serviceID: number;
-  estimatedPrice: number;
   notes?: string | null;
 }
 

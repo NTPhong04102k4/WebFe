@@ -31,6 +31,9 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
     grossWeight_kg: number | "" | null;
     payloadCapacity_kg: number | "" | null;
     engineCode: string;
+    engineType: string | null;
+    aspiration: string | null;
+    hybridType: string | null;
     cylinders: number | "";
     maxPower_hp: number | "";
     maxTorque_nm: number | "";
@@ -61,6 +64,9 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
     grossWeight_kg: "",
     payloadCapacity_kg: "",
     engineCode: "",
+    engineType: null,
+    aspiration: null,
+    hybridType: null,
     cylinders: "",
     maxPower_hp: "",
     maxTorque_nm: "",
@@ -98,6 +104,9 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
         grossWeight_kg: initialData.grossWeight_kg ?? "",
         payloadCapacity_kg: initialData.payloadCapacity_kg ?? "",
         engineCode: initialData.engineCode || "",
+        engineType: initialData.engineType ?? null,
+        aspiration: initialData.aspiration ?? null,
+        hybridType: initialData.hybridType ?? null,
         cylinders: initialData.cylinders || "",
         maxPower_hp: initialData.maxPower_hp || "",
         maxTorque_nm: initialData.maxTorque_nm || "",
@@ -172,6 +181,9 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
       grossWeight_kg: convertValue(form.grossWeight_kg),
       payloadCapacity_kg: convertValue(form.payloadCapacity_kg),
       engineCode: form.engineCode || "",
+      engineType: form.engineType || null,
+      aspiration: form.aspiration || null,
+      hybridType: form.hybridType || null,
       cylinders: convertRequiredValue(form.cylinders),
       maxPower_hp: convertRequiredValue(form.maxPower_hp),
       maxTorque_nm: convertRequiredValue(form.maxTorque_nm),
@@ -407,6 +419,48 @@ export const TechSpecForm: React.FC<TechSpecFormProps> = ({
               setForm((s) => ({ ...s, engineCode: e.target.value }))
             }
             required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Loại động cơ</label>
+          <input
+            type="text"
+            className="w-full border rounded-md px-3 py-2"
+            value={form.engineType || ""}
+            onChange={(e) =>
+              setForm((s) => ({ ...s, engineType: e.target.value || null }))
+            }
+            placeholder="VD: Inline-4, V6, V8, Flat-4"
+            maxLength={50}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Nạp khí</label>
+          <input
+            type="text"
+            className="w-full border rounded-md px-3 py-2"
+            value={form.aspiration || ""}
+            onChange={(e) =>
+              setForm((s) => ({ ...s, aspiration: e.target.value || null }))
+            }
+            placeholder="VD: Turbo, Naturally Aspirated, Supercharged"
+            maxLength={30}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Hybrid</label>
+          <input
+            type="text"
+            className="w-full border rounded-md px-3 py-2"
+            value={form.hybridType || ""}
+            onChange={(e) =>
+              setForm((s) => ({ ...s, hybridType: e.target.value || null }))
+            }
+            placeholder="VD: Full Hybrid, PHEV, Mild Hybrid (để trống nếu không)"
+            maxLength={30}
           />
         </div>
 

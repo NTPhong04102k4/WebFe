@@ -25,6 +25,20 @@ const ORDER_STATUS_COLORS: Record<string, string> = {
   Refunded: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
 };
 
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  Pending: "Chờ xử lý",
+  Processing: "Đang xử lý",
+  Completed: "Hoàn thành",
+  Cancelled: "Đã huỷ",
+  Refunded: "Đã hoàn tiền",
+};
+
+const PAY_STATUS_LABELS: Record<string, string> = {
+  Paid: "Đã thanh toán",
+  Unpaid: "Chưa thanh toán",
+  Refunded: "Đã hoàn tiền",
+};
+
 const PAY_STATUS_COLORS: Record<string, string> = {
   Paid: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
   Unpaid: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
@@ -91,7 +105,7 @@ export default function AdminOrdersPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           { label: "Tổng đơn hàng", value: total, hint: "Tất cả đơn", color: "text-blue-600" },
-          { label: "Cần xử lý", value: pendingQ.isLoading || processingQ.isLoading ? "…" : pendingCount, hint: "Pending + Processing (toàn hệ thống)", color: pendingCount > 0 ? "text-red-600" : "text-slate-700" },
+          { label: "Cần xử lý", value: pendingQ.isLoading || processingQ.isLoading ? "…" : pendingCount, hint: "Chờ xử lý + Đang xử lý (toàn hệ thống)", color: pendingCount > 0 ? "text-red-600" : "text-slate-700" },
           { label: "Doanh thu tháng", value: revenueQ.data ? fmt(revenueQ.data.totalRevenue) : "…", hint: `${monthStart} – ${monthEnd}`, color: "text-green-600" },
           { label: "Tổng đơn tháng", value: revenueQ.data?.totalOrders ?? "…", hint: "Từ revenue API", color: "text-purple-600" },
         ].map((c) => (
@@ -121,14 +135,22 @@ export default function AdminOrdersPage() {
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         >
           <option value="">Tất cả trạng thái</option>
-          {["Pending", "Processing", "Completed", "Cancelled", "Refunded"].map((s) => (
-            <option key={s} value={s}>{s}</option>
+          {(["Pending", "Processing", "Completed", "Cancelled", "Refunded"] as const).map((s) => (
+            <option key={s} value={s}>{ORDER_STATUS_LABELS[s] ?? s}</option>
           ))}
         </select>
         <input type="date" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" placeholder="Từ ngày" />
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
         <input type="date" value={toDate} onChange={(e) => { setToDate(e.target.value); setPage(1); }}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" placeholder="Đến ngày" />
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+        {(keyword || status || fromDate || toDate) && (
+          <button
+            onClick={() => { setKeyword(""); setStatus(""); setFromDate(""); setToDate(""); setPage(1); }}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+          >
+            Xóa lọc
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -174,12 +196,12 @@ export default function AdminOrdersPage() {
                 </td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ORDER_STATUS_COLORS[order.orderStatus] ?? "bg-slate-100 text-slate-600"}`}>
-                    {order.orderStatus}
+                    {ORDER_STATUS_LABELS[order.orderStatus] ?? order.orderStatus}
                   </span>
                 </td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${PAY_STATUS_COLORS[order.paymentStatus] ?? "bg-slate-100 text-slate-600"}`}>
-                    {order.paymentStatus}
+                    {PAY_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-400">

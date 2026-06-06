@@ -1,4 +1,4 @@
-import { CarDetailResponse, CarResponse, CarResponseItem } from "src/shared/types/Reponse/Car";
+import { CarDetailResponse, CarResponse, CarResponseItem, CarStatusResponse } from "src/shared/types/Reponse/Car";
 import type { OperationResult, PagedResponse } from "src/services/types/common.types";
 import apiClient from "../..";
 import type { ApiRequestOptions } from "../../requestOptions";
@@ -187,11 +187,11 @@ export const carRouteFn = {
       "📤 Request data (before send):",
       JSON.stringify(requestData, null, 2)
     );
-    logger.log("📤 Request URL:", carRoute.techSpecCreate);
+    logger.log("📤 Request URL:", carRoute.techSpecCreate(id));
 
     try {
       const response = await apiClient.post<CarDetailResponse>(
-        carRoute.techSpecCreate,
+        carRoute.techSpecCreate(id),
         requestData,
         withSignal({}, options)
       );
@@ -203,7 +203,7 @@ export const carRouteFn = {
         statusText: error.response?.statusText,
         responseData: error.response?.data,
         message: error.message,
-        url: carRoute.techSpecCreate,
+        url: carRoute.techSpecCreate(id),
         requestData: JSON.stringify(requestData, null, 2),
       });
 
@@ -221,6 +221,13 @@ export const carRouteFn = {
     );
     return response.data;
   },
+  getStatuses: async (options?: ApiRequestOptions) => {
+    const response = await apiClient.get<OperationResult<CarStatusResponse[]>>(
+      carRoute.statuses,
+      withSignal({}, options)
+    );
+    return unwrapData<CarStatusResponse[]>(response.data) ?? [];
+  },
   updateTechSpec: async (
     id: number,
     data: TechSpecDetailUpdateRequest,
@@ -236,13 +243,13 @@ export const carRouteFn = {
     };
 
     logger.log("📤 Request data:", requestData);
-    logger.log("📤 Request URL:", carRoute.techSpecEdit);
+    logger.log("📤 Request URL:", carRoute.techSpecEdit(id));
 
     try {
       const response = await apiClient.patch<CarDetailResponse>(
-        carRoute.techSpecEdit,
+        carRoute.techSpecEdit(id),
         requestData,
-        withSignal({ params: { id } }, options)
+        withSignal({}, options)
       );
       logger.log("✅ Tech spec updated successfully");
       return response.data;
@@ -252,7 +259,7 @@ export const carRouteFn = {
         statusText: error.response?.statusText,
         data: error.response?.data,
         message: error.message,
-        url: carRoute.techSpecEdit,
+        url: carRoute.techSpecEdit(id),
         requestData: requestData,
       });
       throw error;

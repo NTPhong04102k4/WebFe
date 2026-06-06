@@ -25,6 +25,9 @@ export interface CarDetailResponse {
   grossWeight_kg: number | null;
   payloadCapacity_kg: number | null;
   engineCode: string;
+  engineType?: string | null;
+  aspiration?: string | null;
+  hybridType?: string | null;
   cylinders: number;
   maxPower_hp: number;
   maxTorque_nm: number;
@@ -84,4 +87,13 @@ export interface CarResponseItem {
 export interface CarResponse {
   data: CarResponseItem[];
   totalCount: number;
+}
+
+export interface CarStatusResponse {
+  statusID: number;
+  statusCode: string;
+  statusName: string;
+  description?: string | null;
+  colorCode?: string | null;
+  isActive: boolean;
 }
