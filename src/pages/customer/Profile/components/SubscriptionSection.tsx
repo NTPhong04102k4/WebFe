@@ -19,6 +19,8 @@ export function SubscriptionSection() {
   const isActive    = sub?.isActive === true;
   const isPending   = sub != null && !sub.isActive && !!sub.paymentReference;
   const isCancelled = isActive && !!sub?.deprecatedAt;
+  const isExpired   = isActive && (sub?.daysRemaining ?? 1) <= 0;
+  const isNearExpiry = isActive && !isExpired && (sub?.daysRemaining ?? 99) <= 7;
 
   const handleCancel = () => {
     cancel.mutate(undefined, {
@@ -69,26 +71,43 @@ export function SubscriptionSection() {
       <div className="rounded-xl border border-slate-200 bg-white p-5">
         <h2 className="font-semibold text-slate-900">Gói thành viên</h2>
         <div className="mt-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-5">
-          <p className="text-sm text-slate-600">Bạn chưa đăng ký gói Premium nào.</p>
-          <p className="mt-1 text-sm text-slate-500">
-            Nâng cấp để mở khóa ưu tiên đăng tin, hỗ trợ 24/7 và trợ lý AI.
-          </p>
+          <p className="text-sm font-medium text-slate-700">Bạn chưa đăng ký gói Premium nào.</p>
+          <ul className="mt-3 space-y-1.5">
+            {[
+              "Xem không giới hạn xe đăng bán",
+              "Hỗ trợ ưu tiên 24/7",
+              "Trợ lý AI tư vấn mua xe",
+            ].map((benefit) => (
+              <li key={benefit} className="flex items-center gap-2 text-sm text-slate-600">
+                <svg className="h-4 w-4 shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                {benefit}
+              </li>
+            ))}
+          </ul>
           <button
             onClick={() => navigate("/premium")}
             className="mt-4 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
-            Xem các gói Premium
+            Khám phá các gói →
           </button>
         </div>
       </div>
     );
   }
 
-  const statusBadge = isCancelled
-    ? { label: "Đã hủy", cls: "bg-slate-100 text-slate-500" }
+  const statusBadge = isExpired
+    ? { label: "Đã hết hạn", cls: "bg-red-100 text-red-600" }
+    : isCancelled
+    ? { label: "Đã hủy gia hạn", cls: "bg-slate-100 text-slate-500" }
     : isActive
     ? { label: "Đang hoạt động", cls: "bg-green-100 text-green-700" }
     : { label: "Chờ thanh toán", cls: "bg-yellow-100 text-yellow-700" };
+
+  const cardGradient = isExpired
+    ? "bg-gradient-to-r from-slate-500 to-slate-700"
+    : "bg-gradient-to-r from-blue-600 to-indigo-600";
 
   const endDate = new Date(sub.endDate).toLocaleDateString("vi-VN");
 
@@ -102,7 +121,41 @@ export function SubscriptionSection() {
           </span>
         </div>
 
-        <div className="mt-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white">
+        {/* Near-expiry warning */}
+        {isNearExpiry && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+            <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium text-amber-800">
+                Gói sắp hết hạn trong <strong>{sub.daysRemaining} ngày</strong>
+              </p>
+              <p className="mt-0.5 text-xs text-amber-600">
+                Gia hạn sớm để không gián đoạn dịch vụ.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Expired warning */}
+        {isExpired && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+            <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium text-red-800">
+                Gói đã hết hạn vào <strong>{endDate}</strong>
+              </p>
+              <p className="mt-0.5 text-xs text-red-600">
+                Gia hạn ngay để tiếp tục sử dụng các tính năng Premium.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className={`mt-4 rounded-xl ${cardGradient} p-5 text-white`}>
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider opacity-75">
@@ -122,7 +175,9 @@ export function SubscriptionSection() {
             </div>
             <div className="rounded-lg bg-white/15 px-3 py-2">
               <p className="text-xs opacity-75">Còn lại</p>
-              <p className="mt-0.5 text-sm font-semibold">{sub.daysRemaining} ngày</p>
+              <p className="mt-0.5 text-sm font-semibold">
+                {isExpired ? "Đã hết hạn" : `${sub.daysRemaining} ngày`}
+              </p>
             </div>
           </div>
         </div>
@@ -148,13 +203,17 @@ export function SubscriptionSection() {
         )}
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {isActive && sub.daysRemaining <= 7 && (
+          {isActive && (isExpired || isNearExpiry) && (
             <button
               onClick={handleRenew}
               disabled={renew.isPending}
-              className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className={`rounded-lg px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50 ${
+                isExpired
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
-              {renew.isPending ? "Đang xử lý..." : "Gia hạn gói"}
+              {renew.isPending ? "Đang xử lý..." : isExpired ? "Gia hạn ngay" : "Gia hạn gói"}
             </button>
           )}
           {isPending && (
@@ -177,8 +236,8 @@ export function SubscriptionSection() {
               </button>
             </>
           )}
-          {/* Ẩn nút Hủy khi đã ở trạng thái cancelled */}
-          {isActive && !isCancelled && sub.autoRenew && (
+          {/* Ẩn nút Hủy khi đã hết hạn hoặc đã cancelled */}
+          {isActive && !isExpired && !isCancelled && sub.autoRenew && (
             <button
               onClick={handleCancel}
               disabled={cancel.isPending}
@@ -187,15 +246,17 @@ export function SubscriptionSection() {
               {cancel.isPending ? "Đang hủy..." : "Hủy gia hạn"}
             </button>
           )}
-          <button
-            onClick={() => navigate("/premium")}
-            className="rounded-lg border border-slate-200 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Đổi gói
-          </button>
+          {!isExpired && (
+            <button
+              onClick={() => navigate("/premium")}
+              className="rounded-lg border border-slate-200 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Đổi gói
+            </button>
+          )}
         </div>
 
-        {isActive && sub.autoRenew && (
+        {isActive && !isExpired && sub.autoRenew && (
           <p className="mt-3 text-xs text-slate-400">
             Gia hạn tự động vào {endDate}. Bạn có thể hủy bất kỳ lúc nào.
           </p>

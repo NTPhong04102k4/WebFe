@@ -39,10 +39,18 @@ function BookingModal({
   const rawUID = user?.userUUID || user?.userID || user?.id;
   const userID = rawUID != null ? String(rawUID) : undefined;
 
-  const { data: vehiclesRes } = useCustomerVehicles({ page: 1, pageSize: 100, userId: userID });
+  const { data: vehiclesRes } = useCustomerVehicles({
+    page: 1,
+    pageSize: 100,
+    userId: userID,
+  });
   const vehicles = vehiclesRes?.data ?? [];
 
-  const { data: catalogRes, isLoading: catalogLoading } = useServiceCatalog({ page: 1, pageSize: 100, isActive: true });
+  const { data: catalogRes, isLoading: catalogLoading } = useServiceCatalog({
+    page: 1,
+    pageSize: 100,
+    isActive: true,
+  });
   const catalog = catalogRes?.data ?? [];
 
   const { data: categoriesData } = useCategoryList();
@@ -58,13 +66,28 @@ function BookingModal({
   const [time, setTime] = useState("09:00");
   const [appointmentType, setAppointmentType] = useState("Maintenance");
   const [customerNote, setCustomerNote] = useState("");
-  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>(
+    [],
+  );
 
-  const [nearbyLocations, setNearbyLocations] = useState<NearbyLocationResponse[] | null>(null);
+  const [nearbyLocations, setNearbyLocations] = useState<
+    NearbyLocationResponse[] | null
+  >(null);
   const [geoLoading, setGeoLoading] = useState(false);
+  const [locationMode, setLocationMode] = useState<"all" | "nearby">("all");
 
-  const handleFindNearby = useCallback(() => {
-    if (!navigator.geolocation) { notify.error("Trình duyệt không hỗ trợ định vị."); return; }
+  const handleLocationModeChange = useCallback((mode: "all" | "nearby") => {
+    setLocationMode(mode);
+    if (mode === "all") {
+      setNearbyLocations(null);
+      setLocationID("");
+      return;
+    }
+    if (!navigator.geolocation) {
+      notify.error("Trình duyệt không hỗ trợ định vị.");
+      setLocationMode("all");
+      return;
+    }
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -73,14 +96,16 @@ function BookingModal({
             pos.coords.latitude,
             pos.coords.longitude,
             50,
-            "Workshop"
+            "Workshop",
           );
           setNearbyLocations(results);
-          if (results.length > 0 && !locationID) {
-            setLocationID(String(results[0].locationID));
-          }
+          setLocationID(
+            results.length > 0 ? String(results[0].locationID) : "",
+          );
         } catch {
-          notify.error("Không tìm được showroom gần bạn.");
+          notify.error("Không tìm được workshop gần bạn.");
+          setLocationMode("all");
+          setNearbyLocations(null);
         } finally {
           setGeoLoading(false);
         }
@@ -88,18 +113,26 @@ function BookingModal({
       () => {
         notify.error("Không lấy được vị trí. Vui lòng cho phép truy cập GPS.");
         setGeoLoading(false);
-      }
+        setLocationMode("all");
+      },
     );
-  }, [locationID]);
+  }, []);
 
   // Pre-select service from URL param
   useEffect(() => {
     if (!preselectedServiceID || catalog.length === 0) return;
     const svc = catalog.find((s) => s.serviceID === preselectedServiceID);
     if (svc && !selectedServices.some((s) => s.serviceID === svc.serviceID)) {
-      setSelectedServices([{ serviceID: svc.serviceID, estimatedPrice: svc.price, notes: null, serviceName: svc.serviceName }]);
+      setSelectedServices([
+        {
+          serviceID: svc.serviceID,
+          estimatedPrice: svc.price,
+          notes: null,
+          serviceName: svc.serviceName,
+        },
+      ]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preselectedServiceID, catalog.length]);
 
   const totalDuration = useMemo(() => {
@@ -117,7 +150,9 @@ function BookingModal({
   const serviceTree = useMemo((): ComboTreeItem[] => {
     if (!catalog.length) return [];
 
-    const available = catalog.filter((svc) => !unavailableIDs.has(svc.serviceID));
+    const available = catalog.filter(
+      (svc) => !unavailableIDs.has(svc.serviceID),
+    );
 
     // Flat fallback khi chưa có categories
     if (!categories.length) {
@@ -146,7 +181,12 @@ function BookingModal({
               label: `${svc.serviceName} — ${formatCurrency(svc.price)}`,
             })),
           ];
-          if (children.length) nodes.push({ id: `cat-${cat.categoryID}`, label: cat.categoryName, children });
+          if (children.length)
+            nodes.push({
+              id: `cat-${cat.categoryID}`,
+              label: cat.categoryName,
+              children,
+            });
         });
       return nodes;
     }
@@ -165,23 +205,45 @@ function BookingModal({
   const handleAddService = (id: string) => {
     const svc = catalog.find((c) => String(c.serviceID) === id);
     if (!svc) return;
-    if (unavailableIDs.has(svc.serviceID)) { notify.error("Dịch vụ này đã được chọn."); return; }
+    if (unavailableIDs.has(svc.serviceID)) {
+      notify.error("Dịch vụ này đã được chọn.");
+      return;
+    }
     setSelectedServices((prev) => [
       ...prev,
-      { serviceID: svc.serviceID, estimatedPrice: svc.price, notes: null, serviceName: svc.serviceName },
+      {
+        serviceID: svc.serviceID,
+        estimatedPrice: svc.price,
+        notes: null,
+        serviceName: svc.serviceName,
+      },
     ]);
   };
 
   const removeService = (serviceID: number) => {
-    setSelectedServices((prev) => prev.filter((s) => s.serviceID !== serviceID));
+    setSelectedServices((prev) =>
+      prev.filter((s) => s.serviceID !== serviceID),
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vehicleID) { notify.error("Vui lòng chọn xe."); return; }
-    if (!locationID || locationID === "0") { notify.error("Vui lòng chọn chi nhánh."); return; }
-    if (!date || !time) { notify.error("Vui lòng chọn ngày và giờ hẹn."); return; }
-    if (selectedServices.length === 0) { notify.error("Vui lòng chọn ít nhất 1 dịch vụ."); return; }
+    if (!vehicleID) {
+      notify.error("Vui lòng chọn xe.");
+      return;
+    }
+    if (!locationID || locationID === "0") {
+      notify.error("Vui lòng chọn chi nhánh.");
+      return;
+    }
+    if (!date || !time) {
+      notify.error("Vui lòng chọn ngày và giờ hẹn.");
+      return;
+    }
+    if (selectedServices.length === 0) {
+      notify.error("Vui lòng chọn ít nhất 1 dịch vụ.");
+      return;
+    }
 
     try {
       await createAppointment.mutateAsync({
@@ -233,16 +295,27 @@ function BookingModal({
       <form id="booking-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Dịch vụ đã chọn */}
         <div>
-          <span className="text-sm font-medium text-slate-700">Dịch vụ đã chọn</span>
+          <span className="text-sm font-medium text-slate-700">
+            Dịch vụ đã chọn
+          </span>
           {selectedServices.length === 0 ? (
-            <p className="mt-1 text-sm text-slate-400">Chưa chọn dịch vụ nào.</p>
+            <p className="mt-1 text-sm text-slate-400">
+              Chưa chọn dịch vụ nào.
+            </p>
           ) : (
             <div className="mt-2 space-y-2 rounded-lg bg-slate-50 p-3">
               {selectedServices.map((s) => (
-                <div key={s.serviceID} className="flex items-center justify-between gap-2 text-sm">
+                <div
+                  key={s.serviceID}
+                  className="flex items-center justify-between gap-2 text-sm"
+                >
                   <div>
-                    <span className="font-medium text-slate-800">{s.serviceName}</span>
-                    <span className="ml-2 text-slate-500">{formatCurrency(s.estimatedPrice)}</span>
+                    <span className="font-medium text-slate-800">
+                      {s.serviceName}
+                    </span>
+                    <span className="ml-2 text-slate-500">
+                      {formatCurrency(s.estimatedPrice)}
+                    </span>
                   </div>
                   <button
                     type="button"
@@ -254,7 +327,9 @@ function BookingModal({
                 </div>
               ))}
               {totalDuration > 0 && (
-                <p className="mt-1 text-xs text-slate-400">⏱ Thời lượng dự kiến: {totalDuration} phút</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  ⏱ Thời lượng dự kiến: {totalDuration} phút
+                </p>
               )}
             </div>
           )}
@@ -272,9 +347,13 @@ function BookingModal({
         {/* Xe */}
         {vehicles.length === 0 ? (
           <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
-            <span className="block text-sm font-medium text-slate-800 mb-1">Xe của bạn <span className="text-red-500">*</span></span>
+            <span className="block text-sm font-medium text-slate-800 mb-1">
+              Xe của bạn <span className="text-red-500">*</span>
+            </span>
             Bạn chưa có xe nào.{" "}
-            <Link to="/profile" className="font-medium underline">Thêm xe trong hồ sơ</Link>
+            <Link to="/profile" className="font-medium underline">
+              Thêm xe trong hồ sơ
+            </Link>
           </div>
         ) : (
           <Select
@@ -297,7 +376,7 @@ function BookingModal({
             required
             type="date"
             value={date}
-            min={new Date().toISOString().split("T")[0]}
+            min={new Date(Date.now() + 86_400_000).toISOString().split("T")[0]}
             onChange={(e) => setDate(e.target.value)}
           />
           <Input
@@ -322,43 +401,63 @@ function BookingModal({
           />
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700">Chi nhánh <span className="text-red-500">*</span></span>
-              <button
-                type="button"
-                onClick={handleFindNearby}
+              <span className="text-sm font-medium text-slate-700">
+                Chi nhánh <span className="text-red-500">*</span>
+              </span>
+              <select
+                value={locationMode}
                 disabled={geoLoading}
-                className="flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 disabled:opacity-50"
+                onChange={(e) =>
+                  handleLocationModeChange(e.target.value as "all" | "nearby")
+                }
+                className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-600 focus:border-blue-400 focus:outline-none disabled:opacity-50"
               >
-                {geoLoading ? "Đang tìm..." : "📍 Gần tôi"}
-              </button>
+                <option value="all">Tất cả</option>
+                <option value="nearby">Gần tôi</option>
+              </select>
             </div>
             <select
               required
               value={locationID}
               onChange={(e) => setLocationID(e.target.value)}
-              disabled={locLoading}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+              disabled={locLoading || geoLoading}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none disabled:bg-slate-50 disabled:text-slate-400"
             >
-              <option value="">{locLoading ? "Đang tải..." : "— Chọn chi nhánh —"}</option>
+              <option value="">
+                {geoLoading
+                  ? "Đang tìm vị trí..."
+                  : locLoading
+                    ? "Đang tải..."
+                    : "— Chọn chi nhánh —"}
+              </option>
               {(nearbyLocations ?? locations).map((loc) => {
-                const dist = "distanceKm" in loc ? (loc as NearbyLocationResponse).distanceKm : null;
+                const dist =
+                  "distanceKm" in loc
+                    ? (loc as NearbyLocationResponse).distanceKm
+                    : null;
                 return (
                   <option key={loc.locationID} value={String(loc.locationID)}>
                     {loc.locationName}
-                    {dist != null ? ` — ${dist.toFixed(1)} km` : ` — ${loc.address}, ${loc.city}`}
+                    {dist != null
+                      ? ` — ${dist.toFixed(1)} km`
+                      : ` — ${loc.address}, ${loc.city}`}
                   </option>
                 );
               })}
             </select>
-            {nearbyLocations && nearbyLocations.length === 0 && (
-              <p className="mt-1 text-xs text-amber-600">Không có chi nhánh nào trong vòng 50 km. Hiển thị tất cả.</p>
+            {locationMode === "nearby" && nearbyLocations?.length === 0 && (
+              <p className="mt-1 text-xs text-amber-600">
+                Không có workshop nào trong vòng 50 km.
+              </p>
             )}
           </div>
         </div>
 
         {/* Ghi chú */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-800">Mô tả vấn đề / ghi chú</label>
+          <label className="block text-sm font-medium text-slate-800">
+            Mô tả vấn đề / ghi chú
+          </label>
           <textarea
             value={customerNote}
             onChange={(e) => setCustomerNote(e.target.value)}
@@ -375,28 +474,30 @@ function BookingModal({
 // ── Status badge ──────────────────────────────────────────────────────────────
 
 const STATUS_LABEL: Record<string, string> = {
-  Pending:       "Chờ xác nhận",
-  Scheduled:     "Đã vào lịch",
-  Confirmed:     "Đã xác nhận",
+  Pending: "Chờ xác nhận",
+  Scheduled: "Đã vào lịch",
+  Confirmed: "Đã xác nhận",
   "In-Progress": "Đang thực hiện",
-  Completed:     "Hoàn thành",
-  Cancelled:     "Đã huỷ",
-  NoShow:        "Không đến",
+  Completed: "Hoàn thành",
+  Cancelled: "Đã huỷ",
+  NoShow: "Không đến",
 };
 
 const STATUS_CLASS: Record<string, string> = {
-  Pending:       "bg-amber-50 text-amber-700",
-  Scheduled:     "bg-blue-50 text-blue-700",
-  Confirmed:     "bg-green-50 text-green-700",
+  Pending: "bg-amber-50 text-amber-700",
+  Scheduled: "bg-blue-50 text-blue-700",
+  Confirmed: "bg-green-50 text-green-700",
   "In-Progress": "bg-indigo-50 text-indigo-700",
-  Completed:     "bg-emerald-50 text-emerald-700",
-  Cancelled:     "bg-red-50 text-red-600",
-  NoShow:        "bg-slate-100 text-slate-500",
+  Completed: "bg-emerald-50 text-emerald-700",
+  Cancelled: "bg-red-50 text-red-600",
+  NoShow: "bg-slate-100 text-slate-500",
 };
 
 function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[status] ?? "bg-slate-100 text-slate-600"}`}>
+    <span
+      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[status] ?? "bg-slate-100 text-slate-600"}`}
+    >
       {STATUS_LABEL[status] ?? status}
     </span>
   );
@@ -406,7 +507,9 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function CustomerAppointmentsPage() {
   const [searchParams] = useSearchParams();
-  const preselectedServiceID = searchParams.get("serviceID") ? Number(searchParams.get("serviceID")) : null;
+  const preselectedServiceID = searchParams.get("serviceID")
+    ? Number(searchParams.get("serviceID"))
+    : null;
 
   const [bookingOpen, setBookingOpen] = useState(!!preselectedServiceID);
 
@@ -423,7 +526,9 @@ export default function CustomerAppointmentsPage() {
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Lịch hẹn của tôi</h1>
+          <h1 className="text-2xl font-bold text-slate-900">
+            Lịch hẹn của tôi
+          </h1>
           <p className="mt-1 text-sm text-slate-500">
             Xem và quản lý lịch bảo dưỡng / sửa chữa.
           </p>
@@ -459,7 +564,9 @@ export default function CustomerAppointmentsPage() {
 
           <div className="divide-y divide-slate-100">
             {appointments.isLoading && (
-              <p className="p-6 text-center text-sm text-slate-500">Đang tải...</p>
+              <p className="p-6 text-center text-sm text-slate-500">
+                Đang tải...
+              </p>
             )}
 
             {!appointments.isLoading && rows.length === 0 && (
@@ -474,7 +581,9 @@ export default function CustomerAppointmentsPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-900">{appt.appointmentNumber}</span>
+                      <span className="font-semibold text-slate-900">
+                        {appt.appointmentNumber}
+                      </span>
                       <StatusBadge status={appt.status} />
                     </div>
                     <div className="mt-1 text-sm text-slate-500">
@@ -484,18 +593,24 @@ export default function CustomerAppointmentsPage() {
                     <div className="mt-0.5 text-sm text-slate-500">
                       {new Date(appt.scheduledDateTime).toLocaleString("vi-VN")}
                     </div>
-                    {Array.isArray((appt as any).services) && (appt as any).services.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {(appt as any).services.map((s: any) => (
-                          <span key={s.appointmentServiceID ?? s.serviceID} className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
-                            {s.serviceName ?? `#${s.serviceID}`}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    {Array.isArray((appt as any).services) &&
+                      (appt as any).services.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {(appt as any).services.map((s: any) => (
+                            <span
+                              key={s.appointmentServiceID ?? s.serviceID}
+                              className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700"
+                            >
+                              {s.serviceName ?? `#${s.serviceID}`}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                   </div>
 
-                  {["Pending", "Scheduled", "Confirmed"].includes(appt.status) && (
+                  {["Pending", "Scheduled", "Confirmed"].includes(
+                    appt.status,
+                  ) && (
                     <button
                       type="button"
                       className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
@@ -503,7 +618,10 @@ export default function CustomerAppointmentsPage() {
                       onClick={() =>
                         cancelAppointment.mutate({
                           id: appt.appointmentID,
-                          body: { status: "Cancelled", cancelReason: "Khách hàng hủy" },
+                          body: {
+                            status: "Cancelled",
+                            cancelReason: "Khách hàng hủy",
+                          },
                         })
                       }
                     >

@@ -67,7 +67,7 @@ export function openSocialAuthPopup(provider: SocialAuthProvider): Promise<Socia
     const apiOrigin = getApiOrigin(baseApiUrl)
 
     if (!baseApiUrl || !apiOrigin) {
-      reject(new Error('Thieu cau hinh VITE_API_BASE_URL cho social login'))
+      reject(new Error('Thiếu cấu hình VITE_API_BASE_URL cho social login.'))
       return
     }
 
@@ -78,7 +78,7 @@ export function openSocialAuthPopup(provider: SocialAuthProvider): Promise<Socia
     )
 
     if (!popup) {
-      reject(new Error('Popup blocked. Please allow popups for this site.'))
+      reject(new Error('Popup bị chặn. Vui lòng cho phép popup cho trang này.'))
       return
     }
 
@@ -120,7 +120,7 @@ export function openSocialAuthPopup(provider: SocialAuthProvider): Promise<Socia
       if (!isProviderMessage(provider, data.type) && data.type !== 'OAUTH_SUCCESS' && data.type !== 'OAUTH_ERROR') return
 
       if (isErrorMessage(data.type)) {
-        fail(readString(data, 'error') || readString(data, 'message') || `${provider} login failed`)
+        fail(readString(data, 'error') || readString(data, 'message') || `Đăng nhập ${provider} thất bại.`)
         return
       }
 
@@ -128,7 +128,7 @@ export function openSocialAuthPopup(provider: SocialAuthProvider): Promise<Socia
         const tokens = readTokens(data)
         const token = readString(data, 'token') || readString(data, 'access_token') || tokens?.access_token
         if (!token) {
-          fail('No token received from backend')
+          fail('Không nhận được token từ máy chủ.')
           return
         }
 
@@ -146,14 +146,14 @@ export function openSocialAuthPopup(provider: SocialAuthProvider): Promise<Socia
 
     const checkInterval = window.setInterval(() => {
       try {
-        if (popup.closed && !resolved) fail('Popup was closed by user')
+        if (popup.closed && !resolved) fail('Bạn đã đóng cửa sổ đăng nhập.')
       } catch {
         // Cross-origin popup access can throw while provider auth is in progress.
       }
     }, 500)
 
     const timeout = window.setTimeout(() => {
-      if (!resolved) fail('Login timeout')
+      if (!resolved) fail('Hết thời gian đăng nhập, vui lòng thử lại.')
     }, 300000)
 
     window.addEventListener('message', messageListener)

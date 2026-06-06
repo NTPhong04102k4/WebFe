@@ -12,6 +12,7 @@ export function extractError(err: unknown): string {
     if (err.response?.status === 422) return data?.message ?? 'Dữ liệu không hợp lệ'
     if (err.response?.status === 500) return 'Lỗi máy chủ, vui lòng thử lại sau'
   }
+  if (err instanceof Error && err.message) return err.message
   return 'Đã xảy ra lỗi, vui lòng thử lại'
 }
 
