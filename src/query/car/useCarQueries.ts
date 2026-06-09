@@ -16,6 +16,14 @@ export function useCarStatusList() {
   });
 }
 
+export function useCarStats() {
+  return useQuery({
+    queryKey: carKeys.stats(),
+    queryFn: ({ signal }) => carRouteFn.getStats({ signal }),
+    staleTime: 2 * 60_000,
+  });
+}
+
 export function useCarList(params: CarPagingRequest) {
   return useQuery({
     queryKey: carKeys.list(params),

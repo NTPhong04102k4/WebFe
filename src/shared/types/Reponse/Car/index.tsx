@@ -8,6 +8,7 @@ export interface BrandCarResponse {
   website: string | null;
 }
 export interface BodyCarReponse {
+  bodyTypeID: number;
   bodyCode: string;
   bodyName: string;
   imagePath: string | null;
@@ -96,4 +97,25 @@ export interface CarStatusResponse {
   description?: string | null;
   colorCode?: string | null;
   isActive: boolean;
+}
+
+export interface CarStatsByStatus {
+  statusCode: string;
+  statusName: string;
+  count: number;
+  totalListPrice: number;
+  totalSalePrice: number;
+}
+
+export interface CarStatsByCondition {
+  condition: string;
+  label: string;
+  count: number;
+  totalListPrice: number;
+}
+
+export interface CarStatsResponse {
+  totalCars: number;
+  byStatus: CarStatsByStatus[];
+  byCondition: CarStatsByCondition[];
 }

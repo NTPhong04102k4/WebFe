@@ -134,6 +134,7 @@ export const API = {
     techSpecGet: (id: string | number) => `/cars/${id}/tech-spec`,
     paging: "/cars",
     statuses: "/cars/statuses",
+    stats: "/cars/stats",
     create: "/car/create",
     edit: "/car/edit",
     delete: (id: string | number) => `/cars/${id}`,

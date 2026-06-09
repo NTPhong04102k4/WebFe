@@ -7,6 +7,8 @@ export interface CarPagingRequest {
   bodyCode?: string;
   priceFrom?: number | null;
   priceTo?: number | null;
+  statusCodes?: string[];
+  conditions?: string[];
 }
 export interface CarDetailUpdateRequest {
   userUUID: string;

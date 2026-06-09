@@ -12,14 +12,16 @@ type ViewMode = "list" | "create" | "edit" | "detail";
 
 export const Cars: React.FC = () => {
   const [query, setQuery] = React.useState<{
-    condition: "new" | "used" | "certified" | "";
+    conditions: string[];
+    statusCodes: string[];
     search: string;
     brandCode: string;
     bodyCode: string;
     page: number;
     pageSize: number;
   }>({
-    condition: "",
+    conditions: [],
+    statusCodes: [],
     search: "",
     brandCode: "",
     bodyCode: "",
@@ -37,34 +39,14 @@ export const Cars: React.FC = () => {
     search: query.search,
     brandCode: query.brandCode,
     bodyCode: query.bodyCode,
+    statusCodes: query.statusCodes,
+    conditions: query.conditions,
   });
 
-  // Filter and paginate cars locally
   const filteredAndPaginatedCars = React.useMemo(() => {
     if (!allCarsData?.data) return { data: [], total: 0 };
-
-    let filtered = [...allCarsData.data];
-
-    // Filter by condition
-    if (query.condition) {
-      const conditionMap: Record<string, string> = {
-        new: "New",
-        used: "Used",
-        certified: "Certified",
-      };
-      const normalizedCondition =
-        conditionMap[query.condition.toLowerCase()] || query.condition;
-      filtered = filtered.filter(
-        (car) =>
-          car.condition?.toLowerCase() === normalizedCondition.toLowerCase()
-      );
-    }
-
-    return {
-      data: filtered,
-      total: query.condition ? filtered.length : allCarsData.totalCount,
-    };
-  }, [allCarsData, query]);
+    return { data: allCarsData.data, total: allCarsData.totalCount };
+  }, [allCarsData]);
 
   // Find selected car from all cars
   const selectedCar: CarResponseItem | undefined = React.useMemo(() => {
@@ -164,7 +146,7 @@ export const Cars: React.FC = () => {
         </div>
       )}
 
-      {viewMode === "edit" && selectedCar && (
+      {viewMode === "edit" && selectedCarId != null && (
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Chỉnh sửa xe</h2>
@@ -176,7 +158,7 @@ export const Cars: React.FC = () => {
             </button>
           </div>
           <EditCarForm
-            car={selectedCar}
+            carId={selectedCarId}
             onUpdated={handleUpdated}
             onCancel={handleBackToList}
           />

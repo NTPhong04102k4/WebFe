@@ -13,6 +13,7 @@ import { useBodyTypeList } from '@/query/body-type/useBodyTypeQueries'
 import { useCarStatusList } from '@/query/car/useCarQueries'
 import { useLocationList } from '@/query/location/useLocationQueries'
 import { SelectField } from '@/shared/components/Form/SelectField'
+import { CarStatsPanel } from './CarStatsPanel'
 
 type CarCondition = 'New' | 'Used' | 'Certified' | string
 
@@ -111,6 +112,8 @@ export default function AdminCarsPage() {
   const [search, setSearch] = useState('')
   const [priceFrom, setPriceFrom] = useState<string>('')
   const [priceTo, setPriceTo] = useState<string>('')
+  const [statusCodes, setStatusCodes] = useState<string[]>([])
+  const [conditions, setConditions] = useState<string[]>([])
 
   const priceFromNum = useMemo(() => {
     if (!priceFrom.trim()) return undefined
@@ -134,8 +137,10 @@ export default function AdminCarsPage() {
       bodyCode,
       priceFromNum,
       priceToNum,
+      statusCodes,
+      conditions,
     ],
-    [page, pageSize, search, brandCode, bodyCode, priceFromNum, priceToNum]
+    [page, pageSize, search, brandCode, bodyCode, priceFromNum, priceToNum, statusCodes, conditions]
   )
 
   const brandOptions = useMemo(
@@ -183,6 +188,11 @@ export default function AdminCarsPage() {
     [locations]
   )
 
+  const [modalOpen, setModalOpen] = useState(false)
+  const [mode, setMode] = useState<'create' | 'edit'>('create')
+  const [editingCar, setEditingCar] = useState<CarResponseItem | null>(null)
+  const [deleteConfirmCar, setDeleteConfirmCar] = useState<CarResponseItem | null>(null)
+
   const { data, isLoading, error } = useQuery<CarResponse, Error>({
     queryKey,
     placeholderData: keepPreviousData,
@@ -195,16 +205,19 @@ export default function AdminCarsPage() {
         bodyCode: bodyCode.trim(),
         ...(priceFromNum !== undefined ? { priceFrom: priceFromNum } : {}),
         ...(priceToNum !== undefined ? { priceTo: priceToNum } : {}),
+        ...(statusCodes.length > 0 ? { statusCodes } : {}),
+        ...(conditions.length > 0 ? { conditions } : {}),
       }),
+  })
+
+  const { data: carDetail, isLoading: detailLoading } = useQuery({
+    queryKey: ['admin-car-detail', editingCar?.carID],
+    queryFn: () => carRouteFn.getDetail(editingCar!.carID),
+    enabled: mode === 'edit' && !!editingCar && modalOpen,
   })
 
   const total = data?.totalCount ?? 0
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
-
-  const [modalOpen, setModalOpen] = useState(false)
-  const [mode, setMode] = useState<'create' | 'edit'>('create')
-  const [editingCar, setEditingCar] = useState<CarResponseItem | null>(null)
-  const [deleteConfirmCar, setDeleteConfirmCar] = useState<CarResponseItem | null>(null)
 
   const {
     control,
@@ -222,42 +235,41 @@ export default function AdminCarsPage() {
   const watchedVideoFile = watch('videoFile')
 
   useEffect(() => {
-    if (!modalOpen) return
-    if (mode !== 'edit' || !editingCar) return
+    if (!modalOpen || mode !== 'edit' || !carDetail) return
 
     reset({
-      carCode: editingCar.carCode ?? '',
-      vin: editingCar.vin ?? '',
-      carName: editingCar.carName ?? '',
-      modelYear: String(editingCar.modelYear ?? ''),
-      modelName: editingCar.modelName ?? '',
-      brandID: String(editingCar.brandID ?? ''),
-      bodyTypeID: String(editingCar.bodyTypeID ?? ''),
-      statusID: String(editingCar.statusID ?? ''),
-      condition: editingCar.condition ?? 'New',
-      locationID: String(editingCar.locationID ?? ''),
-      price: String(editingCar.price ?? ''),
+      carCode: carDetail.carCode ?? '',
+      vin: carDetail.vin ?? '',
+      carName: carDetail.carName ?? '',
+      modelYear: String(carDetail.modelYear ?? ''),
+      modelName: carDetail.modelName ?? '',
+      brandID: String(carDetail.brandID ?? ''),
+      bodyTypeID: String(carDetail.bodyTypeID ?? ''),
+      statusID: String(carDetail.statusID ?? ''),
+      condition: carDetail.condition ?? 'New',
+      locationID: String(carDetail.locationID ?? ''),
+      price: String(carDetail.price ?? ''),
       importPrice:
-        editingCar.importPrice === null || editingCar.importPrice === undefined
+        carDetail.importPrice === null || carDetail.importPrice === undefined
           ? ''
-          : String(editingCar.importPrice),
-      salePrice: String(editingCar.salePrice ?? ''),
-      engineSize: String((editingCar.engineSize as any) ?? ''),
-      fuelType: String(editingCar.fuelType ?? 'Petrol'),
-      transmission: String((editingCar as any).transmission ?? 'Automatic'),
-      driveType: String((editingCar as any).driveType ?? 'FWD'),
-      doors: String((editingCar as any).doors ?? '4'),
-      seats: String((editingCar as any).seats ?? ''),
-      color: String((editingCar as any).color ?? 'Đen'),
-      mileage: String((editingCar as any).mileage ?? ''),
-      shortDescription: String(editingCar.shortDescription ?? ''),
-      detailedDescription: String(editingCar.detailedDescription ?? ''),
-      isFeature: Boolean(editingCar.isFeature ?? false),
-      isActive: Boolean((editingCar as any).isActive ?? true),
+          : String(carDetail.importPrice),
+      salePrice: String(carDetail.salePrice ?? ''),
+      engineSize: String((carDetail.engineSize as any) ?? ''),
+      fuelType: String(carDetail.fuelType ?? 'Petrol'),
+      transmission: String((carDetail as any).transmission ?? 'Automatic'),
+      driveType: String((carDetail as any).driveType ?? 'FWD'),
+      doors: String((carDetail as any).doors ?? '4'),
+      seats: String((carDetail as any).seats ?? ''),
+      color: String((carDetail as any).color ?? 'Đen'),
+      mileage: String((carDetail as any).mileage ?? ''),
+      shortDescription: String(carDetail.shortDescription ?? ''),
+      detailedDescription: String(carDetail.detailedDescription ?? ''),
+      isFeature: Boolean(carDetail.isFeature ?? false),
+      isActive: Boolean((carDetail as any).isActive ?? true),
       imageFiles: [],
       videoFile: null,
     })
-  }, [modalOpen, mode, editingCar, reset])
+  }, [modalOpen, mode, carDetail, reset])
 
   useEffect(() => {
     if (!modalOpen) return
@@ -348,6 +360,8 @@ export default function AdminCarsPage() {
 
   return (
     <div className="space-y-6">
+      <CarStatsPanel />
+
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -368,39 +382,30 @@ export default function AdminCarsPage() {
           </button>
         </div>
 
+        {/* Row 1: text + selects */}
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-slate-700">Tên xe</span>
             <input
               className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
               value={search}
-              onChange={(e) => {
-                setPage(1)
-                setSearch(e.target.value)
-              }}
+              onChange={(e) => { setPage(1); setSearch(e.target.value) }}
               placeholder="VD: Camry"
             />
           </label>
-
           <SelectField
             label="Hãng xe"
             value={brandCode}
             options={brandOptions}
             disabled={brandsLoading}
-            onChange={(e) => {
-              setPage(1)
-              setBrandCode(e.target.value)
-            }}
+            onChange={(e) => { setPage(1); setBrandCode(e.target.value) }}
           />
           <SelectField
             label="Kiểu thân xe"
             value={bodyCode}
             options={bodyOptions}
             disabled={bodiesLoading}
-            onChange={(e) => {
-              setPage(1)
-              setBodyCode(e.target.value)
-            }}
+            onChange={(e) => { setPage(1); setBodyCode(e.target.value) }}
           />
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-slate-700">Giá từ</span>
@@ -408,10 +413,7 @@ export default function AdminCarsPage() {
               inputMode="numeric"
               className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
               value={priceFrom}
-              onChange={(e) => {
-                setPage(1)
-                setPriceFrom(e.target.value)
-              }}
+              onChange={(e) => { setPage(1); setPriceFrom(e.target.value) }}
               placeholder="VD: 100000000"
             />
           </label>
@@ -421,30 +423,88 @@ export default function AdminCarsPage() {
               inputMode="numeric"
               className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"
               value={priceTo}
-              onChange={(e) => {
-                setPage(1)
-                setPriceTo(e.target.value)
-              }}
+              onChange={(e) => { setPage(1); setPriceTo(e.target.value) }}
               placeholder="VD: 200000000"
             />
           </label>
         </div>
 
-        <div className="mt-4 flex items-center justify-end">
-          <button
-            type="button"
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            onClick={() => {
-              setPage(1)
-              setSearch('')
-              setBrandCode('')
-              setBodyCode('')
-              setPriceFrom('')
-              setPriceTo('')
-            }}
-          >
-            Xoá bộ lọc
-          </button>
+        {/* Row 2: chip filters */}
+        <div className="mt-4 flex flex-wrap items-start gap-6">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Trạng thái</span>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { code: 'AVAILABLE', label: 'Còn hàng',     active: 'bg-green-600 text-white border-green-600',  inactive: 'border-green-200 text-green-700 hover:bg-green-50'  },
+                { code: 'RESERVED',  label: 'Đặt cọc',      active: 'bg-yellow-500 text-white border-yellow-500', inactive: 'border-yellow-200 text-yellow-700 hover:bg-yellow-50' },
+                { code: 'SOLD',      label: 'Đã bán',        active: 'bg-blue-600 text-white border-blue-600',    inactive: 'border-blue-200 text-blue-700 hover:bg-blue-50'    },
+              ].map(({ code, label, active, inactive }) => {
+                const on = statusCodes.includes(code)
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${on ? active : inactive}`}
+                    onClick={() => {
+                      setPage(1)
+                      setStatusCodes((prev) =>
+                        prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+                      )
+                    }}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tình trạng xe</span>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { code: 'new',       label: '✨ Xe mới',       active: 'bg-emerald-600 text-white border-emerald-600', inactive: 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' },
+                { code: 'used',      label: '🔧 Xe cũ',         active: 'bg-slate-600 text-white border-slate-600',   inactive: 'border-slate-300 text-slate-600 hover:bg-slate-50'     },
+                { code: 'certified', label: '🏅 Chứng thực',    active: 'bg-purple-600 text-white border-purple-600', inactive: 'border-purple-200 text-purple-700 hover:bg-purple-50' },
+              ].map(({ code, label, active, inactive }) => {
+                const on = conditions.includes(code)
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${on ? active : inactive}`}
+                    onClick={() => {
+                      setPage(1)
+                      setConditions((prev) =>
+                        prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+                      )
+                    }}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="ml-auto self-end">
+            <button
+              type="button"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              onClick={() => {
+                setPage(1)
+                setSearch('')
+                setBrandCode('')
+                setBodyCode('')
+                setPriceFrom('')
+                setPriceTo('')
+                setStatusCodes([])
+                setConditions([])
+              }}
+            >
+              Xoá bộ lọc
+            </button>
+          </div>
         </div>
       </div>
 
@@ -613,8 +673,13 @@ export default function AdminCarsPage() {
               </button>
             </div>
 
-            <div className="max-h-[75vh] overflow-y-auto px-4 py-5">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="relative max-h-[75vh] overflow-y-auto px-4 py-5">
+              {mode === 'edit' && detailLoading && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+                  <LoadingSpinner size="lg" />
+                </div>
+              )}
+              <div className={`grid grid-cols-1 gap-4 md:grid-cols-2${createMutation.isPending || updateMutation.isPending ? ' pointer-events-none select-none opacity-60' : ''}`}>
                 <label className="flex flex-col gap-1">
                   <span className="text-sm font-medium text-slate-700">Car code</span>
                   <input
@@ -878,9 +943,9 @@ export default function AdminCarsPage() {
               <button
                 type="button"
                 disabled={
-                  createMutation.isPending || updateMutation.isPending
+                  createMutation.isPending || updateMutation.isPending || (mode === 'edit' && detailLoading)
                 }
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${createMutation.isPending || updateMutation.isPending ? 'cursor-not-allowed bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
                 onClick={handleSubmit(async (values) => {
                   try {
                     const fd = buildCarFormData(values)
@@ -895,7 +960,7 @@ export default function AdminCarsPage() {
                   }
                 })}
               >
-                {mode === 'create' ? 'Tạo xe' : 'Lưu thay đổi'}
+                {createMutation.isPending || updateMutation.isPending ? 'Đang lưu...' : mode === 'create' ? 'Tạo xe' : 'Lưu thay đổi'}
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { CarDetailResponse, CarResponse, CarResponseItem, CarStatusResponse } from "src/shared/types/Reponse/Car";
+import { CarDetailResponse, CarResponse, CarResponseItem, CarStatsResponse, CarStatusResponse } from "src/shared/types/Reponse/Car";
 import type { OperationResult, PagedResponse } from "src/services/types/common.types";
 import apiClient from "../..";
 import type { ApiRequestOptions } from "../../requestOptions";
@@ -62,6 +62,8 @@ export const carRouteFn = {
             bodyCode: params.bodyCode || undefined,
             priceFrom: params.priceFrom ?? undefined,
             priceTo: params.priceTo ?? undefined,
+            statusCodes: params.statusCodes?.length ? params.statusCodes.join(",") : undefined,
+            conditions: params.conditions?.length ? params.conditions.join(",") : undefined,
           },
         },
         options
@@ -227,6 +229,13 @@ export const carRouteFn = {
       withSignal({}, options)
     );
     return unwrapData<CarStatusResponse[]>(response.data) ?? [];
+  },
+  getStats: async (options?: ApiRequestOptions) => {
+    const response = await apiClient.get<OperationResult<CarStatsResponse>>(
+      carRoute.stats,
+      withSignal({}, options)
+    );
+    return unwrapData<CarStatsResponse>(response.data);
   },
   updateTechSpec: async (
     id: number,
