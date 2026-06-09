@@ -10,8 +10,15 @@ import { formatCurrency } from '@/common/utils/formatCurrency'
 import type { CarResponse, CarResponseItem } from '@/shared/types/Reponse/Car'
 import { useBrandCarList } from '@/query/brand-car/useBrandCarQueries'
 import { useBodyTypeList } from '@/query/body-type/useBodyTypeQueries'
+import { useCarStatusList } from '@/query/car/useCarQueries'
 import { SelectField } from '@/shared/components/Form/SelectField'
 import PremiumGateModal from '@/pages/customer/Premium/components/PremiumGateModal'
+
+const CONDITION_OPTIONS = [
+  { value: 'new', label: 'Xe mới nguyên' },
+  { value: 'used', label: 'Xe đã sử dụng' },
+  { value: 'certified', label: 'Xe đã sử dụng (chứng thực)' },
+]
 
 // ── Compare Modal ──────────────────────────────────────────────────────────────
 const COMPARE_ROWS: { label: string; key: keyof CarResponseItem }[] = [
@@ -127,6 +134,7 @@ export default function CustomerCarsPage() {
   const [searchParams] = useSearchParams()
   const { data: brandCars = [], isLoading: brandsLoading } = useBrandCarList()
   const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList()
+  const { data: carStatuses = [] } = useCarStatusList()
 
   const [page, setPage] = useState(1)
   const pageSize = 12
@@ -136,6 +144,8 @@ export default function CustomerCarsPage() {
   const [search, setSearch] = useState(() => searchParams.get('search') ?? searchParams.get('carName') ?? '')
   const [priceFrom, setPriceFrom] = useState<string>('')
   const [priceTo, setPriceTo] = useState<string>('')
+  const [condition, setCondition] = useState(() => searchParams.get('condition') ?? '')
+  const [statusCode, setStatusCode] = useState(() => searchParams.get('statusCode') ?? '')
 
   const priceFromNum = useMemo(() => {
     if (!priceFrom.trim()) return undefined
@@ -159,8 +169,10 @@ export default function CustomerCarsPage() {
       bodyCode,
       priceFromNum,
       priceToNum,
+      condition,
+      statusCode,
     ],
-    [page, pageSize, search, brandCode, bodyCode, priceFromNum, priceToNum]
+    [page, pageSize, search, brandCode, bodyCode, priceFromNum, priceToNum, condition, statusCode]
   )
 
   const brandOptions = useMemo(
@@ -171,6 +183,14 @@ export default function CustomerCarsPage() {
   const bodyOptions = useMemo(
     () => bodyTypes.map((body) => ({ value: body.bodyCode, label: body.bodyName })),
     [bodyTypes]
+  )
+
+  const statusOptions = useMemo(
+    () =>
+      carStatuses
+        .filter((s) => s.isActive)
+        .map((s) => ({ value: s.statusCode, label: s.statusName })),
+    [carStatuses]
   )
 
   const { data, isLoading, error } = useQuery<CarResponse, Error>({
@@ -185,6 +205,8 @@ export default function CustomerCarsPage() {
         bodyCode: bodyCode.trim(),
         ...(priceFromNum !== undefined ? { priceFrom: priceFromNum } : {}),
         ...(priceToNum !== undefined ? { priceTo: priceToNum } : {}),
+        ...(condition ? { conditions: [condition] } : {}),
+        ...(statusCode ? { statusCodes: [statusCode] } : {}),
       }),
   })
 
@@ -217,7 +239,7 @@ export default function CustomerCarsPage() {
       </div>
 
       <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-slate-700">Tên xe</span>
             <input
@@ -250,6 +272,26 @@ export default function CustomerCarsPage() {
             onChange={(e) => {
               setPage(1)
               setBodyCode(e.target.value)
+            }}
+          />
+
+          <SelectField
+            label="Tình trạng xe"
+            value={condition}
+            options={CONDITION_OPTIONS}
+            onChange={(e) => {
+              setPage(1)
+              setCondition(e.target.value)
+            }}
+          />
+
+          <SelectField
+            label="Trạng thái"
+            value={statusCode}
+            options={statusOptions}
+            onChange={(e) => {
+              setPage(1)
+              setStatusCode(e.target.value)
             }}
           />
 
@@ -293,6 +335,8 @@ export default function CustomerCarsPage() {
               setBodyCode('')
               setPriceFrom('')
               setPriceTo('')
+              setCondition('')
+              setStatusCode('')
             }}
           >
             Xoá bộ lọc
