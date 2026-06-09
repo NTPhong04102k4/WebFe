@@ -8,6 +8,8 @@ import {
   useReviewMutations,
 } from "src/query/review/useReviewQueries";
 import { notify } from "@/components/core/Feedback/toast";
+import LoadingSpinner from "src/components/common/LoadingSpinner";
+import EmptyState from "src/components/common/EmptyState";
 
 import shell from "../account-shell.module.scss";
 
@@ -62,14 +64,16 @@ export default function MyReviewsPage() {
       {/* Car Reviews */}
       {tab === "car" && (
         <div className="mt-4 space-y-3">
-          {carQ.isLoading && <p className={shell.sub}>Đang tải…</p>}
+          {carQ.isLoading && <LoadingSpinner size="sm" />}
           {!carQ.isLoading && carReviews.length === 0 && (
-            <div className={shell.card} style={{ textAlign: "center" }}>
-              <p className={shell.sub}>Bạn chưa có đánh giá xe nào.</p>
-              <Link to="/cars" className={`${shell.btn} ${shell.primary}`} style={{ display: "inline-block", marginTop: "0.75rem" }}>
-                Khám phá xe
-              </Link>
-            </div>
+            <EmptyState
+              title="Bạn chưa có đánh giá xe nào."
+              action={
+                <Link to="/cars" className={`${shell.btn} ${shell.primary}`} style={{ display: "inline-block" }}>
+                  Khám phá xe
+                </Link>
+              }
+            />
           )}
           {carReviews.map((r) => (
             <div key={r.reviewID} className={shell.card}>
@@ -124,11 +128,9 @@ export default function MyReviewsPage() {
       {/* Service Reviews */}
       {tab === "service" && (
         <div className="mt-4 space-y-3">
-          {serviceQ.isLoading && <p className={shell.sub}>Đang tải…</p>}
+          {serviceQ.isLoading && <LoadingSpinner size="sm" />}
           {!serviceQ.isLoading && serviceReviews.length === 0 && (
-            <div className={shell.card} style={{ textAlign: "center" }}>
-              <p className={shell.sub}>Bạn chưa có đánh giá dịch vụ nào.</p>
-            </div>
+            <EmptyState title="Bạn chưa có đánh giá dịch vụ nào." />
           )}
           {serviceReviews.map((r) => (
             <div key={r.reviewID} className={shell.card}>
@@ -143,9 +145,9 @@ export default function MyReviewsPage() {
                   )}
                   {r.title && <p className="mt-1 text-sm font-medium text-slate-600">{r.title}</p>}
                   <p className="mt-1 text-sm text-slate-500 line-clamp-3">{r.content}</p>
-                  {r.shopResponse && (
+                  {r.responseFromShop && (
                     <div className="mt-2 rounded bg-blue-50 px-3 py-2 text-xs text-blue-700">
-                      <span className="font-medium">Phản hồi:</span> {r.shopResponse}
+                      <span className="font-medium">Phản hồi:</span> {r.responseFromShop}
                     </div>
                   )}
                 </div>
