@@ -12,6 +12,7 @@ export interface BroadcastViewModel {
   recipientCount: number;
   creatorName?: string;
   createdDate: string;
+  targetStaffIDs?: number[];
 }
 
 export interface BroadcastListResult {

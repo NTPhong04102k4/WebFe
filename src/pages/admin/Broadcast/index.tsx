@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Bell, Plus, Send, Trash2, Pencil, RefreshCw } from "lucide-react";
+import { Bell, Plus, Send, Trash2, Pencil, RefreshCw, Users, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { notify } from "src/components/core/Feedback/toast";
+import { StaffPickerModal } from "src/components/common/StaffPickerModal";
 import { useBroadcastList, useBroadcastMutations } from "src/query/broadcast/useBroadcastQueries";
 import type { BroadcastViewModel } from "src/shared/types/Reponse/Broadcast";
 import type { BroadcastQueryRequest, BroadcastRequest } from "src/shared/types/Request/Broadcast";
@@ -64,109 +65,172 @@ function BroadcastModal({
     },
   });
 
+  const [selectedStaffIDs, setSelectedStaffIDs] = useState<number[]>(initial?.targetStaffIDs ?? []);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
   const targetType = watch("targetType");
+  const targetingStaff = targetType === "Staff" || targetType === "Both";
 
   const submit = (vals: FormValues) => {
     onSubmit({
       title: vals.title,
       body: vals.body,
       targetType: vals.targetType,
-      staffRoleFilter: vals.staffRoleFilter || undefined,
+      staffRoleFilter: selectedStaffIDs.length > 0 ? undefined : (vals.staffRoleFilter || undefined),
       scheduledAt: vals.scheduledAt ? new Date(vals.scheduledAt).toISOString() : undefined,
+      targetStaffIDs: selectedStaffIDs.length > 0 ? selectedStaffIDs : undefined,
     });
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
-        className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-          {initial ? "Chỉnh sửa broadcast" : "Tạo broadcast mới"}
-        </h2>
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+        <div
+          className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+            {initial ? "Chỉnh sửa broadcast" : "Tạo broadcast mới"}
+          </h2>
 
-        <form onSubmit={handleSubmit(submit)} className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Tiêu đề <span className="text-red-500">*</span>
-            </label>
-            <input
-              {...register("title", { required: "Bắt buộc" })}
-              className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-              placeholder="Tiêu đề thông báo..."
-            />
-            {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Nội dung <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              {...register("body", { required: "Bắt buộc" })}
-              rows={4}
-              className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white resize-none"
-              placeholder="Nội dung thông báo..."
-            />
-            {errors.body && <p className="text-xs text-red-500 mt-1">{errors.body.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Đối tượng</label>
-            <select
-              {...register("targetType")}
-              className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-            >
-              <option value="Customer">Khách hàng (FCM push)</option>
-              <option value="Staff">Nhân viên (Email)</option>
-              <option value="Both">Tất cả</option>
-            </select>
-          </div>
-
-          {(targetType === "Staff" || targetType === "Both") && (
+          <form onSubmit={handleSubmit(submit)} className="space-y-3">
+            {/* Title */}
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Lọc theo vai trò nhân viên <span className="text-slate-400">(để trống = tất cả)</span>
+                Tiêu đề <span className="text-red-500">*</span>
               </label>
               <input
-                {...register("staffRoleFilter")}
+                {...register("title", { required: "Bắt buộc" })}
                 className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                placeholder="VD: Technician, Admin..."
+                placeholder="Tiêu đề thông báo..."
+              />
+              {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>}
+            </div>
+
+            {/* Body */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Nội dung <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                {...register("body", { required: "Bắt buộc" })}
+                rows={4}
+                className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white resize-none"
+                placeholder="Nội dung thông báo..."
+              />
+              {errors.body && <p className="text-xs text-red-500 mt-1">{errors.body.message}</p>}
+            </div>
+
+            {/* Target type */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Đối tượng</label>
+              <select
+                {...register("targetType")}
+                className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+              >
+                <option value="Customer">Khách hàng (FCM push)</option>
+                <option value="Staff">Nhân viên (Email)</option>
+                <option value="Both">Tất cả</option>
+              </select>
+            </div>
+
+            {/* Staff targeting block */}
+            {targetingStaff && (
+              <div className="rounded-lg border border-slate-200 dark:border-slate-600 p-3 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Nhân viên nhận thông báo
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPickerOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-700 transition-colors"
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    {selectedStaffIDs.length > 0 ? "Thay đổi" : "Chọn nhân viên"}
+                  </button>
+                </div>
+
+                {/* Selected staff display */}
+                {selectedStaffIDs.length > 0 ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                      <Users className="h-3 w-3" />
+                      {selectedStaffIDs.length} nhân viên được chọn
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedStaffIDs([])}
+                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-500"
+                    >
+                      <X className="h-3 w-3" /> Xóa tất cả
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 dark:text-slate-500">
+                    Chưa chọn nhân viên cụ thể — hoặc lọc theo vai trò bên dưới (chỉ SuperAdmin).
+                  </p>
+                )}
+
+                {/* Role filter — only shown when no specific staff selected */}
+                {selectedStaffIDs.length === 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                      Lọc theo vai trò <span className="text-slate-400">(để trống = tất cả nhân viên)</span>
+                    </label>
+                    <input
+                      {...register("staffRoleFilter")}
+                      className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                      placeholder="VD: Technician, Admin..."
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Scheduled at */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Gửi lúc <span className="text-slate-400">(để trống = lưu nháp)</span>
+              </label>
+              <input
+                type="datetime-local"
+                {...register("scheduledAt")}
+                className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
               />
             </div>
-          )}
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Gửi lúc <span className="text-slate-400">(để trống = lưu nháp)</span>
-            </label>
-            <input
-              type="datetime-local"
-              {...register("scheduledAt")}
-              className="w-full border rounded-lg px-3 py-2 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-            />
-          </div>
-
-          <div className="flex gap-2 pt-2 justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-            >
-              Huỷ
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? "Đang lưu..." : "Lưu"}
-            </button>
-          </div>
-        </form>
+            <div className="flex gap-2 pt-2 justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                Huỷ
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {loading ? "Đang lưu..." : "Lưu"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+
+      {/* Staff picker — z-index above broadcast modal */}
+      <StaffPickerModal
+        open={pickerOpen}
+        selected={selectedStaffIDs}
+        onConfirm={(ids) => {
+          setSelectedStaffIDs(ids);
+          setPickerOpen(false);
+        }}
+        onClose={() => setPickerOpen(false)}
+      />
+    </>
   );
 }
 
@@ -293,9 +357,14 @@ export default function AdminBroadcastPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                     {TARGET_LABEL[item.targetType] ?? item.targetType}
-                    {item.staffRoleFilter && (
+                    {item.targetStaffIDs && item.targetStaffIDs.length > 0 ? (
+                      <div className="flex items-center gap-1 text-xs text-blue-500 mt-0.5">
+                        <Users className="h-3 w-3" />
+                        {item.targetStaffIDs.length} người
+                      </div>
+                    ) : item.staffRoleFilter ? (
                       <div className="text-xs text-slate-400">{item.staffRoleFilter}</div>
-                    )}
+                    ) : null}
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
                   <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{formatDt(item.scheduledAt)}</td>
