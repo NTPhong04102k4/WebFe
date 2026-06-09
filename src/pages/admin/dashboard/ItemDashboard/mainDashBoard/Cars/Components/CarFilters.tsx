@@ -1,12 +1,13 @@
 import React from "react";
 import { useBrandCarList } from "src/query/brand-car/useBrandCarQueries";
 import { useBodyTypeList } from "src/query/body-type/useBodyTypeQueries";
+import { useCarStatusList } from "src/query/car/useCarQueries";
 import { SelectField } from "src/shared/components/Form/SelectField";
-
-type Condition = "new" | "used" | "certified" | "";
+import { ComboBox } from "src/components/common/ComboBox";
 
 export interface CarFiltersValue {
-  condition: Condition;
+  conditions: string[];
+  statusCodes: string[];
   search: string;
   brandCode: string;
   bodyCode: string;
@@ -14,15 +15,26 @@ export interface CarFiltersValue {
   pageSize: number;
 }
 
+const CONDITION_OPTIONS = [
+  { value: "new", label: "Xe mới" },
+  { value: "used", label: "Xe đã sử dụng" },
+  { value: "certified", label: "Xe chứng thực" },
+];
+
 export const CarFilters: React.FC<{
   value: CarFiltersValue;
   onChange: (next: Partial<CarFiltersValue>) => void;
 }> = ({ value, onChange }) => {
   const { data: brandCar = [], isLoading: brandsLoading } = useBrandCarList();
   const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList();
+  const { data: statuses = [] } = useCarStatusList();
+
+  const statusOptions = statuses
+    .filter((s) => s.isActive)
+    .map((s) => ({ value: s.statusCode, label: s.statusName }));
 
   return (
-    <div className="rounded-md border bg-gray-50 p-4">
+    <div className="rounded-md border bg-gray-50 p-4 space-y-3">
       <div className="flex flex-col items-stretch gap-4 md:flex-row md:items-end">
         <div className="flex-1">
           <label className="flex flex-col gap-1">
@@ -34,20 +46,6 @@ export const CarFilters: React.FC<{
               placeholder="VD: Camry"
             />
           </label>
-        </div>
-        <div className="flex-1">
-          <SelectField
-            label="Tình trạng"
-            value={value.condition}
-            options={[
-              { value: "new", label: "Xe mới" },
-              { value: "used", label: "Xe cũ" },
-              { value: "certified", label: "Xe cũ đã chứng nhận" },
-            ]}
-            onChange={(e) =>
-              onChange({ condition: e.target.value as Condition })
-            }
-          />
         </div>
         <div className="flex-1">
           <SelectField
@@ -73,6 +71,27 @@ export const CarFilters: React.FC<{
             }))}
           />
         </div>
+      </div>
+      <div className="flex flex-col items-stretch gap-4 md:flex-row md:items-end">
+        <div className="flex-1">
+          <ComboBox
+            label="Tình trạng xe"
+            placeholder="Chọn tình trạng..."
+            value={value.conditions}
+            valueCollection={CONDITION_OPTIONS}
+            onChange={(conditions) => onChange({ conditions })}
+          />
+        </div>
+        <div className="flex-1">
+          <ComboBox
+            label="Trạng thái giao dịch"
+            placeholder="Chọn trạng thái..."
+            value={value.statusCodes}
+            valueCollection={statusOptions}
+            onChange={(statusCodes) => onChange({ statusCodes })}
+          />
+        </div>
+        <div className="flex-1 hidden md:block" />
       </div>
     </div>
   );
