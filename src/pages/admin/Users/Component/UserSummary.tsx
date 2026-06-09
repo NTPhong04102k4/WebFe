@@ -11,10 +11,10 @@ type UserSummaryProps = {
 export function UserSummary({ total, currentPage, active, locked }: UserSummaryProps) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <SummaryCard icon={<Users className="h-5 w-5" />} label="Tong ket qua" value={total} />
-      <SummaryCard icon={<Users className="h-5 w-5" />} label="Dang hien thi" value={currentPage} />
-      <SummaryCard icon={<UserCheck className="h-5 w-5" />} label="Active tren trang" value={active} tone="green" />
-      <SummaryCard icon={<Lock className="h-5 w-5" />} label="Bi khoa tren trang" value={locked} tone="red" />
+      <SummaryCard icon={<Users className="h-5 w-5" />}     label="Tổng kết quả"       value={total}       />
+      <SummaryCard icon={<Users className="h-5 w-5" />}     label="Đang hiển thị"      value={currentPage} />
+      <SummaryCard icon={<UserCheck className="h-5 w-5" />} label="Hoạt động (trang)"  value={active}      tone="green" />
+      <SummaryCard icon={<Lock className="h-5 w-5" />}      label="Bị khóa (trang)"    value={locked}      tone="red"   />
     </div>
   );
 }
@@ -31,9 +31,9 @@ function SummaryCard({
   tone?: "blue" | "green" | "red";
 }) {
   const toneClass = {
-    blue: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+    blue:  "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
     green: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-    red: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
+    red:   "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
   }[tone];
 
   return (

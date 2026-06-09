@@ -28,9 +28,9 @@ function statusClass(user: UserProfile) {
 }
 
 function statusLabel(user: UserProfile) {
-  if (user.isLocked) return "Bi khoa";
-  if (!user.isActive) return "Tam dung";
-  return "Dang hoat dong";
+  if (user.isLocked) return "Bị khóa";
+  if (!user.isActive) return "Tạm dừng";
+  return "Đang hoạt động";
 }
 
 export function UserTable({ users, loading, onView }: UserTableProps) {
@@ -38,10 +38,9 @@ export function UserTable({ users, loading, onView }: UserTableProps) {
     () => [
       {
         accessorKey: "fullName",
-        header: "Nguoi dung",
+        header: "Người dùng",
         cell: ({ row }) => {
           const user = row.original;
-
           return (
             <div className="flex items-center gap-3">
               <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
@@ -68,7 +67,7 @@ export function UserTable({ users, loading, onView }: UserTableProps) {
           <div className="max-w-xs">
             <div className="truncate">{row.original.email || "-"}</div>
             <div className="text-xs text-slate-600 dark:text-slate-300">
-              {row.original.emailVerified ? "Da xac thuc" : "Chua xac thuc"}
+              {row.original.emailVerified ? "Đã xác thực" : "Chưa xác thực"}
             </div>
           </div>
         ),
@@ -80,7 +79,7 @@ export function UserTable({ users, loading, onView }: UserTableProps) {
       },
       {
         accessorKey: "isActive",
-        header: "Trang thai",
+        header: "Trạng thái",
         cell: ({ row }) => (
           <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClass(row.original)}`}>
             {statusLabel(row.original)}
@@ -89,12 +88,12 @@ export function UserTable({ users, loading, onView }: UserTableProps) {
       },
       {
         accessorKey: "createdDate",
-        header: "Ngay tao",
+        header: "Ngày tạo",
         cell: ({ getValue }) => formatDate(String(getValue() || "")),
       },
       {
         id: "actions",
-        header: "Hanh dong",
+        header: "Hành động",
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex justify-end">
@@ -103,7 +102,7 @@ export function UserTable({ users, loading, onView }: UserTableProps) {
               className="rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600/30 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 dark:focus:ring-blue-300/30"
               onClick={() => onView(row.original)}
             >
-              Chi tiet
+              Chi tiết
             </button>
           </div>
         ),
@@ -118,8 +117,8 @@ export function UserTable({ users, loading, onView }: UserTableProps) {
       columns={columns}
       loading={loading}
       getRowId={(user) => user.userUUID ?? user.userID}
-      emptyTitle="Khong co nguoi dung"
-      emptyDescription="Chua co nguoi dung phu hop voi bo loc."
+      emptyTitle="Không có người dùng"
+      emptyDescription="Chưa có người dùng phù hợp với bộ lọc hiện tại."
     />
   );
 }

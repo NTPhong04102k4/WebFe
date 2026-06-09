@@ -1,7 +1,7 @@
 import { RefreshCw } from "lucide-react";
 
 import { ComboBox, DateTimePicker, Input } from "src/components/common";
-import { SelectField } from "@/shared/components/Form/SelectField";
+import { Select } from "src/components/core/Select/Select";
 import type {
   UserListPeriod,
   UserListQuery,
@@ -34,63 +34,45 @@ type UserToolbarProps = {
 };
 
 const statusOptions = [
-  { label: "Dang hoat dong", value: "active" },
-  { label: "Tam dung", value: "inactive" },
-  { label: "Bi khoa", value: "locked" },
-  { label: "Khong bi khoa", value: "unlocked" },
+  { label: "Đang hoạt động", value: "active" },
+  { label: "Tạm dừng",       value: "inactive" },
+  { label: "Bị khóa",        value: "locked" },
+  { label: "Không bị khóa",  value: "unlocked" },
 ];
 
 const periodOptions = [
-  { label: "7 ngay gan day", value: "7d" },
-  { label: "30 ngay gan day", value: "30d" },
-  { label: "Khoang ngay tuy chon", value: "custom" },
+  { label: "7 ngày gần đây",       value: "7d" },
+  { label: "30 ngày gần đây",      value: "30d" },
+  { label: "Khoảng ngày tùy chọn", value: "custom" },
 ];
 
 const sortByOptions = [
-  { label: "Ngay tao", value: "createdDate" },
-  { label: "Ngay cap nhat", value: "updatedDate" },
-  { label: "Dang nhap cuoi", value: "lastLoginDate" },
-  { label: "Username", value: "username" },
+  { label: "Ngày tạo",      value: "createdDate" },
+  { label: "Ngày cập nhật", value: "updatedDate" },
+  { label: "Đăng nhập cuối", value: "lastLoginDate" },
+  { label: "Username",      value: "username" },
 ];
 
 const sortDirOptions = [
-  { label: "Moi nhat", value: "desc" },
-  { label: "Cu nhat", value: "asc" },
+  { label: "Mới nhất", value: "desc" },
+  { label: "Cũ nhất",  value: "asc" },
 ];
 
 export function UserToolbar({
-  search,
-  email,
-  username,
-  phone,
-  period,
-  statusFilters,
-  fromDate,
-  toDate,
-  sortBy,
-  sortDir,
-  isSyncing,
-  onSearchChange,
-  onEmailChange,
-  onUsernameChange,
-  onPhoneChange,
-  onPeriodChange,
-  onStatusFiltersChange,
-  onDateRangeChange,
-  onSortByChange,
-  onSortDirChange,
-  onRefresh,
+  search, email, username, phone, period, statusFilters, fromDate, toDate,
+  sortBy, sortDir, isSyncing,
+  onSearchChange, onEmailChange, onUsernameChange, onPhoneChange, onPeriodChange,
+  onStatusFiltersChange, onDateRangeChange, onSortByChange, onSortDirChange, onRefresh,
 }: UserToolbarProps) {
   return (
     <div className="rounded-xl border border-slate-300 bg-white p-4 dark:border-slate-600 dark:bg-slate-900">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-            Quan ly nguoi dung
+            Quản lý người dùng
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Theo doi tai khoan theo email, username, phone va trang thai hoat
-            dong
+            Theo dõi tài khoản theo email, username, phone và trạng thái hoạt động
           </p>
         </div>
         <button
@@ -99,54 +81,43 @@ export function UserToolbar({
           onClick={onRefresh}
         >
           <RefreshCw className="h-4 w-4" />
-          Tai lai
+          Tải lại
         </button>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
         <Input
-          label="Tim kiem chung"
+          label="Tìm kiếm chung"
           value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Tim email, username, phone..."
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Tìm email, username, phone..."
         />
-        <SelectField
-          label="Thoi gian"
-          value={period}
-          placeholder="Tat ca thoi gian"
+        <Select
+          label="Thời gian"
+          value={period === "all" ? "" : period}
+          placeholder="Tất cả thời gian"
           options={periodOptions}
-          onChange={(event) => onPeriodChange((event.target.value || "all") as UserListPeriod)}
-          className="border-2 border-slate-400 bg-white text-slate-800 focus:border-blue-600 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100"
+          onChange={(e) => onPeriodChange((e.target.value || "all") as UserListPeriod)}
         />
         <ComboBox
-          label="Trang thai"
+          label="Trạng thái"
           value={statusFilters}
           valueCollection={statusOptions}
-          placeholder="Tat ca trang thai"
-          onChange={(value) =>
-            onStatusFiltersChange(value as UserStatusFilter[])
-          }
+          placeholder="Tất cả trạng thái"
+          onChange={(value) => onStatusFiltersChange(value as UserStatusFilter[])}
         />
         <div className="grid grid-cols-2 gap-3">
-          <SelectField
-            label="Sap xep"
+          <Select
+            label="Sắp xếp"
             value={sortBy}
-            placeholder="Ngay tao"
             options={sortByOptions}
-            onChange={(event) =>
-              onSortByChange((event.target.value || "createdDate") as UserListQuery["sortBy"])
-            }
-            className="border-2 border-slate-400 bg-white text-slate-800 focus:border-blue-600 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100"
+            onChange={(e) => onSortByChange((e.target.value || "createdDate") as UserListQuery["sortBy"])}
           />
-          <SelectField
-            label="Huong"
+          <Select
+            label="Hướng"
             value={sortDir}
-            placeholder="Moi nhat"
             options={sortDirOptions}
-            onChange={(event) =>
-              onSortDirChange((event.target.value || "desc") as UserListQuery["sortDir"])
-            }
-            className="border-2 border-slate-400 bg-white text-slate-800 focus:border-blue-600 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100"
+            onChange={(e) => onSortDirChange((e.target.value || "desc") as UserListQuery["sortDir"])}
           />
         </div>
       </div>
@@ -155,35 +126,35 @@ export function UserToolbar({
         <Input
           label="Email"
           value={email}
-          onChange={(event) => onEmailChange(event.target.value)}
-          placeholder="Loc rieng theo email"
+          onChange={(e) => onEmailChange(e.target.value)}
+          placeholder="Lọc riêng theo email"
         />
         <Input
           label="Username"
           value={username}
-          onChange={(event) => onUsernameChange(event.target.value)}
-          placeholder="Loc rieng theo username"
+          onChange={(e) => onUsernameChange(e.target.value)}
+          placeholder="Lọc riêng theo username"
         />
         <Input
           label="Phone"
           value={phone}
-          onChange={(event) => onPhoneChange(event.target.value)}
-          placeholder="Loc rieng theo phone"
+          onChange={(e) => onPhoneChange(e.target.value)}
+          placeholder="Lọc riêng theo phone"
         />
-        {isSyncing ? (
+        {isSyncing && (
           <span className="self-center text-xs text-slate-600 dark:text-slate-300">
-            Dang dong bo...
+            Đang đồng bộ...
           </span>
-        ) : null}
+        )}
       </div>
 
-      {period === "custom" ? (
+      {period === "custom" && (
         <DateTimePicker
           className="mt-3"
           value={{ fromDate, toDate }}
           onChange={onDateRangeChange}
         />
-      ) : null}
+      )}
     </div>
   );
 }

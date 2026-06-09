@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Modal } from "src/components/common";
+import { Input } from "src/components/core/Form/Input";
+import { Select } from "src/components/core/Select/Select";
 import { notify } from "src/components/core/Feedback/toast";
 import { useAdminUserMutations } from "src/query/user/useUserQueries";
 import type { AdminUserUpdateRequest } from "src/services/api/functions/user/Routes.Fn";
 import type { UserProfile } from "src/shared/types/Reponse/auth/user";
-
-// ─── Types ─────────────────────────────────────────────────────────────────
 
 type UserDetailModalProps = {
   user: UserProfile | null;
@@ -18,8 +18,6 @@ type ConfirmAction = {
   message: string;
   onConfirm: () => void;
 };
-
-// ─── Helpers ───────────────────────────────────────────────────────────────
 
 function formatDate(value?: string | null) {
   if (!value) return "-";
@@ -35,45 +33,6 @@ function displayName(user: UserProfile) {
   return user.fullName || user.username || user.email || user.userID;
 }
 
-// ─── ConfirmDialog ──────────────────────────────────────────────────────────
-
-function ConfirmDialog({
-  action,
-  isPending,
-  onCancel,
-}: {
-  action: ConfirmAction;
-  isPending: boolean;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl dark:bg-slate-900">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{action.title}</h3>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{action.message}</p>
-        <div className="mt-5 flex gap-3">
-          <button
-            onClick={onCancel}
-            disabled={isPending}
-            className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
-          >
-            Hủy
-          </button>
-          <button
-            onClick={action.onConfirm}
-            disabled={isPending}
-            className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-          >
-            {isPending ? "Đang xử lý..." : "Xác nhận"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── DetailItem ─────────────────────────────────────────────────────────────
-
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-slate-300 p-3 dark:border-slate-600">
@@ -83,28 +42,11 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ─── FormField ─────────────────────────────────────────────────────────────
-
-function FormField({ label, required, error, children }: {
-  label: string;
-  required?: boolean;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-        {label}{required && <span className="ml-0.5 text-red-500">*</span>}
-      </label>
-      {children}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-    </div>
-  );
-}
-
-const inputCls = "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100";
-
-// ─── EditForm ───────────────────────────────────────────────────────────────
+const GENDER_OPTIONS = [
+  { value: "Male",   label: "Nam" },
+  { value: "Female", label: "Nữ" },
+  { value: "Other",  label: "Khác" },
+];
 
 function EditForm({
   user,
@@ -115,11 +57,7 @@ function EditForm({
   onCancel: () => void;
   onSaveRequest: (data: AdminUserUpdateRequest) => void;
 }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<AdminUserUpdateRequest>({
+  const { register, handleSubmit, formState: { errors } } = useForm<AdminUserUpdateRequest>({
     defaultValues: {
       email: user.email ?? "",
       username: user.username ?? "",
@@ -135,66 +73,73 @@ function EditForm({
   return (
     <form onSubmit={handleSubmit(onSaveRequest)} className="space-y-3">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <FormField label="Email" required error={errors.email?.message}>
-          <input
-            {...register("email", {
-              required: "Email là bắt buộc",
-              pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Email không đúng định dạng" },
-            })}
-            className={inputCls}
-            placeholder="user@example.com"
-          />
-        </FormField>
-
-        <FormField label="Username" required error={errors.username?.message}>
-          <input
-            {...register("username", { required: "Username là bắt buộc" })}
-            className={inputCls}
-            placeholder="username"
-          />
-        </FormField>
-
-        <FormField label="CMND / CCCD" required error={errors.identityNumber?.message}>
-          <input
-            {...register("identityNumber", { required: "IdentityNumber là bắt buộc" })}
-            className={inputCls}
-            placeholder="012345678901"
-          />
-        </FormField>
-
-        <FormField label="Họ tên" error={errors.fullName?.message}>
-          <input {...register("fullName")} className={inputCls} placeholder="Nguyễn Văn A" />
-        </FormField>
-
-        <FormField label="Số điện thoại" error={errors.phone?.message}>
-          <input {...register("phone")} className={inputCls} placeholder="0912345678" />
-        </FormField>
-
-        <FormField label="Giới tính">
-          <select {...register("gender")} className={inputCls}>
-            <option value="">— Chọn —</option>
-            <option value="Male">Nam</option>
-            <option value="Female">Nữ</option>
-            <option value="Other">Khác</option>
-          </select>
-        </FormField>
-
-        <FormField label="Ngày sinh">
-          <input {...register("dateOfBirth")} type="date" className={inputCls} />
-        </FormField>
+        <Input
+          label="Email"
+          required
+          error={errors.email?.message}
+          placeholder="user@example.com"
+          {...register("email", {
+            required: "Email là bắt buộc",
+            pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Email không đúng định dạng" },
+          })}
+        />
+        <Input
+          label="Username"
+          required
+          error={errors.username?.message}
+          placeholder="username"
+          {...register("username", { required: "Username là bắt buộc" })}
+        />
+        <Input
+          label="CMND / CCCD"
+          required
+          error={errors.identityNumber?.message}
+          placeholder="012345678901"
+          {...register("identityNumber", { required: "IdentityNumber là bắt buộc" })}
+        />
+        <Input
+          label="Họ tên"
+          error={errors.fullName?.message}
+          placeholder="Nguyễn Văn A"
+          {...register("fullName")}
+        />
+        <Input
+          label="Số điện thoại"
+          error={errors.phone?.message}
+          placeholder="0912345678"
+          {...register("phone")}
+        />
+        <Select
+          label="Giới tính"
+          placeholder="— Chọn —"
+          options={GENDER_OPTIONS}
+          {...register("gender")}
+        />
+        <Input
+          label="Ngày sinh"
+          type="date"
+          {...register("dateOfBirth")}
+        />
       </div>
 
-      <FormField label="Địa chỉ">
-        <input {...register("address")} className={inputCls} placeholder="123 Đường ABC, Quận 1" />
-      </FormField>
+      <Input
+        label="Địa chỉ"
+        placeholder="123 Đường ABC, Quận 1"
+        {...register("address")}
+      />
 
       <div className="flex gap-3 pt-2">
-        <button type="button" onClick={onCancel}
-          className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+        >
           Hủy
         </button>
-        <button type="submit"
-          className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        <button
+          type="submit"
+          className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
           Lưu thay đổi
         </button>
       </div>
@@ -202,16 +147,12 @@ function EditForm({
   );
 }
 
-// ─── UserDetailModal ────────────────────────────────────────────────────────
-
 export function UserDetailModal({ user, onClose }: UserDetailModalProps) {
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
   const { update, remove } = useAdminUserMutations();
 
   const isPending = update.isPending || remove.isPending;
-
-  const handleCloseConfirm = () => setConfirm(null);
 
   const handleSaveRequest = (data: AdminUserUpdateRequest) => {
     if (!user) return;
@@ -266,7 +207,6 @@ export function UserDetailModal({ user, onClose }: UserDetailModalProps) {
       >
         {user ? (
           <div className="space-y-5">
-            {/* Avatar + tên */}
             <div className="flex items-center gap-4">
               <div className="h-14 w-14 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                 {user.image ? (
@@ -300,11 +240,7 @@ export function UserDetailModal({ user, onClose }: UserDetailModalProps) {
             </div>
 
             {editing ? (
-              <EditForm
-                user={user}
-                onCancel={() => setEditing(false)}
-                onSaveRequest={handleSaveRequest}
-              />
+              <EditForm user={user} onCancel={() => setEditing(false)} onSaveRequest={handleSaveRequest} />
             ) : (
               <>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -331,11 +267,33 @@ export function UserDetailModal({ user, onClose }: UserDetailModalProps) {
       </Modal>
 
       {confirm && (
-        <ConfirmDialog
-          action={confirm}
-          isPending={isPending}
-          onCancel={handleCloseConfirm}
-        />
+        <Modal
+          open
+          title={confirm.title}
+          onClose={() => setConfirm(null)}
+          size="sm"
+          closeOnBackdrop={false}
+          footer={
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirm(null)}
+                disabled={isPending}
+                className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirm.onConfirm}
+                disabled={isPending}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {isPending ? "Đang xử lý..." : "Xác nhận"}
+              </button>
+            </div>
+          }
+        >
+          <p className="text-sm text-slate-600 dark:text-slate-300">{confirm.message}</p>
+        </Modal>
       )}
     </>
   );
