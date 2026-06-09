@@ -235,4 +235,113 @@ const isoString = date && time ? new Date(`${date}T${time}`).toISOString() : "";
 3. Cập nhật imports
 4. Chuyển đổi từng element, chú ý `Select.onChange` signature
 5. Thay `notify.info` validation toast bằng inline `error` prop + `submitted` state
-6. Giữ nguyên logic business
+6. Nếu file > ~200 lines sau khi thay component:
+   - Tách logic ra `useXxxHandler.ts` (state/query/mutation/handlers)
+   - Tách UI thành sub-components trong `components/`
+   - Đặt pure utils/types vào `<page>Helpers.ts`
+   - `index.tsx` chỉ còn: gọi hook + render composition
+
+---
+
+## Component Splitting — page > ~200 lines
+
+Khi page component quá dài, tách ra `components/` subfolder trong cùng thư mục page:
+
+```
+src/pages/<role>/<Page>/
+├── index.tsx              ← CHỈ render UI — không có useState/useMutation/useQuery
+├── useXxxHandler.ts       ← toàn bộ state, query, mutation, handlers — export 1 hook
+├── <page>Helpers.ts       ← utility functions thuần (getImageSrc, formatXxx, pure types)
+└── components/
+    ├── <Item>Card.tsx      ← card/row trong grid hoặc list
+    ├── <Item>Filters.tsx   ← filter panel (Input + Select)
+    ├── <Feature>Modal.tsx  ← modal đặc thù của page
+    └── <Feature>Bar.tsx    ← floating bar / action bar
+```
+
+**Nguyên tắc:**
+- `index.tsx` **không có** `useState`, `useMutation`, `useQuery`, `useEffect` — chỉ gọi hook + render JSX
+- `useXxxHandler.ts` export 1 hook duy nhất, trả về object typed với tất cả state/handlers
+- Props callbacks truyền `string` value, không truyền `SyntheticEvent` xuống sub-component
+- Handler gọi `setPage(1)` được đóng gói trong `useXxxHandler` trước khi expose
+- Utility function thuần (không có hook) → `<page>Helpers.ts`
+
+---
+
+### Pattern: useXxxHandler.ts
+
+```ts
+// useCartHandler.ts
+export type CartHandlerReturn = {
+  // data
+  items: DisplayItem[];
+  isLoading: boolean;
+  // actions
+  handleRemove: (type: "car" | "accessory", id: number) => void;
+  handleCheckout: () => void;
+  // form state
+  paymentMethod: string;
+  handlePaymentMethodChange: (method: string) => void;
+  // ui
+  showPremiumGate: boolean;
+  setShowPremiumGate: (v: boolean) => void;
+  // ... tất cả các field cần cho UI
+};
+
+export function useCartHandler(): CartHandlerReturn {
+  // state
+  const [paymentMethod, setPaymentMethod] = useState("BANK_TRANSFER");
+
+  // queries / mutations
+  const createOrder = useMutation({ ... });
+
+  // handlers — đóng gói side-effect trước khi expose
+  const handlePaymentMethodChange = (method: string) => {
+    setPaymentMethod(method);
+    if (method !== "BANK_TRANSFER") setIsInstallment(false);  // side-effect đi kèm
+  };
+
+  return { items, isLoading, handleRemove, handleCheckout, paymentMethod, handlePaymentMethodChange, ... };
+}
+```
+
+```tsx
+// index.tsx — chỉ render
+export default function CartPage() {
+  const h = useCartHandler();
+
+  if (h.isLoading) return <LoadingSpinner />;
+
+  return (
+    <>
+      <CartItemCard onRemove={() => h.handleRemove(...)} />
+      <CartSummaryPanel
+        paymentMethod={h.paymentMethod}
+        onPaymentMethodChange={h.handlePaymentMethodChange}
+        onCheckout={h.handleCheckout}
+      />
+    </>
+  );
+}
+```
+
+**Ví dụ thực tế — Cart page (`src/pages/customer/Cart/`):**
+```
+index.tsx             ← 120 lines, chỉ JSX + gọi useCartHandler
+useCartHandler.ts     ← state/query/mutation/handlers, export CartHandlerReturn
+cartHelpers.ts        ← DisplayItem type + adaptServerCart()
+components/
+  CartItemCard.tsx    ← props: item, isSelected, onToggle, onRemove, onUpdateQuantity
+  CartSummaryPanel.tsx ← props: tất cả checkout state + handlers từ hook
+```
+
+**Ví dụ — Cars page (`src/pages/customer/Cars/`):**
+```
+index.tsx          ← state + useQuery + compose CarFilters/CarCard/CompareModal/CompareBar
+carHelpers.ts      ← getImageSrc(car)
+components/
+  CarFilters.tsx   ← props: filter values + onXxxChange(value: string) + onReset
+  CarCard.tsx      ← props: car, img, inCompare, onToggleCompare, inCart, onAddToCart
+  CompareModal.tsx ← props: cars[], onClose  (dùng Modal core)
+  CompareBar.tsx   ← props: compareList, onToggle, onClear, onCompare
+```
