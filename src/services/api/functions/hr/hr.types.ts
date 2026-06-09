@@ -114,6 +114,7 @@ export interface PayrollListParams {
   staffId?: number;
   fromDate?: string;
   toDate?: string;
+  period?: any;
 }
 
 export interface PayrollRequest {
