@@ -1,4 +1,5 @@
 import { EmptyState, Loading } from "src/components/core";
+import { Modal } from "src/components/core/Modal/Modal";
 
 import { AccessoryFormModal } from "./Component/AccessoryFormModal";
 import { AccessoryPagination } from "./Component/AccessoryPagination";
@@ -68,40 +69,40 @@ export default function AdminAccessoriesPage() {
         submitForm={accessoryManager.submitForm}
       />
 
-      {accessoryManager.deleteConfirmItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl dark:bg-slate-900">
-            <div className="px-6 py-5">
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Xác nhận xóa phụ kiện</h2>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                Bạn có chắc muốn xóa{' '}
-                <span className="font-semibold text-slate-900 dark:text-slate-100">
-                  {accessoryManager.deleteConfirmItem.accessoryName}
-                </span>?
-                Hành động này không thể hoàn tác.
-              </p>
-            </div>
-            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-6 py-3 dark:border-slate-700">
-              <button
-                type="button"
-                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                onClick={() => accessoryManager.setDeleteConfirmItem(null)}
-                disabled={accessoryManager.isDeleting}
-              >
-                Huỷ
-              </button>
-              <button
-                type="button"
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
-                disabled={accessoryManager.isDeleting}
-                onClick={accessoryManager.confirmDelete}
-              >
-                {accessoryManager.isDeleting ? 'Đang xóa...' : 'Xóa phụ kiện'}
-              </button>
-            </div>
+      <Modal
+        open={!!accessoryManager.deleteConfirmItem}
+        title="Xác nhận xóa phụ kiện"
+        onClose={() => accessoryManager.setDeleteConfirmItem(null)}
+        size="sm"
+        footer={
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              onClick={() => accessoryManager.setDeleteConfirmItem(null)}
+              disabled={accessoryManager.isDeleting}
+            >
+              Huỷ
+            </button>
+            <button
+              type="button"
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+              disabled={accessoryManager.isDeleting}
+              onClick={accessoryManager.confirmDelete}
+            >
+              {accessoryManager.isDeleting ? 'Đang xóa...' : 'Xóa phụ kiện'}
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Bạn có chắc muốn xóa{' '}
+          <span className="font-semibold text-slate-900 dark:text-slate-100">
+            {accessoryManager.deleteConfirmItem?.accessoryName}
+          </span>?
+          {' '}Hành động này không thể hoàn tác.
+        </p>
+      </Modal>
     </div>
   );
 }
