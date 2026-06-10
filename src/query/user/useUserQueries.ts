@@ -24,6 +24,13 @@ export function useUserDetail(gmailOrUserName: string | null) {
   });
 }
 
+export function useSendContactMutation() {
+  return useMutation({
+    mutationFn: (data: { subject: string; message: string }) =>
+      userRouteFn.sendContactMessage(data),
+  });
+}
+
 export function useAdminUserMutations() {
   const qc = useQueryClient();
   const invalidate = () => qc.invalidateQueries({ queryKey: userKeys.adminLists() });

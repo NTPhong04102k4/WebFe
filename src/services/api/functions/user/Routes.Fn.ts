@@ -99,4 +99,11 @@ export const userRouteFn = {
       suppressErrorToast: true,
     } as object);
   },
+  sendContactMessage: async (data: { subject: string; message: string }) => {
+    const response = await api.post<OperationResult>(
+      userRoute.sendGmailMessage,
+      data,
+    );
+    return response.data;
+  },
 };

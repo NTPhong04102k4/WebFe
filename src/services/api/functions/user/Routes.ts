@@ -7,4 +7,5 @@ export const userRoute = {
     `/user/${encodeURIComponent(gmailOrUserName)}`,
   adminUserById: (id: string | number) => `/user/admin/users/${id}`,
   fcmToken: "/user/fcm-token",
+  sendGmailMessage: "/user/send-gmail-message",
 } as const;

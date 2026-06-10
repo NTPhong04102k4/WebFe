@@ -10,14 +10,21 @@ import {
   MessageCircle,
   Bot,
   Crown,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useCart } from "@/hooks/useCart";
 import { notify } from "@/components/core/Feedback/toast";
+import { Modal, Input } from "@/components/core";
 import api from "@/services/api/axiosInstance";
 import { canAccessStaffBackend, getUserRoles } from "@/common/utils/roles";
 import { isTokenExpired } from "@/services/decode";
 import { API } from "@/services/api/endpoints";
+import { useSendContactMutation } from "@/query/user/useUserQueries";
+
+const HOTLINE = "1900 1234";
+const HOTLINE_TEL = "+8419001234";
 
 export default function CustomerLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -108,6 +115,38 @@ export default function CustomerLayout() {
     { to: "/accessories", label: "Phụ kiện" },
     { to: "/appointments", label: "Dịch vụ" },
   ];
+
+  // Liên hệ Sales — gửi email qua Brevo tới hộp thư sales (backend)
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactSubject, setContactSubject] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const sendContact = useSendContactMutation();
+
+  const handleOpenContact = () => {
+    if (!user) {
+      navigate("/auth/login");
+      return;
+    }
+    setContactOpen(true);
+  };
+
+  const handleSendContact = () => {
+    if (!contactSubject.trim() || !contactMessage.trim()) {
+      notify.error("Vui lòng nhập đầy đủ tiêu đề và nội dung");
+      return;
+    }
+    sendContact.mutate(
+      { subject: contactSubject, message: contactMessage },
+      {
+        onSuccess: () => {
+          notify.success("Đã gửi liên hệ, đội ngũ Sales sẽ phản hồi sớm");
+          setContactOpen(false);
+          setContactSubject("");
+          setContactMessage("");
+        },
+      },
+    );
+  };
 
   return (
     <div className="flex h-screen flex-col bg-slate-50 overflow-hidden">
@@ -287,6 +326,21 @@ export default function CustomerLayout() {
                 <p className="text-sm leading-relaxed">
                   Hệ thống mua bán xe hơi uy tín, chất lượng hàng đầu Việt Nam.
                 </p>
+                <a
+                  href={`tel:${HOTLINE_TEL}`}
+                  className="mt-3 flex items-center gap-2 text-sm hover:text-white"
+                >
+                  <Phone className="h-4 w-4 text-blue-400" />
+                  Hotline: {HOTLINE}
+                </a>
+                <button
+                  type="button"
+                  onClick={handleOpenContact}
+                  className="mt-2 flex items-center gap-2 text-sm hover:text-white"
+                >
+                  <Mail className="h-4 w-4 text-blue-400" />
+                  Liên hệ Sales
+                </button>
               </div>
               <div>
                 <h4 className="mb-3 font-semibold text-white">Liên kết nhanh</h4>
@@ -330,6 +384,54 @@ export default function CustomerLayout() {
           </div>
         </footer>
       </main>
+
+      {/* Modal liên hệ Sales — gửi email qua Brevo */}
+      <Modal
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+        title="Liên hệ Sales"
+        footer={
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setContactOpen(false)}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleSendContact}
+              disabled={sendContact.isPending}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+            >
+              {sendContact.isPending ? "Đang gửi..." : "Gửi liên hệ"}
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <Input
+            label="Tiêu đề"
+            required
+            value={contactSubject}
+            onChange={(e) => setContactSubject(e.target.value)}
+            placeholder="Vd: Tư vấn xe SUV tầm giá 800tr"
+          />
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-slate-800">
+              Nội dung <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={contactMessage}
+              onChange={(e) => setContactMessage(e.target.value)}
+              rows={5}
+              placeholder="Mô tả nhu cầu của bạn..."
+              className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25"
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
