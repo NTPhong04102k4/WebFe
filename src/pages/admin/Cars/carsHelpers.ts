@@ -1,4 +1,5 @@
 import type { CarResponseItem } from '@/shared/types/Reponse/Car'
+import { DRIVE_TYPE, FUEL_TYPE } from '@/common/utils/const'
 
 export type CarCondition = 'New' | 'Used' | 'Certified' | string
 
@@ -47,9 +48,9 @@ export const emptyForm: CarFormState = {
   importPrice: '',
   salePrice: '',
   engineSize: '',
-  fuelType: 'Petrol',
+  fuelType: FUEL_TYPE.GASOLINE,
   transmission: 'Automatic',
-  driveType: 'FWD',
+  driveType: DRIVE_TYPE.FWD,
   doors: '4',
   seats: '',
   color: 'Đen',
@@ -60,6 +61,21 @@ export const emptyForm: CarFormState = {
   isActive: true,
   imageFiles: [],
   videoFile: null,
+}
+
+// Backend trả ImagePaths dạng JSON-serialized array string, vd: '["https://...","https://..."]'
+export function parseImagePaths(value: string | string[] | null | undefined): string[] {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) return parsed
+    } catch {
+      // not JSON — fall back to comma-separated string
+    }
+    return value.split(',').map((p) => p.trim()).filter(Boolean)
+  }
+  return []
 }
 
 export function getImageSrc(car: CarResponseItem): string | undefined {
@@ -83,7 +99,8 @@ export function appendIfNotEmpty(fd: FormData, key: string, value: string): void
 
 export function buildCarFormData(
   values: CarFormState,
-  user: { id?: string | number | null; role?: string | null } | null
+  user: { id?: string | number | null; role?: string | null } | null,
+  keepImagePaths?: string[]
 ): FormData {
   if (!user) throw new Error('Bạn cần đăng nhập')
 
@@ -127,6 +144,15 @@ export function buildCarFormData(
 
   values.imageFiles.forEach((f) => fd.append('ImageFiles', f))
   if (values.videoFile) fd.append('VideoFile', values.videoFile)
+  if (keepImagePaths) {
+    // Luôn gửi ít nhất 1 entry để backend phân biệt "giữ rỗng" (xoá hết ảnh cũ)
+    // với "không gửi KeepImagePaths" (giữ nguyên toàn bộ ảnh cũ).
+    if (keepImagePaths.length > 0) {
+      keepImagePaths.forEach((path) => fd.append('KeepImagePaths', path))
+    } else {
+      fd.append('KeepImagePaths', '')
+    }
+  }
 
   return fd
 }

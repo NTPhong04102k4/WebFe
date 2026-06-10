@@ -1,13 +1,13 @@
-import LoadingSpinner from '@/components/common/LoadingSpinner'
-import { CarStatsPanel } from './CarStatsPanel'
-import { useCarsHandler } from './useCarsHandler'
-import { CarFilters } from './components/CarFilters'
-import { CarList } from './components/CarList'
-import { CarFormModal } from './components/CarFormModal'
-import { CarDeleteModal } from './components/CarDeleteModal'
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { CarStatsPanel } from "./CarStatsPanel";
+import { useCarsHandler } from "./useCarsHandler";
+import { CarFilters } from "./components/CarFilters";
+import { CarList } from "./components/CarList";
+import { CarFormModal } from "./components/CarFormModal";
+import { CarDeleteModal } from "./components/CarDeleteModal";
 
 export default function AdminCarsPage() {
-  const h = useCarsHandler()
+  const h = useCarsHandler();
 
   return (
     <div className="space-y-6">
@@ -17,7 +17,9 @@ export default function AdminCarsPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Quản lý xe</h1>
-            <p className="mt-1 text-sm text-slate-600">List / filter / tạo & cập nhật</p>
+            <p className="mt-1 text-sm text-slate-600">
+              List / filter / tạo & cập nhật
+            </p>
           </div>
           <button
             type="button"
@@ -77,7 +79,9 @@ export default function AdminCarsPage() {
               Trước
             </button>
             <div className="text-sm text-slate-600">
-              Trang <strong className="font-semibold text-slate-900">{h.page}</strong> / {h.totalPages}
+              Trang{" "}
+              <strong className="font-semibold text-slate-900">{h.page}</strong>{" "}
+              / {h.totalPages}
             </div>
             <button
               type="button"
@@ -93,8 +97,7 @@ export default function AdminCarsPage() {
 
       {h.modalOpen && (
         <CarFormModal
-          mode={h.mode}
-          editingCar={h.editingCar}
+          carId={h.editingCarId}
           brandIdOptions={h.brandIdOptions}
           bodyTypeIdOptions={h.bodyTypeIdOptions}
           carStatusOptions={h.carStatusOptions}
@@ -114,5 +117,5 @@ export default function AdminCarsPage() {
         onClose={h.closeDeleteConfirm}
       />
     </div>
-  )
+  );
 }
