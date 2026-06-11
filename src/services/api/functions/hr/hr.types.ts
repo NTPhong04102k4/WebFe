@@ -53,9 +53,7 @@ export interface TechnicianRequest {
   staffID: number;
   levelID: number;
   hireDate: string;
-  yearsOfExperience?: number;
   certifications?: string | null;
-  isAvailable?: boolean;
   notes?: string | null;
   isActive?: boolean;
 }

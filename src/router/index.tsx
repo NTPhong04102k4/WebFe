@@ -55,6 +55,7 @@ const TechniciansPage            = lazy(() => import('@/pages/admin/HR/Technicia
 const TechnicianLevelsPage       = lazy(() => import('@/pages/admin/HR/TechnicianLevels'))
 const SkillsPage                 = lazy(() => import('@/pages/admin/HR/Skills'))
 const PayrollPage                = lazy(() => import('@/pages/admin/HR/Payroll'))
+const MyTechnicianProfilePage    = lazy(() => import('@/pages/admin/HR/MyTechnicianProfile'))
 const InsuranceCompaniesPage     = lazy(() => import('@/pages/admin/Insurance/Companies'))
 const InsurancePackagesPage      = lazy(() => import('@/pages/admin/Insurance/Packages'))
 const InsurancePoliciesPage      = lazy(() => import('@/pages/admin/Insurance/Policies'))
@@ -155,6 +156,7 @@ export default function AppRouter() {
           <Route path="hr/levels" element={<TechnicianLevelsPage />} />
           <Route path="hr/skills" element={<SkillsPage />} />
           <Route path="hr/payroll" element={<PayrollPage />} />
+          <Route path="hr/my-profile" element={<MyTechnicianProfilePage />} />
 
           {/* Insurance */}
           <Route path="insurance/companies" element={<InsuranceCompaniesPage />} />

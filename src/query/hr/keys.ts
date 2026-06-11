@@ -11,6 +11,7 @@ export const hrKeys = {
   technicians: () => [...hrKeys.all, "technicians"] as const,
   technicianList: (params: TechnicianListParams) =>
     [...hrKeys.technicians(), "list", params] as const,
+  myTechnician: () => [...hrKeys.technicians(), "me"] as const,
   payrolls: (params: PayrollListParams) =>
     [...hrKeys.all, "payrolls", params] as const,
   payroll: (id: number) => [...hrKeys.all, "payroll", id] as const,

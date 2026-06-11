@@ -190,6 +190,7 @@ export const API = {
     technicians: {
       list: "/hr/technicians",
       available: "/hr/technicians/available",
+      me: "/hr/technicians/me",
       detail: (id: string | number) => `/hr/technicians/${id}`,
       skills: (id: string | number) => `/hr/technicians/${id}/skills`,
       performance: (id: string | number) => `/hr/technicians/${id}/performance`,

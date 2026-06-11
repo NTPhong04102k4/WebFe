@@ -82,6 +82,14 @@ export function useHrTechniciansSearch(params: TechnicianListParams) {
   });
 }
 
+export function useMyTechnician() {
+  return useQuery({
+    queryKey: hrKeys.myTechnician(),
+    queryFn: ({ signal }) => hrApi.getMyTechnician({ signal }),
+    retry: false,
+  });
+}
+
 export function useHrTechnicianMutations() {
   const qc = useQueryClient();
   const invalidate = () => qc.invalidateQueries({ queryKey: hrKeys.technicians() });

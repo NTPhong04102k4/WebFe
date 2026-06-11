@@ -17,6 +17,8 @@ export type MultiComboboxProps = {
   loading?: boolean;
   disabled?: boolean;
   className?: string;
+  /** Cho phép thêm giá trị tự do không có trong `options` (chip/tag input). */
+  allowCreate?: boolean;
 };
 
 export function MultiCombobox({
@@ -28,6 +30,7 @@ export function MultiCombobox({
   loading = false,
   disabled = false,
   className,
+  allowCreate = false,
 }: MultiComboboxProps) {
   const triggerId = useId();
   const listboxId = useId();
@@ -36,16 +39,34 @@ export function MultiCombobox({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selectedOptions = useMemo(
-    () => options.filter((option) => value.includes(option.value)),
-    [options, value],
-  );
+  const selectedOptions = useMemo(() => {
+    const matched = options.filter((option) => value.includes(option.value));
+    if (!allowCreate) return matched;
+    const matchedValues = new Set(matched.map((option) => option.value));
+    const custom = value
+      .filter((item) => !matchedValues.has(item))
+      .map((item) => ({ value: item, label: item }));
+    return [...matched, ...custom];
+  }, [options, value, allowCreate]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return options;
     const q = search.toLowerCase();
     return options.filter((option) => option.label.toLowerCase().includes(q));
   }, [options, search]);
+
+  const trimmedSearch = search.trim();
+  const canCreate =
+    allowCreate &&
+    trimmedSearch.length > 0 &&
+    !value.some((item) => item.toLowerCase() === trimmedSearch.toLowerCase()) &&
+    !options.some((option) => option.value.toLowerCase() === trimmedSearch.toLowerCase());
+
+  const addCustomValue = () => {
+    if (!canCreate) return;
+    onChange([...value, trimmedSearch]);
+    setSearch("");
+  };
 
   const openDropdown = () => {
     if (disabled || loading) return;
@@ -162,6 +183,12 @@ export function MultiCombobox({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && canCreate) {
+                e.preventDefault();
+                addCustomValue();
+              }
+            }}
           />
         )}
 
@@ -188,11 +215,35 @@ export function MultiCombobox({
             <li className="flex items-center justify-center py-6">
               <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
             </li>
-          ) : filtered.length === 0 ? (
-            <li className="px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">
-              Không tìm thấy kết quả
-            </li>
           ) : (
+            <>
+              {canCreate && (
+                <li role="none">
+                  <div
+                    role="option"
+                    aria-selected={false}
+                    tabIndex={-1}
+                    className="mx-1 flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-900/30"
+                    onClick={addCustomValue}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        addCustomValue();
+                      }
+                    }}
+                  >
+                    + Thêm "{trimmedSearch}"
+                  </div>
+                </li>
+              )}
+              {filtered.length === 0 && !canCreate && (
+                <li className="px-3 py-4 text-center text-sm text-slate-500 dark:text-slate-400">
+                  Không tìm thấy kết quả
+                </li>
+              )}
+            </>
+          )}
+          {!loading &&
             filtered.map((option) => {
               const isSelected = value.includes(option.value);
               return (
@@ -222,8 +273,7 @@ export function MultiCombobox({
                   </div>
                 </li>
               );
-            })
-          )}
+            })}
         </ul>
       )}
     </div>

@@ -48,6 +48,7 @@ const navItems: NavItem[] = [
       { label: 'Cấp bậc', to: '/admin/hr/levels' },
       { label: 'Kỹ năng', to: '/admin/hr/skills' },
       { label: 'Bảng lương', to: '/admin/hr/payroll' },
+      { label: 'Hồ sơ KTV của tôi', to: '/admin/hr/my-profile' },
     ],
   },
   {

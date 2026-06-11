@@ -140,6 +140,20 @@ export const hrApi = {
     return res.data;
   },
 
+  getMyTechnician: async (options?: ApiRequestOptions): Promise<TechnicianViewModel | null> => {
+    try {
+      const res = await apiClient.get<OperationResult<TechnicianViewModel>>(
+        API.hr.technicians.me,
+        withSignal({ suppressErrorToast: true } as import("axios").AxiosRequestConfig, options)
+      );
+      return unwrapOperation(res.data) ?? null;
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) return null;
+      throw err;
+    }
+  },
+
   getTechnicianSkills: async (id: number, options?: ApiRequestOptions) => {
     const res = await apiClient.get<TechnicianSkillViewModel[]>(
       API.hr.technicians.skills(id),
