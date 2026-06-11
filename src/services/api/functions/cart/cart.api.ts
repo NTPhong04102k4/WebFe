@@ -8,6 +8,7 @@ export interface CartCarItem {
   carID: number;
   carName: string;
   carBrand: string;
+  thumbnailUrl?: string | null;
   salePrice: number;
   discountAmount: number;
   totalPrice: number;
@@ -18,6 +19,7 @@ export interface CartCarItem {
 export interface CartAccessoryItem {
   accessoryID: number;
   accessoryName: string;
+  thumbnailUrl?: string | null;
   unitPrice: number;
   quantity: number;
   totalPrice: number;

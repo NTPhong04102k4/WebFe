@@ -10,7 +10,13 @@ interface Props {
   onUpdateQuantity: (quantity: number) => void;
 }
 
-export default function CartItemCard({ item, isSelected, onToggle, onRemove, onUpdateQuantity }: Props) {
+export default function CartItemCard({
+  item,
+  isSelected,
+  onToggle,
+  onRemove,
+  onUpdateQuantity,
+}: Props) {
   const isCar = item.type === "car";
   const unavailable = item.isAvailable === false;
 
@@ -29,7 +35,11 @@ export default function CartItemCard({ item, isSelected, onToggle, onRemove, onU
       </div>
       <div className="h-24 w-32 shrink-0 overflow-hidden rounded-lg bg-slate-100">
         {item.imagePath ? (
-          <img className="h-full w-full object-cover" src={item.imagePath} alt={item.name} />
+          <img
+            className="h-full w-full object-fill"
+            src={item.imagePath}
+            alt={item.name}
+          />
         ) : null}
       </div>
       <div className="min-w-0 flex-1">
@@ -42,7 +52,9 @@ export default function CartItemCard({ item, isSelected, onToggle, onRemove, onU
             {item.unavailableReason ?? "Không còn khả dụng"}
           </p>
         ) : (
-          <p className="mt-1 text-sm font-semibold text-blue-700">{formatCurrency(item.price)}</p>
+          <p className="mt-1 text-sm font-semibold text-blue-700">
+            {formatCurrency(item.price)}
+          </p>
         )}
         <div className="mt-3 flex items-center gap-2">
           {!isCar ? (
@@ -66,7 +78,11 @@ export default function CartItemCard({ item, isSelected, onToggle, onRemove, onU
           ) : (
             <span className="text-sm text-slate-500">Số lượng: 1</span>
           )}
-          <button type="button" className="ml-3 text-sm text-red-600" onClick={onRemove}>
+          <button
+            type="button"
+            className="ml-3 text-sm text-red-600"
+            onClick={onRemove}
+          >
             Xóa
           </button>
         </div>

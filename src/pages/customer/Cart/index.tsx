@@ -22,7 +22,7 @@ export default function CustomerCartPage() {
   }
 
   return (
-    <>
+    <div className="min-w-[765px]">
       {h.showPremiumGate && (
         <PremiumGateModal
           featureTitle="Giới hạn đơn hàng"
@@ -35,7 +35,7 @@ export default function CustomerCartPage() {
         <h1 className="text-2xl font-bold text-slate-900">Giỏ hàng</h1>
 
         {h.items.length === 0 ? (
-          <div className="mt-6 rounded-xl border border-slate-200 bg-white">
+          <div className="mt-6 rounded-xl border border-slate-200 bg-white min-w-40 flex flex-col">
             <EmptyState
               title="Giỏ hàng đang trống"
               description="Thêm xe hoặc phụ kiện để bắt đầu."
@@ -63,7 +63,10 @@ export default function CustomerCartPage() {
             <div className="space-y-4">
               <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <Checkbox
-                  checked={h.selectedItemKeys.size === h.availableCount && h.availableCount > 0}
+                  checked={
+                    h.selectedItemKeys.size === h.availableCount &&
+                    h.availableCount > 0
+                  }
                   onChange={h.toggleSelectAll}
                   label={
                     <span className="font-medium text-slate-700">
@@ -87,7 +90,9 @@ export default function CustomerCartPage() {
                       isSelected={h.selectedItemKeys.has(key)}
                       onToggle={() => h.toggleItem(key)}
                       onRemove={() => h.handleRemove(item.type, item.id)}
-                      onUpdateQuantity={(qty) => h.handleUpdateQuantity(item.type, item.id, qty)}
+                      onUpdateQuantity={(qty) =>
+                        h.handleUpdateQuantity(item.type, item.id, qty)
+                      }
                     />
                   );
                 })}
@@ -102,7 +107,9 @@ export default function CustomerCartPage() {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => h.setCurrentPage((p) => Math.max(1, p - 1))}
+                      onClick={() =>
+                        h.setCurrentPage((p) => Math.max(1, p - 1))
+                      }
                       disabled={h.currentPage === 1}
                       className="rounded border bg-white px-3 py-1 text-sm disabled:opacity-50"
                     >
@@ -110,7 +117,9 @@ export default function CustomerCartPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => h.setCurrentPage((p) => Math.min(h.totalPages, p + 1))}
+                      onClick={() =>
+                        h.setCurrentPage((p) => Math.min(h.totalPages, p + 1))
+                      }
                       disabled={h.currentPage === h.totalPages}
                       className="rounded border bg-white px-3 py-1 text-sm disabled:opacity-50"
                     >
@@ -161,6 +170,6 @@ export default function CustomerCartPage() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
