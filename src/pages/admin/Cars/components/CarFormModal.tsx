@@ -142,7 +142,7 @@ export function CarFormModal({
     );
     await onSave(fd);
   });
-  const isCreate = !!carId;
+  const isCreate = !carId;
   return (
     <Modal
       open

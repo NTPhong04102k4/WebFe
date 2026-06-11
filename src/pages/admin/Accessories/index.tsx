@@ -1,5 +1,4 @@
-import { EmptyState, Loading } from "src/components/core";
-import { Modal } from "src/components/core/Modal/Modal";
+import { EmptyState, Loading, Modal } from "src/components/core";
 
 import { AccessoryFormModal } from "./Component/AccessoryFormModal";
 import { AccessoryPagination } from "./Component/AccessoryPagination";
@@ -39,17 +38,21 @@ export default function AdminAccessoriesPage() {
       />
 
       {accessoryManager.isLoading ? (
-        <Loading label="Dang tai phu kien..." />
+        <Loading label="Đang tải phụ kiện..." />
       ) : accessoryManager.error ? (
         <div className="rounded-xl border-2 border-red-500 bg-red-50 p-4 text-sm font-medium text-slate-800 dark:border-red-400 dark:bg-red-900 dark:text-slate-100">
-          Loi: {accessoryManager.error.message}
+          Lỗi: {accessoryManager.error.message}
         </div>
       ) : accessoryManager.accessories.length === 0 ? (
         <div className="rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900">
-          <EmptyState title="Khong co phu kien" description="Chua co phu kien phu hop voi bo loc." />
+          <EmptyState title="Không có phụ kiện" description="Chưa có phụ kiện phù hợp với bộ lọc." />
         </div>
       ) : (
-        <AccessoryTable accessories={accessoryManager.accessories} onEdit={accessoryManager.openEdit} onDelete={accessoryManager.handleDelete} />
+        <AccessoryTable
+          accessories={accessoryManager.accessories}
+          onEdit={accessoryManager.openEdit}
+          onDelete={accessoryManager.handleDelete}
+        />
       )}
 
       <AccessoryPagination
@@ -59,10 +62,14 @@ export default function AdminAccessoriesPage() {
       />
 
       <AccessoryFormModal
+        bodyTypeOptions={accessoryManager.bodyTypeOptions}
+        carBrandOptions={accessoryManager.carBrandOptions}
         categories={accessoryManager.categories}
         brands={accessoryManager.brands}
         editingAccessory={accessoryManager.editingAccessory}
         form={accessoryManager.form}
+        isBodyTypeLoading={accessoryManager.isBodyTypeLoading}
+        isCarBrandLoading={accessoryManager.isCarBrandLoading}
         isSaving={accessoryManager.isSaving}
         modalOpen={accessoryManager.modalOpen}
         closeModal={accessoryManager.closeModal}

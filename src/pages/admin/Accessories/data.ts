@@ -1,5 +1,6 @@
 import type { UseFormReturn } from "react-hook-form";
 
+import type { ComboTreeItem, MultiComboboxOption } from "src/components/core";
 import type {
   AccessoriesListItem,
   AccessoryDetailResponse,
@@ -24,7 +25,8 @@ export type AccessoryFormValues = {
   stockQuantity: string;
   minStockLevel: string;
   maxStockLevel: string;
-  compatibleCarModels: string;
+  compatibleBrands: string[];
+  compatibleBodyTypes: string[];
   imagePath: File | null;
   installationVideo: File | null;
   warrantyMonths: string;
@@ -32,11 +34,19 @@ export type AccessoryFormValues = {
 
 export type AccessoryManagerState = {
   accessories: AccessoriesListItem[];
+  bodyTypeOptions: MultiComboboxOption[];
   brands: BrandAccessoryResponse[];
+  carBrandOptions: MultiComboboxOption[];
   categories: CategoryResponse[];
+  categoryTreeItems: ComboTreeItem[];
+  deleteConfirmItem: AccessoriesListItem | null;
   editingAccessory: AccessoryDetailResponse | null;
   error: Error | null;
   form: UseFormReturn<AccessoryFormValues>;
+  isBodyTypeLoading: boolean;
+  isCarBrandLoading: boolean;
+  isCategoryLoading: boolean;
+  isDeleting: boolean;
   isLoading: boolean;
   isSaving: boolean;
   isSyncing: boolean;
@@ -50,8 +60,11 @@ export type AccessoryManagerState = {
   sortDescending: boolean;
   totalPages: number;
   closeModal: () => void;
+  confirmDelete: () => void;
+  handleDelete: (item: AccessoriesListItem) => void;
   openCreate: () => void;
   openEdit: (item: AccessoriesListItem) => void;
+  setDeleteConfirmItem: (item: AccessoriesListItem | null) => void;
   setPage: (page: number) => void;
   setSearch: (value: string) => void;
   setSelectedBrand: (value: string) => void;

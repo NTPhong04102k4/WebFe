@@ -1,21 +1,41 @@
 import { Controller } from "react-hook-form";
 
-import { Input, Modal, Select } from "src/components/core";
+import { Input, Modal, MultiCombobox, Select } from "src/components/core";
 import type { AccessoryManagerState } from "../data";
+import { AccessoryMediaField } from "./AccessoryMediaField";
 
 type AccessoryFormModalProps = Pick<
   AccessoryManagerState,
-  "categories" | "brands" | "editingAccessory" | "form" | "isSaving" | "modalOpen" | "closeModal" | "submitForm"
+  | "bodyTypeOptions"
+  | "carBrandOptions"
+  | "categories"
+  | "brands"
+  | "editingAccessory"
+  | "form"
+  | "isBodyTypeLoading"
+  | "isCarBrandLoading"
+  | "isSaving"
+  | "modalOpen"
+  | "closeModal"
+  | "submitForm"
 >;
 
 const getBrandValue = (brand: { name: string }, index: number) =>
-  String((brand as { brandAccessoryID?: number; id?: number }).brandAccessoryID ?? (brand as { id?: number }).id ?? index + 1);
+  String(
+    (brand as { brandAccessoryID?: number; id?: number }).brandAccessoryID ??
+      (brand as { id?: number }).id ??
+      index + 1,
+  );
 
 export function AccessoryFormModal({
+  bodyTypeOptions,
+  carBrandOptions,
   categories,
   brands,
   editingAccessory,
   form,
+  isBodyTypeLoading,
+  isCarBrandLoading,
   isSaving,
   modalOpen,
   closeModal,
@@ -41,7 +61,7 @@ export function AccessoryFormModal({
       open={modalOpen}
       onClose={closeModal}
       size="xl"
-      title={editingAccessory ? "Chinh sua phu kien" : "Tao phu kien"}
+      title={editingAccessory ? "Chỉnh sửa phụ kiện" : "Tạo phụ kiện"}
       footer={
         <div className="flex items-center justify-end gap-2">
           <button
@@ -49,7 +69,7 @@ export function AccessoryFormModal({
             className="rounded-lg border-2 border-slate-400 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
             onClick={closeModal}
           >
-            Huy
+            Hủy
           </button>
           <button
             type="submit"
@@ -57,52 +77,147 @@ export function AccessoryFormModal({
             disabled={isSaving}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
           >
-            {editingAccessory ? "Luu thay doi" : "Tao phu kien"}
+            {editingAccessory ? "Lưu thay đổi" : "Tạo phụ kiện"}
           </button>
         </div>
       }
     >
-      <form id="accessory-form" className="grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={submitForm}>
+      <form
+        id="accessory-form"
+        className="grid grid-cols-1 gap-4 md:grid-cols-2"
+        onSubmit={submitForm}
+      >
         <Input
-          label="Ma phu kien"
+          label="Mã phụ kiện"
           readOnly={Boolean(editingAccessory)}
           error={errors.accessoryCode?.message}
           className="read-only:bg-slate-200 dark:read-only:bg-slate-800"
-          {...register("accessoryCode", { required: "Vui long nhap ma phu kien" })}
+          {...register("accessoryCode", {
+            required: "Vui lòng nhập mã phụ kiện",
+          })}
         />
         <Input
-          label="Ten phu kien"
+          label="Tên phụ kiện"
           error={errors.accessoryName?.message}
-          {...register("accessoryName", { required: "Vui long nhap ten phu kien" })}
+          {...register("accessoryName", {
+            required: "Vui lòng nhập tên phụ kiện",
+          })}
         />
         <Select
-          label="Danh muc"
-          placeholder="Chon danh muc"
+          label="Danh mục"
+          placeholder="Chọn danh mục"
           options={categoryOptions}
           error={errors.categoryID?.message}
-          {...register("categoryID", { required: "Vui long chon danh muc" })}
+          {...register("categoryID", { required: "Vui lòng chọn danh mục" })}
         />
-        <Select label="Thuong hieu" placeholder="Chon thuong hieu" options={brandOptions} {...register("brandAccessoryID")} />
-        <Input label="Gia ban" type="number" min="0" error={errors.price?.message} {...register("price", { required: "Vui long nhap gia ban" })} />
-        <Input label="Gia von" type="number" min="0" {...register("costPrice")} />
-        <Input label="Ton kho" type="number" min="0" {...register("stockQuantity")} />
-        <Input label="Bao hanh (thang)" type="number" min="0" {...register("warrantyMonths")} />
-        <Input label="Ton toi thieu" type="number" min="0" {...register("minStockLevel")} />
-        <Input label="Ton toi da" type="number" min="0" {...register("maxStockLevel")} />
-        <Input label="Dong xe tuong thich" className="md:col-span-2" {...register("compatibleCarModels")} />
-        <Input label="Mo ta" className="md:col-span-2" {...register("description")} />
+        <Select
+          label="Thương hiệu"
+          placeholder="Chọn thương hiệu"
+          options={brandOptions}
+          {...register("brandAccessoryID")}
+        />
+        <Input
+          label="Giá bán"
+          type="number"
+          min="0"
+          error={errors.price?.message}
+          {...register("price", { required: "Vui lòng nhập giá bán" })}
+        />
+        <Input
+          label="Giá vốn"
+          type="number"
+          min="0"
+          {...register("costPrice")}
+        />
+        <Input
+          label="Tồn kho"
+          type="number"
+          min="0"
+          {...register("stockQuantity")}
+        />
+        <Input
+          label="Bảo hành (tháng)"
+          type="number"
+          min="0"
+          {...register("warrantyMonths")}
+        />
+        <Input
+          label="Tồn tối thiểu"
+          type="number"
+          min="0"
+          {...register("minStockLevel")}
+        />
+        <Input
+          label="Tồn tối đa"
+          type="number"
+          min="0"
+          {...register("maxStockLevel")}
+        />
         <Controller
-          name="imagePath"
+          name="compatibleBrands"
           control={control}
-          render={({ field: { onChange } }) => (
-            <Input label="Anh phu kien" type="file" accept="image/*" onChange={(event) => onChange(event.target.files?.[0] ?? null)} />
-          )}
+          render={({ field: { value, onChange } }) => {
+            console.log("[AccessoryFormModal] compatibleBrands value=", value, "carBrandOptions=", carBrandOptions);
+            return (
+              <MultiCombobox
+                label="Hãng xe tương thích"
+                placeholder="Chọn hãng xe"
+                options={carBrandOptions}
+                value={value}
+                onChange={onChange}
+                loading={isCarBrandLoading}
+              />
+            );
+          }}
         />
+        <Controller
+          name="compatibleBodyTypes"
+          control={control}
+          render={({ field: { value, onChange } }) => {
+            console.log("[AccessoryFormModal] compatibleBodyTypes value=", value, "bodyTypeOptions=", bodyTypeOptions);
+            return (
+              <MultiCombobox
+                label="Loại thân xe tương thích"
+                placeholder="Chọn loại thân xe"
+                options={bodyTypeOptions}
+                value={value}
+                onChange={onChange}
+                loading={isBodyTypeLoading}
+              />
+            );
+          }}
+        />{" "}
+        <div className="flex flex-col gap-4 ">
+          <Input
+            label="Mô tả"
+            className="md:col-span-2"
+            {...register("description")}
+          />
+          <Controller
+            name="imagePath"
+            control={control}
+            render={({ field: { value, onChange } }) => (
+              <AccessoryMediaField
+                label="Ảnh phụ kiện"
+                kind="image"
+                existingUrl={editingAccessory?.imagePath}
+                value={value}
+                onChange={onChange}
+              />
+            )}
+          />
+        </div>
         <Controller
           name="installationVideo"
           control={control}
-          render={({ field: { onChange } }) => (
-            <Input label="Video lap dat" type="file" accept="video/*" onChange={(event) => onChange(event.target.files?.[0] ?? null)} />
+          render={({ field: { value, onChange } }) => (
+            <AccessoryMediaField
+              label="Video lắp đặt"
+              kind="video"
+              existingUrl={editingAccessory?.installationVideo}
+              value={value}
+              onChange={onChange}
+            />
           )}
         />
       </form>

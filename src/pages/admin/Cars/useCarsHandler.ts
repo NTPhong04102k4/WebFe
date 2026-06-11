@@ -287,8 +287,8 @@ export function useCarsHandler(): CarsHandlerReturn {
     openCreateModal: () => {
       setModalOpen(true);
     },
-    openEditModal: () => {
-      setEditingCarId(editingCarId);
+    openEditModal: (car) => {
+      setEditingCarId(car.carID);
       setModalOpen(true);
     },
     closeModal: () => setModalOpen(false),
