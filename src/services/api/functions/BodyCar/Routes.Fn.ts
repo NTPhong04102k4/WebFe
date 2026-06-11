@@ -30,7 +30,7 @@ function toBodyTypeFormData(data: BodyTypePayload) {
   form.append("BodyName", data.bodyName);
   form.append("Description", data.description ?? "");
   form.append("SeatCapacityRange", data.seatCapacityRange ?? "");
-  if (data.image instanceof File) form.append("Image", data.image);
+  if (data.image instanceof File) form.append("ImageFile", data.image);
   if (typeof data.imagePath === "string") form.append("ImagePath", data.imagePath);
   return form;
 }
