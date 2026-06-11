@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Car,
   ShoppingCart,
@@ -36,6 +36,14 @@ export default function CustomerLayout() {
 
   const { totalCount: cartCount } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Reset scroll về đầu trang mỗi khi chuyển route — <main> là vùng scroll riêng,
+  // window.scrollTo không có tác dụng vì nó dùng overflow-y-auto
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // Chạy một lần khi layout mount — nếu access token đã expire thì thử refresh
   // ngay, không đợi request đầu tiên bị 401
@@ -86,7 +94,10 @@ export default function CustomerLayout() {
   // Click outside to close user menu dropdown
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
         setUserMenuOpen(false);
       }
     };
@@ -311,7 +322,10 @@ export default function CustomerLayout() {
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto flex flex-col min-h-0">
+      <main
+        ref={mainRef}
+        className="flex-1 overflow-y-auto flex flex-col min-h-0"
+      >
         <Outlet />
 
         {/* Footer — cuộn xuống cuối trang mới thấy */}
@@ -343,7 +357,9 @@ export default function CustomerLayout() {
                 </button>
               </div>
               <div>
-                <h4 className="mb-3 font-semibold text-white">Liên kết nhanh</h4>
+                <h4 className="mb-3 font-semibold text-white">
+                  Liên kết nhanh
+                </h4>
                 <ul className="space-y-2 text-sm">
                   <li>
                     <Link to="/cars" className="hover:text-white">
