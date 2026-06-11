@@ -78,3 +78,37 @@ export const FUEL_TYPE_OPTIONS = [
   { value: FUEL_TYPE.HYDROGEN, label: "Hydro (pin nhiên liệu)" },
   { value: FUEL_TYPE.ETHANOL, label: "Cồn ethanol" },
 ];
+
+// Nhóm kỹ năng kỹ thuật viên (HR.Skills.Category)
+// Đồng bộ với BE: Web/Common/SkillCategories.cs
+export const SKILL_CATEGORY = {
+  ENGINE: "Engine", // Động cơ
+  ELECTRIC: "Electric", // Điện
+  BODY: "Body", // Thân vỏ
+  PAINT: "Paint", // Sơn
+  TRANSMISSION: "Transmission", // Hộp số
+  BRAKE: "Brake", // Phanh
+  SUSPENSION: "Suspension", // Hệ thống treo
+  AC: "AC", // Điều hòa
+  TIRE: "Tire", // Lốp - bánh xe
+  DIAGNOSTIC: "Diagnostic", // Chẩn đoán
+  DETAILING: "Detailing", // Chăm sóc xe
+  GENERAL: "General", // Tổng quát
+} as const;
+
+export type SkillCategory = (typeof SKILL_CATEGORY)[keyof typeof SKILL_CATEGORY];
+
+export const SKILL_CATEGORY_OPTIONS = [
+  { value: SKILL_CATEGORY.ENGINE, label: "Động cơ (Engine)" },
+  { value: SKILL_CATEGORY.ELECTRIC, label: "Điện (Electric)" },
+  { value: SKILL_CATEGORY.BODY, label: "Thân vỏ (Body)" },
+  { value: SKILL_CATEGORY.PAINT, label: "Sơn (Paint)" },
+  { value: SKILL_CATEGORY.TRANSMISSION, label: "Hộp số (Transmission)" },
+  { value: SKILL_CATEGORY.BRAKE, label: "Phanh (Brake)" },
+  { value: SKILL_CATEGORY.SUSPENSION, label: "Hệ thống treo (Suspension)" },
+  { value: SKILL_CATEGORY.AC, label: "Điều hòa (AC)" },
+  { value: SKILL_CATEGORY.TIRE, label: "Lốp - Bánh xe (Tire)" },
+  { value: SKILL_CATEGORY.DIAGNOSTIC, label: "Chẩn đoán (Diagnostic)" },
+  { value: SKILL_CATEGORY.DETAILING, label: "Chăm sóc xe (Detailing)" },
+  { value: SKILL_CATEGORY.GENERAL, label: "Tổng quát (General)" },
+];

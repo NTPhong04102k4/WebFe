@@ -10,12 +10,15 @@ type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "children"
   label: string;
   options: SelectOption[];
   placeholder?: string;
+  /** Ẩn option mặc định (placeholder) - dùng khi luôn cần chọn 1 giá trị cụ thể */
+  hidePlaceholder?: boolean;
 };
 
 export function SelectField({
   label,
   options,
   placeholder = "Tất cả",
+  hidePlaceholder = false,
   className = "",
   ...props
 }: SelectFieldProps) {
@@ -26,7 +29,7 @@ export function SelectField({
         {...props}
         className={`w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 ${className}`}
       >
-        <option value="">{placeholder}</option>
+        {!hidePlaceholder && <option value="">{placeholder}</option>}
         {options.map((option) => (
           <option
             key={option.value}
