@@ -285,13 +285,17 @@ export function useCarsHandler(): CarsHandlerReturn {
     editingCarId: editingCarId,
     deleteConfirmCar,
     openCreateModal: () => {
+      setEditingCarId(null);
       setModalOpen(true);
     },
     openEditModal: (car) => {
       setEditingCarId(car.carID);
       setModalOpen(true);
     },
-    closeModal: () => setModalOpen(false),
+    closeModal: () => {
+      setModalOpen(false);
+      setEditingCarId(null);
+    },
     openDeleteConfirm: (car) => setDeleteConfirmCar(car),
     closeDeleteConfirm: () => setDeleteConfirmCar(null),
     isSaving: createMutation.isPending || updateMutation.isPending,

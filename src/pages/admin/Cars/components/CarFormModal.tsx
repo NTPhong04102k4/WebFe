@@ -164,7 +164,7 @@ export function CarFormModal({
             disabled={isSaving || detailLoading}
             className={`rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-60 ${isSaving ? "cursor-not-allowed bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}
           >
-            {isSaving ? "Đang lưu..." : !!carId ? "Tạo xe" : "Lưu thay đổi"}
+            {isSaving ? "Đang lưu..." : carId ? "Lưu thay đổi" : "Tạo xe"}
           </button>
         </div>
       }
