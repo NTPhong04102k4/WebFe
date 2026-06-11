@@ -14,7 +14,7 @@ export function BrandTable({ brands, onEdit }: BrandTableProps) {
     () => [
       {
         accessorKey: "brandName",
-        header: "Hang",
+        header: "Hãng",
         cell: ({ row }) => {
           const brand = row.original;
 
@@ -35,7 +35,7 @@ export function BrandTable({ brands, onEdit }: BrandTableProps) {
       },
       {
         accessorKey: "countryOrigin",
-        header: "Quoc gia",
+        header: "Quốc gia",
         cell: ({ getValue }) => String(getValue() || "-"),
       },
       {
@@ -47,7 +47,7 @@ export function BrandTable({ brands, onEdit }: BrandTableProps) {
       },
       {
         id: "actions",
-        header: "Hanh dong",
+        header: "Hành động",
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex justify-end">
@@ -56,7 +56,7 @@ export function BrandTable({ brands, onEdit }: BrandTableProps) {
               className="rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600/30 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 dark:focus:ring-blue-300/30"
               onClick={() => onEdit(row.original)}
             >
-              Sua
+              Sửa
             </button>
           </div>
         ),
@@ -70,8 +70,8 @@ export function BrandTable({ brands, onEdit }: BrandTableProps) {
       data={brands}
       columns={columns}
       getRowId={(brand) => brand.brandCode}
-      emptyTitle="Khong co hang xe"
-      emptyDescription="Chua co hang xe phu hop voi bo loc."
+      emptyTitle="Không có hãng xe"
+      emptyDescription="Chưa có hãng xe phù hợp với bộ lọc."
     />
   );
 }

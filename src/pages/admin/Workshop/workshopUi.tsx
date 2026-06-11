@@ -16,7 +16,7 @@ export function formatMoney(value?: number | null) {
   }).format(value);
 }
 
-export function getErrorMessage(error: unknown, fallback = "Thao tac that bai") {
+export function getErrorMessage(error: unknown, fallback = "Thao tác thất bại") {
   if (error && typeof error === "object") {
     const anyError = error as {
       response?: { data?: { message?: string; errorCode?: string } };

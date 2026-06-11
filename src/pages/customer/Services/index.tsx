@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { formatCurrency } from "@/common/utils/formatCurrency";
+import { Input } from "@/components/core/Form/Input";
+import { Select } from "@/components/core/Select/Select";
+import { Loading } from "@/components/core/Feedback/Loading";
+import { EmptyState } from "@/components/core/Feedback/EmptyState";
 import { useServiceCatalog } from "src/query/service-catalog/useServiceCatalogQueries";
 import { useServiceCategoryList } from "src/query/service-category/useServiceCategoryQueries";
 
@@ -9,23 +13,25 @@ export default function CustomerServicesPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
   const [categoryID, setCategoryID] = useState<number | "">("");
-  const [search, setSearch] = useState({ keyword: "", categoryID: "" });
+  const [search, setSearch] = useState<{ keyword?: string; categoryID?: number }>({});
 
   const { data, isLoading } = useServiceCatalog({
     page: 1,
     pageSize: 50,
     isActive: true,
-    keyword: search.keyword || undefined,
-    categoryID: search.categoryID ? Number(search.categoryID) : undefined,
+    keyword: search.keyword,
+    categoryID: search.categoryID,
   });
 
-  const categories = useServiceCategoryList();
-  const categoryList = (categories.data as Array<{ categoryID?: number; id?: number; categoryName?: string; name?: string }> | undefined) ?? [];
+  const { data: categoryList = [] } = useServiceCategoryList();
 
   const services = data?.data ?? [];
 
   const handleSearch = () => {
-    setSearch({ keyword, categoryID: String(categoryID) });
+    setSearch({
+      keyword: keyword || undefined,
+      categoryID: categoryID === "" ? undefined : categoryID,
+    });
   };
 
   const handleBookService = (serviceID: number) => {
@@ -42,27 +48,22 @@ export default function CustomerServicesPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="mb-6 flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-white p-4">
-        <input
+      <div className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
+        <Input
           type="text"
           placeholder="Tìm dịch vụ..."
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          className="flex-1 min-w-[180px] rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+          className="flex-1 min-w-[180px]"
         />
-        <select
+        <Select
           value={categoryID}
           onChange={(e) => setCategoryID(e.target.value === "" ? "" : Number(e.target.value))}
-          className="rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-        >
-          <option value="">Tất cả danh mục</option>
-          {categoryList.map((c) => {
-            const id = c.categoryID ?? c.id;
-            const name = c.categoryName ?? c.name;
-            return <option key={id} value={id}>{name}</option>;
-          })}
-        </select>
+          placeholder="Tất cả danh mục"
+          className="min-w-[200px]"
+          options={categoryList.map((c) => ({ value: c.categoryID, label: c.categoryName }))}
+        />
         <button
           type="button"
           onClick={handleSearch}
@@ -74,9 +75,9 @@ export default function CustomerServicesPage() {
 
       {/* Service grid */}
       {isLoading ? (
-        <div className="py-12 text-center text-slate-500">Đang tải dịch vụ...</div>
+        <Loading label="Đang tải dịch vụ..." />
       ) : services.length === 0 ? (
-        <div className="py-12 text-center text-slate-500">Không tìm thấy dịch vụ phù hợp.</div>
+        <EmptyState title="Không tìm thấy dịch vụ" description="Không tìm thấy dịch vụ phù hợp." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((svc) => (

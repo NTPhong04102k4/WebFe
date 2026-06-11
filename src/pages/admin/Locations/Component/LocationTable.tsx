@@ -19,7 +19,7 @@ export function LocationTable({ locations }: LocationTableProps) {
     () => [
       {
         accessorKey: "locationName",
-        header: "Dia diem",
+        header: "Địa điểm",
         cell: ({ row }) => {
           const location = row.original;
 
@@ -35,7 +35,7 @@ export function LocationTable({ locations }: LocationTableProps) {
       },
       {
         accessorKey: "locationType",
-        header: "Loai",
+        header: "Loại",
         cell: ({ getValue }) => (
           <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900 dark:text-blue-200">
             {String(getValue() || "-")}
@@ -44,7 +44,7 @@ export function LocationTable({ locations }: LocationTableProps) {
       },
       {
         accessorKey: "address",
-        header: "Dia chi",
+        header: "Địa chỉ",
         cell: ({ row }) => (
           <div className="max-w-md">
             <div className="truncate">{row.original.address || "-"}</div>
@@ -56,7 +56,7 @@ export function LocationTable({ locations }: LocationTableProps) {
       },
       {
         accessorKey: "phone",
-        header: "Lien he",
+        header: "Liên hệ",
         cell: ({ row }) => (
           <div>
             <div>{row.original.phone || "-"}</div>
@@ -66,17 +66,17 @@ export function LocationTable({ locations }: LocationTableProps) {
       },
       {
         id: "time",
-        header: "Gio mo cua",
+        header: "Giờ mở cửa",
         cell: ({ row }) => `${formatTime(row.original.openTime)} - ${formatTime(row.original.closeTime)}`,
       },
       {
         accessorKey: "managerName",
-        header: "Quan ly",
+        header: "Quản lý",
         cell: ({ getValue }) => String(getValue() || "-"),
       },
       {
         id: "info",
-        header: "Toa do",
+        header: "Tọa độ",
         enableSorting: false,
         cell: ({ row }) => {
           const { latitude, longitude, postalCode } = row.original;
@@ -93,7 +93,7 @@ export function LocationTable({ locations }: LocationTableProps) {
               <button
                 type="button"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-slate-400 bg-white text-slate-800 hover:bg-slate-100 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
-                aria-label="Thong tin toa do"
+                aria-label="Thông tin tọa độ"
               >
                 <Info className="h-4 w-4" />
               </button>
@@ -110,8 +110,8 @@ export function LocationTable({ locations }: LocationTableProps) {
       data={locations}
       columns={columns}
       getRowId={(location) => location.locationCode}
-      emptyTitle="Khong co dia diem"
-      emptyDescription="Chua co dia diem phu hop voi bo loc."
+      emptyTitle="Không có địa điểm"
+      emptyDescription="Chưa có địa điểm phù hợp với bộ lọc."
     />
   );
 }

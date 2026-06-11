@@ -40,25 +40,25 @@ export default function AdminHrSkillsPage() {
 
   const columns = useMemo<ColumnDef<SkillViewModel>[]>(
     () => [
-      { accessorKey: "skillCode", header: "Ma" },
-      { accessorKey: "skillName", header: "Ten ky nang" },
-      { accessorKey: "category", header: "Nhom", cell: ({ getValue }) => String(getValue() || "-") },
+      { accessorKey: "skillCode", header: "Mã" },
+      { accessorKey: "skillName", header: "Tên kỹ năng" },
+      { accessorKey: "category", header: "Nhóm", cell: ({ getValue }) => String(getValue() || "-") },
       {
         accessorKey: "isActive",
-        header: "Trang thai",
-        cell: ({ row }) => (row.original.isActive ? "Dang dung" : "Tam dung"),
+        header: "Trạng thái",
+        cell: ({ row }) => (row.original.isActive ? "Đang dùng" : "Tạm dừng"),
       },
       {
         id: "actions",
-        header: "Hanh dong",
+        header: "Hành động",
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
             <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm" onClick={() => openEdit(row.original)}>
-              Sua
+              Sửa
             </button>
             <button className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600" onClick={() => handleDelete(row.original)}>
-              Xoa
+              Xóa
             </button>
           </div>
         ),
@@ -96,10 +96,10 @@ export default function AdminHrSkillsPage() {
       };
       if (editing) {
         await updateSkill.mutateAsync({ id: editing.skillID, body: payload });
-        notify.success("Cap nhat ky nang thanh cong");
+        notify.success("Cập nhật kỹ năng thành công");
       } else {
         await createSkill.mutateAsync(payload);
-        notify.success("Tao ky nang thanh cong");
+        notify.success("Tạo kỹ năng thành công");
       }
       close();
     } catch {
@@ -108,10 +108,10 @@ export default function AdminHrSkillsPage() {
   };
 
   const handleDelete = async (skill: SkillViewModel) => {
-    if (!window.confirm(`Xoa ky nang ${skill.skillName}?`)) return;
+    if (!window.confirm(`Xóa kỹ năng ${skill.skillName}?`)) return;
     try {
       await deleteSkill.mutateAsync(skill.skillID);
-      notify.success("Da xoa ky nang");
+      notify.success("Đã xóa kỹ năng");
     } catch {
       // interceptor đã hiện toast lỗi
     }
@@ -122,38 +122,38 @@ export default function AdminHrSkillsPage() {
       <div className="rounded-xl border border-slate-300 bg-white p-4 dark:border-slate-600 dark:bg-slate-900">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Quan ly ky nang</h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Danh muc skill cho ky thuat vien</p>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Quản lý kỹ năng</h1>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Danh mục skill cho kỹ thuật viên</p>
           </div>
           <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white" onClick={openCreate}>
-            Tao ky nang
+            Tạo kỹ năng
           </button>
         </div>
-        <Input className="mt-4 sm:max-w-sm" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tim ma, ten, nhom..." />
+        <Input className="mt-4 sm:max-w-sm" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm mã, tên, nhóm..." />
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">Khong lay duoc danh sach ky nang.</div>
+        <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">Không lấy được danh sách kỹ năng.</div>
       ) : filteredSkills.length === 0 && !isLoading ? (
         <div className="rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900">
-          <EmptyState title="Khong co ky nang" description="Chua co ky nang phu hop voi bo loc." />
+          <EmptyState title="Không có kỹ năng" description="Chưa có kỹ năng phù hợp với bộ lọc." />
         </div>
       ) : (
         <DataTable data={filteredSkills} columns={columns} loading={isLoading} getRowId={(row) => String(row.skillID)} />
       )}
 
-      <Modal open={open} onClose={close} title={editing ? "Sua ky nang" : "Tao ky nang"} footer={
+      <Modal open={open} onClose={close} title={editing ? "Sửa kỹ năng" : "Tạo kỹ năng"} footer={
         <div className="flex justify-end gap-2">
-          <button className="rounded-lg border px-4 py-2 text-sm" onClick={close}>Huy</button>
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white" onClick={save} disabled={createSkill.isPending || updateSkill.isPending}>Luu</button>
+          <button className="rounded-lg border px-4 py-2 text-sm" onClick={close}>Hủy</button>
+          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white" onClick={save} disabled={createSkill.isPending || updateSkill.isPending}>Lưu</button>
         </div>
       }>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Input label="Ma ky nang" value={form.skillCode} onChange={(event) => setForm({ ...form, skillCode: event.target.value })} disabled={Boolean(editing)} />
-          <Input label="Ten ky nang" value={form.skillName} onChange={(event) => setForm({ ...form, skillName: event.target.value })} />
-          <Input label="Nhom" value={form.category ?? ""} onChange={(event) => setForm({ ...form, category: event.target.value })} />
-          <SelectField label="Trang thai" value={form.isActive ? "true" : "false"} options={[{ label: "Dang dung", value: "true" }, { label: "Tam dung", value: "false" }]} onChange={(event) => setForm({ ...form, isActive: event.target.value !== "false" })} />
-          <Input className="md:col-span-2" label="Mo ta" value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+          <Input label="Mã kỹ năng" value={form.skillCode} onChange={(event) => setForm({ ...form, skillCode: event.target.value })} disabled={Boolean(editing)} />
+          <Input label="Tên kỹ năng" value={form.skillName} onChange={(event) => setForm({ ...form, skillName: event.target.value })} />
+          <Input label="Nhóm" value={form.category ?? ""} onChange={(event) => setForm({ ...form, category: event.target.value })} />
+          <SelectField label="Trạng thái" value={form.isActive ? "true" : "false"} options={[{ label: "Đang dùng", value: "true" }, { label: "Tạm dừng", value: "false" }]} onChange={(event) => setForm({ ...form, isActive: event.target.value !== "false" })} />
+          <Input className="md:col-span-2" label="Mô tả" value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} />
         </div>
       </Modal>
     </div>

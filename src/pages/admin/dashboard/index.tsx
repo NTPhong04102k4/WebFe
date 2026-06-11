@@ -160,10 +160,10 @@ function AppointmentTable({ rows }: { rows: AppointmentViewModel[] }) {
       <table className="w-full text-sm">
         <thead className="text-left text-xs uppercase text-slate-500">
           <tr>
-            <th className="py-2 pr-4">Ma hen</th>
-            <th className="py-2 pr-4">Thoi gian</th>
+            <th className="py-2 pr-4">Mã hẹn</th>
+            <th className="py-2 pr-4">Thời gian</th>
             <th className="py-2 pr-4">Xe</th>
-            <th className="py-2">Trang thai</th>
+            <th className="py-2">Trạng thái</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -177,7 +177,7 @@ function AppointmentTable({ rows }: { rows: AppointmentViewModel[] }) {
           ))}
         </tbody>
       </table>
-      {rows.length === 0 ? <p className="py-6 text-center text-sm text-slate-500">Chua co lich hen.</p> : null}
+      {rows.length === 0 ? <p className="py-6 text-center text-sm text-slate-500">Chưa có lịch hẹn.</p> : null}
     </div>
   );
 }
@@ -188,10 +188,10 @@ function WorkOrderTable({ rows }: { rows: WorkOrderViewModel[] }) {
       <table className="w-full text-sm">
         <thead className="text-left text-xs uppercase text-slate-500">
           <tr>
-            <th className="py-2 pr-4">So phieu</th>
+            <th className="py-2 pr-4">Số phiếu</th>
             <th className="py-2 pr-4">Xe</th>
-            <th className="py-2 pr-4">Trang thai</th>
-            <th className="py-2">Tong tien</th>
+            <th className="py-2 pr-4">Trạng thái</th>
+            <th className="py-2">Tổng tiền</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -205,7 +205,7 @@ function WorkOrderTable({ rows }: { rows: WorkOrderViewModel[] }) {
           ))}
         </tbody>
       </table>
-      {rows.length === 0 ? <p className="py-6 text-center text-sm text-slate-500">Chua co phieu cong viec.</p> : null}
+      {rows.length === 0 ? <p className="py-6 text-center text-sm text-slate-500">Chưa có phiếu công việc.</p> : null}
     </div>
   );
 }
@@ -216,11 +216,11 @@ function OrderTable({ rows }: { rows: OrderViewModel[] }) {
       <table className="w-full text-sm">
         <thead className="text-left text-xs uppercase text-slate-500">
           <tr>
-            <th className="py-2 pr-4">Ma don</th>
-            <th className="py-2 pr-4">Khach hang</th>
-            <th className="py-2 pr-4">Trang thai</th>
-            <th className="py-2 pr-4">Thanh toan</th>
-            <th className="py-2">Tong tien</th>
+            <th className="py-2 pr-4">Mã đơn</th>
+            <th className="py-2 pr-4">Khách hàng</th>
+            <th className="py-2 pr-4">Trạng thái</th>
+            <th className="py-2 pr-4">Thanh toán</th>
+            <th className="py-2">Tổng tiền</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -235,7 +235,7 @@ function OrderTable({ rows }: { rows: OrderViewModel[] }) {
           ))}
         </tbody>
       </table>
-      {rows.length === 0 ? <p className="py-6 text-center text-sm text-slate-500">Chua co don hang.</p> : null}
+      {rows.length === 0 ? <p className="py-6 text-center text-sm text-slate-500">Chưa có đơn hàng.</p> : null}
     </div>
   );
 }
@@ -279,25 +279,25 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-            Dashboard quan tri
+            Dashboard quản trị
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Hom nay: {new Date().toLocaleDateString("vi-VN")}
+            Hôm nay: {new Date().toLocaleDateString("vi-VN")}
           </p>
         </div>
       </div>
 
-      {/* KPI hang 1 — van hanh */}
+      {/* KPI hàng 1 — vận hành */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          title="Lich hen hom nay"
+          title="Lịch hẹn hôm nay"
           value={todayTotal}
           hint={`${scheduledCount} scheduled · ${confirmedCount} confirmed`}
           icon={CalendarClock}
           loading={todayAppointments.isLoading}
         />
         <KpiCard
-          title="Work order dang xu ly"
+          title="Work order đang xử lý"
           value={activeWoTotal}
           hint={`${openWo} open · ${inProgressWo} in-progress · ${waitingWo} waiting`}
           icon={ClipboardList}
@@ -305,7 +305,7 @@ export default function AdminDashboardPage() {
           loading={workOrders.isLoading}
         />
         <KpiCard
-          title="Phieu hoan thanh thang nay"
+          title="Phiếu hoàn thành tháng này"
           value={completedWorkOrders.data?.totalCount ?? 0}
           hint={`${monthStart} — ${monthEnd}`}
           icon={CheckCircle2}
@@ -313,54 +313,54 @@ export default function AdminDashboardPage() {
           loading={completedWorkOrders.isLoading}
         />
         <KpiCard
-          title="Review cho duyet"
+          title="Review chờ duyệt"
           value={pendingReviews.data?.totalCount ?? 0}
-          hint="Can staff/admin phe duyet"
+          hint="Cần staff/admin phê duyệt"
           icon={Star}
           tone="red"
           loading={pendingReviews.isLoading}
         />
       </div>
 
-      {/* KPI hang 2 — kinh doanh */}
+      {/* KPI hàng 2 — kinh doanh */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          title="Doanh thu thang nay"
+          title="Doanh thu tháng này"
           value={formatMoney(monthRevenue.data?.totalRevenue)}
-          hint={`${monthRevenue.data?.totalOrders ?? 0} don hang`}
+          hint={`${monthRevenue.data?.totalOrders ?? 0} đơn hàng`}
           icon={TrendingUp}
           tone="green"
           loading={monthRevenue.isLoading}
         />
         <KpiCard
-          title="Tong don hang"
+          title="Tổng đơn hàng"
           value={recentOrders.data?.totalCount ?? 0}
-          hint="Tat ca don hang trong he thong"
+          hint="Tất cả đơn hàng trong hệ thống"
           icon={ShoppingCart}
           tone="blue"
           loading={recentOrders.isLoading}
         />
         <KpiCard
-          title="Tong xe"
+          title="Tổng xe"
           value={cars.data?.totalCount ?? 0}
-          hint="Xe dang niem yet"
+          hint="Xe đang niêm yết"
           icon={Car}
           tone="slate"
           loading={cars.isLoading}
         />
         <KpiCard
-          title="Dich vu active"
+          title="Dịch vụ active"
           value={services.data?.totalCount ?? 0}
-          hint="Dich vu dang hoat dong"
+          hint="Dịch vụ đang hoạt động"
           icon={Wrench}
           loading={services.isLoading}
         />
       </div>
 
-      {/* KPI hang 3 — nhan su */}
+      {/* KPI hàng 3 — nhân sự */}
       <div className="grid gap-4 sm:grid-cols-2">
         <KpiCard
-          title="Ky thuat vien san sang"
+          title="Kỹ thuật viên sẵn sàng"
           value={technicians.data?.totalCount ?? 0}
           hint="Technician available"
           icon={Users}
@@ -370,7 +370,7 @@ export default function AdminDashboardPage() {
         <KpiCard
           title="Staff active"
           value={canReadStaff ? (staff.data?.totalCount ?? 0) : "Restricted"}
-          hint={canReadStaff ? "Nhan vien dang hoat dong" : "Chi Admin/SuperAdmin xem duoc"}
+          hint={canReadStaff ? "Nhân viên đang hoạt động" : "Chỉ Admin/SuperAdmin xem được"}
           icon={UserCog}
           tone="slate"
           loading={canReadStaff && staff.isLoading}
@@ -379,7 +379,7 @@ export default function AdminDashboardPage() {
 
       {/* Status bars */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Trang thai lich hen hom nay" subtitle="Thong ke tren du lieu cua ngay hien tai">
+        <Panel title="Trạng thái lịch hẹn hôm nay" subtitle="Thống kê trên dữ liệu của ngày hiện tại">
           <div className="space-y-4">
             <StatusBar label="Scheduled" value={scheduledCount} total={todayTotal} tone="bg-amber-500" />
             <StatusBar label="Confirmed" value={confirmedCount} total={todayTotal} tone="bg-blue-600" />
@@ -388,7 +388,7 @@ export default function AdminDashboardPage() {
           </div>
         </Panel>
 
-        <Panel title="Work order theo trang thai" subtitle="Work order can xu ly">
+        <Panel title="Work order theo trạng thái" subtitle="Work order cần xử lý">
           <div className="space-y-4">
             <StatusBar label="Open" value={openWo} total={activeWoTotal} tone="bg-slate-500" />
             <StatusBar label="InProgress" value={inProgressWo} total={activeWoTotal} tone="bg-blue-600" />
@@ -397,17 +397,17 @@ export default function AdminDashboardPage() {
         </Panel>
       </div>
 
-      {/* Cac bang du lieu gan day */}
+      {/* Các bảng dữ liệu gần đây */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <Panel title="Lich hen sap toi" subtitle="Tu hom nay den cuoi thang">
+        <Panel title="Lịch hẹn sắp tới" subtitle="Từ hôm nay đến cuối tháng">
           <AppointmentTable rows={recentAppointments.data?.data ?? []} />
         </Panel>
-        <Panel title="Work order gan day" subtitle="5 phieu moi nhat">
+        <Panel title="Work order gần đây" subtitle="5 phiếu mới nhất">
           <WorkOrderTable rows={recentWorkOrders.data?.data ?? []} />
         </Panel>
       </div>
 
-      <Panel title="Don hang gan day" subtitle="5 don hang moi nhat trong he thong">
+      <Panel title="Đơn hàng gần đây" subtitle="5 đơn hàng mới nhất trong hệ thống">
         <OrderTable rows={recentOrders.data?.data ?? []} />
       </Panel>
     </div>

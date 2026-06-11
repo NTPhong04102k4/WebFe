@@ -44,7 +44,7 @@ export default function AdminInsuranceCompaniesPage() {
     () => [
       {
         accessorKey: "companyName",
-        header: "Cong ty",
+        header: "Công ty",
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
             <div className="h-11 w-11 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -59,15 +59,15 @@ export default function AdminInsuranceCompaniesPage() {
       },
       { accessorKey: "hotline", header: "Hotline", cell: ({ getValue }) => String(getValue() || "-") },
       { accessorKey: "email", header: "Email", cell: ({ getValue }) => String(getValue() || "-") },
-      { accessorKey: "isActive", header: "Trang thai", cell: ({ row }) => row.original.isActive ? "Dang dung" : "Tam dung" },
+      { accessorKey: "isActive", header: "Trạng thái", cell: ({ row }) => row.original.isActive ? "Đang dùng" : "Tạm dừng" },
       {
         id: "actions",
-        header: "Hanh dong",
+        header: "Hành động",
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
-            <button className="rounded-lg border px-3 py-1.5 text-sm" onClick={() => openEdit(row.original)}>Sua</button>
-            <button className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600" onClick={() => remove(row.original)}>Xoa</button>
+            <button className="rounded-lg border px-3 py-1.5 text-sm" onClick={() => openEdit(row.original)}>Sửa</button>
+            <button className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600" onClick={() => remove(row.original)}>Xóa</button>
           </div>
         ),
       },
@@ -99,10 +99,10 @@ export default function AdminInsuranceCompaniesPage() {
     try {
       if (editing) {
         await updateCompany.mutateAsync({ id: editing.companyID, body: form });
-        notify.success("Cap nhat cong ty bao hiem thanh cong");
+        notify.success("Cập nhật công ty bảo hiểm thành công");
       } else {
         await createCompany.mutateAsync(form);
-        notify.success("Tao cong ty bao hiem thanh cong");
+        notify.success("Tạo công ty bảo hiểm thành công");
       }
       setOpen(false);
     } catch {
@@ -111,10 +111,10 @@ export default function AdminInsuranceCompaniesPage() {
   };
 
   const remove = async (company: InsuranceCompanyViewModel) => {
-    if (!window.confirm(`Xoa cong ty ${company.companyName}?`)) return;
+    if (!window.confirm(`Xóa công ty ${company.companyName}?`)) return;
     try {
       await deleteCompany.mutateAsync(company.companyID);
-      notify.success("Da xoa cong ty bao hiem");
+      notify.success("Đã xóa công ty bảo hiểm");
     } catch {
       // interceptor đã hiện toast lỗi
     }
@@ -125,37 +125,37 @@ export default function AdminInsuranceCompaniesPage() {
       <div className="rounded-xl border border-slate-300 bg-white p-4 dark:border-slate-600 dark:bg-slate-900">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Cong ty bao hiem</h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Quan ly nha cung cap bao hiem</p>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Công ty bảo hiểm</h1>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Quản lý nhà cung cấp bảo hiểm</p>
           </div>
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white" onClick={openCreate}>Tao cong ty</button>
+          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white" onClick={openCreate}>Tạo công ty</button>
         </div>
-        <Input className="mt-4 sm:max-w-sm" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tim ma, ten, hotline, email..." />
+        <Input className="mt-4 sm:max-w-sm" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm mã, tên, hotline, email..." />
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">Khong lay duoc danh sach cong ty bao hiem.</div>
+        <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">Không lấy được danh sách công ty bảo hiểm.</div>
       ) : filtered.length === 0 && !isLoading ? (
         <div className="rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900">
-          <EmptyState title="Khong co cong ty" description="Chua co cong ty bao hiem phu hop." />
+          <EmptyState title="Không có công ty" description="Chưa có công ty bảo hiểm phù hợp." />
         </div>
       ) : (
         <DataTable data={filtered} columns={columns} loading={isLoading} getRowId={(row) => String(row.companyID)} />
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title={editing ? "Sua cong ty bao hiem" : "Tao cong ty bao hiem"} footer={
+      <Modal open={open} onClose={() => setOpen(false)} title={editing ? "Sửa công ty bảo hiểm" : "Tạo công ty bảo hiểm"} footer={
         <div className="flex justify-end gap-2">
-          <button className="rounded-lg border px-4 py-2 text-sm" onClick={() => setOpen(false)}>Huy</button>
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white" onClick={save} disabled={createCompany.isPending || updateCompany.isPending}>Luu</button>
+          <button className="rounded-lg border px-4 py-2 text-sm" onClick={() => setOpen(false)}>Hủy</button>
+          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white" onClick={save} disabled={createCompany.isPending || updateCompany.isPending}>Lưu</button>
         </div>
       }>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Input label="Ma cong ty" value={form.companyCode} disabled={Boolean(editing)} onChange={(event) => setForm({ ...form, companyCode: event.target.value })} />
-          <Input label="Ten cong ty" value={form.companyName} onChange={(event) => setForm({ ...form, companyName: event.target.value })} />
+          <Input label="Mã công ty" value={form.companyCode} disabled={Boolean(editing)} onChange={(event) => setForm({ ...form, companyCode: event.target.value })} />
+          <Input label="Tên công ty" value={form.companyName} onChange={(event) => setForm({ ...form, companyName: event.target.value })} />
           <Input label="Hotline" value={form.hotline ?? ""} onChange={(event) => setForm({ ...form, hotline: event.target.value })} />
           <Input label="Email" type="email" value={form.email ?? ""} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-          <Input className="md:col-span-2" label="Dia chi" value={form.address ?? ""} onChange={(event) => setForm({ ...form, address: event.target.value })} />
-          <SelectField label="Trang thai" value={form.isActive ? "true" : "false"} options={[{ label: "Dang dung", value: "true" }, { label: "Tam dung", value: "false" }]} onChange={(event) => setForm({ ...form, isActive: event.target.value !== "false" })} />
+          <Input className="md:col-span-2" label="Địa chỉ" value={form.address ?? ""} onChange={(event) => setForm({ ...form, address: event.target.value })} />
+          <SelectField label="Trạng thái" value={form.isActive ? "true" : "false"} options={[{ label: "Đang dùng", value: "true" }, { label: "Tạm dừng", value: "false" }]} onChange={(event) => setForm({ ...form, isActive: event.target.value !== "false" })} />
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium text-slate-700">Logo</span>
             <input type="file" accept="image/*" className="text-sm" onChange={(event) => setForm({ ...form, logo: event.target.files?.[0] ?? null })} />

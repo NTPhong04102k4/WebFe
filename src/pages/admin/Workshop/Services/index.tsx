@@ -76,7 +76,12 @@ export default function ServiceCatalogPage() {
   const { data, isLoading } = useServiceCatalog(query);
   const { data: categories = [] } = useServiceCategoryList();
   const mutations = useServiceCatalogMutations();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ServiceForm>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ServiceForm>({
     defaultValues: defaults,
   });
 
@@ -131,11 +136,14 @@ export default function ServiceCatalogPage() {
 
     try {
       if (editing) {
-        await mutations.updateService.mutateAsync({ id: editing.serviceID, body });
-        notify.success("Da cap nhat dich vu");
+        await mutations.updateService.mutateAsync({
+          id: editing.serviceID,
+          body,
+        });
+        notify.success("Đã cập nhật dịch vụ");
       } else {
         await mutations.createService.mutateAsync(body);
-        notify.success("Da tao dich vu");
+        notify.success("Đã tạo dịch vụ");
       }
       closeForm();
     } catch {
@@ -149,17 +157,7 @@ export default function ServiceCatalogPage() {
         id: service.serviceID,
         body: { isActive: !service.isActive },
       });
-      notify.success("Da cap nhat trang thai");
-    } catch {
-      // interceptor đã hiện toast lỗi
-    }
-  };
-
-  const deleteService = async (service: ServiceCatalogViewModel) => {
-    if (!window.confirm(`Xoa mem dich vu ${service.serviceName}?`)) return;
-    try {
-      await mutations.deleteService.mutateAsync(service.serviceID);
-      notify.success("Da xoa dich vu");
+      notify.success("Đã cập nhật trạng thái");
     } catch {
       // interceptor đã hiện toast lỗi
     }
@@ -168,134 +166,261 @@ export default function ServiceCatalogPage() {
   const columns = useMemo<ColumnDef<ServiceCatalogViewModel>[]>(
     () => [
       {
-        header: "Dich vu",
+        header: "Dịch vụ",
         cell: ({ row }) => (
           <div>
             <div className="font-medium">{row.original.serviceName}</div>
-            <div className="text-xs text-slate-500">{row.original.serviceCode}</div>
+            <div className="text-xs text-slate-500">
+              {row.original.serviceCode}
+            </div>
           </div>
         ),
       },
       {
-        header: "Danh muc",
+        header: "Danh mục",
         cell: ({ row }) => row.original.categoryName ?? row.original.categoryID,
       },
       {
-        header: "Gia",
+        header: "Giá",
         cell: ({ row }) => formatMoney(row.original.price),
       },
       {
-        header: "Thoi luong",
-        cell: ({ row }) => `${row.original.estimatedDuration_minutes} phut`,
+        header: "Thời lượng",
+        cell: ({ row }) => `${row.original.estimatedDuration_minutes} phút`,
       },
       {
-        header: "Trang thai",
+        header: "Trạng thái",
         cell: ({ row }) => (
           <Badge tone={row.original.isActive ? "green" : "slate"}>
-            {row.original.isActive ? "Active" : "Inactive"}
+            {row.original.isActive ? "Hoạt động" : "Ngừng hoạt động"}
           </Badge>
         ),
       },
       {
-        header: "Ngay tao",
+        header: "Ngày tạo",
         cell: ({ row }) => formatDate(row.original.createdDate),
       },
       {
-        header: "Thao tac",
+        header: "Thao tác",
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-2">
-            <ActionButton onClick={() => openEdit(row.original)}>Sua</ActionButton>
-            <ActionButton onClick={() => toggleStatus(row.original)}>
-              {row.original.isActive ? "Tat" : "Bat"}
+            <ActionButton onClick={() => openEdit(row.original)}>
+              Sửa
             </ActionButton>
-            <ActionButton variant="danger" onClick={() => deleteService(row.original)}>Xoa</ActionButton>
+            <ActionButton onClick={() => toggleStatus(row.original)}>
+              {row.original.isActive ? "Tắt" : "Bật"}
+            </ActionButton>
           </div>
         ),
       },
     ],
-    []
+    [],
   );
 
   const rows = data?.data ?? [];
-  const totalPages = Math.max(1, Math.ceil((data?.totalCount ?? 0) / (query.pageSize ?? 20)));
+  const totalPages = Math.max(
+    1,
+    Math.ceil((data?.totalCount ?? 0) / (query.pageSize ?? 20)),
+  );
 
   return (
     <div>
       <PageHeader
-        title="Danh muc dich vu"
-        description="Quan ly core.services de appointment va work order co danh sach dich vu chinh thuc."
-        action={<ActionButton variant="primary" onClick={openCreate}><Plus className="mr-2 h-4 w-4" /> Them dich vu</ActionButton>}
+        title="Danh mục dịch vụ"
+        description="Quản lý core.services để appointment và work order có danh sách dịch vụ chính thức."
+        action={
+          <ActionButton variant="primary" onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> Thêm dịch vụ
+          </ActionButton>
+        }
       />
 
       <div className="mb-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 md:grid-cols-4">
-        <Input label="Tu khoa" value={draft.keyword} onChange={(e) => setDraft((s) => ({ ...s, keyword: e.target.value }))} placeholder="Ten hoac ma dich vu" />
+        <Input
+          label="Từ khóa"
+          value={draft.keyword}
+          onChange={(e) => setDraft((s) => ({ ...s, keyword: e.target.value }))}
+          placeholder="Tên hoặc mã dịch vụ"
+        />
         <label className="space-y-1">
-          <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Danh muc</span>
-          <select value={draft.categoryID} onChange={(e) => setDraft((s) => ({ ...s, categoryID: e.target.value }))} className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900">
-            <option value="">Tat ca</option>
+          <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">
+            Danh mục
+          </span>
+          <select
+            value={draft.categoryID}
+            onChange={(e) =>
+              setDraft((s) => ({ ...s, categoryID: e.target.value }))
+            }
+            className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
+          >
+            <option value="">Tất cả</option>
             {categories.map((category) => (
-              <option key={category.categoryID} value={category.categoryID}>{category.categoryName}</option>
+              <option key={category.categoryID} value={category.categoryID}>
+                {category.categoryName}
+              </option>
             ))}
           </select>
         </label>
         <label className="space-y-1">
-          <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Trang thai</span>
-          <select value={draft.isActive} onChange={(e) => setDraft((s) => ({ ...s, isActive: e.target.value }))} className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900">
-            <option value="">Tat ca</option>
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
+          <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">
+            Trạng thái
+          </span>
+          <select
+            value={draft.isActive}
+            onChange={(e) =>
+              setDraft((s) => ({ ...s, isActive: e.target.value }))
+            }
+            className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
+          >
+            <option value="">Tất cả</option>
+            <option value="true">Hoạt động</option>
+            <option value="false">Ngừng hoạt động</option>
           </select>
         </label>
         <div className="flex items-end gap-2">
-          <ActionButton variant="primary" onClick={applyFilter}><Search className="mr-2 h-4 w-4" /> Loc</ActionButton>
-          <ActionButton onClick={() => {
-            setDraft({ keyword: "", categoryID: "", isActive: "true" });
-            setQuery({ page: 1, pageSize: 20, isActive: true });
-          }}>Xoa</ActionButton>
+          <ActionButton variant="primary" onClick={applyFilter}>
+            <Search className="mr-2 h-4 w-4" /> Lọc
+          </ActionButton>
+          <ActionButton
+            onClick={() => {
+              setDraft({ keyword: "", categoryID: "", isActive: "true" });
+              setQuery({ page: 1, pageSize: 20, isActive: true });
+            }}
+          >
+            Xóa
+          </ActionButton>
         </div>
       </div>
 
-      <DataTable data={rows} columns={columns} getRowId={(row) => String(row.serviceID)} loading={isLoading} emptyTitle="Chua co dich vu" enablePagination={false} />
+      <DataTable
+        data={rows}
+        columns={columns}
+        getRowId={(row) => String(row.serviceID)}
+        loading={isLoading}
+        emptyTitle="Chưa có dịch vụ"
+        enablePagination={false}
+      />
 
       <div className="mt-4 flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
-        <span>Tong {data?.totalCount ?? 0} dich vu</span>
+        <span>Tổng {data?.totalCount ?? 0} dịch vụ</span>
         <div className="flex gap-2">
-          <ActionButton disabled={(query.page ?? 1) <= 1} onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) - 1 }))}>Truoc</ActionButton>
-          <span className="px-2 py-2">Trang {query.page ?? 1}/{totalPages}</span>
-          <ActionButton disabled={(query.page ?? 1) >= totalPages} onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) + 1 }))}>Sau</ActionButton>
+          <ActionButton
+            disabled={(query.page ?? 1) <= 1}
+            onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) - 1 }))}
+          >
+            Trước
+          </ActionButton>
+          <span className="px-2 py-2">
+            Trang {query.page ?? 1}/{totalPages}
+          </span>
+          <ActionButton
+            disabled={(query.page ?? 1) >= totalPages}
+            onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) + 1 }))}
+          >
+            Sau
+          </ActionButton>
         </div>
       </div>
 
-      <Modal open={formOpen} onClose={closeForm} title={editing ? "Sua dich vu" : "Them dich vu"} size="xl" closeOnBackdrop={false} footer={
-        <div className="flex justify-end gap-2">
-          <ActionButton onClick={closeForm}>Huy</ActionButton>
-          <ActionButton variant="primary" onClick={handleSubmit(saveService)} disabled={mutations.createService.isPending || mutations.updateService.isPending}>Luu</ActionButton>
-        </div>
-      }>
+      <Modal
+        open={formOpen}
+        onClose={closeForm}
+        title={editing ? "Sửa dịch vụ" : "Thêm dịch vụ"}
+        size="xl"
+        closeOnBackdrop={false}
+        footer={
+          <div className="flex justify-end gap-2">
+            <ActionButton onClick={closeForm}>Hủy</ActionButton>
+            <ActionButton
+              variant="primary"
+              onClick={handleSubmit(saveService)}
+              disabled={
+                mutations.createService.isPending ||
+                mutations.updateService.isPending
+              }
+            >
+              Lưu
+            </ActionButton>
+          </div>
+        }
+      >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Ma dich vu" maxLength={20} required {...register("serviceCode", { required: "Bat buoc", maxLength: 20 })} error={errors.serviceCode?.message} />
-          <Input label="Ten dich vu" maxLength={200} required {...register("serviceName", { required: "Bat buoc", maxLength: 200 })} error={errors.serviceName?.message} />
+          <Input
+            label="Mã dịch vụ"
+            maxLength={20}
+            required
+            {...register("serviceCode", {
+              required: "Bắt buộc",
+              maxLength: 20,
+            })}
+            error={errors.serviceCode?.message}
+          />
+          <Input
+            label="Tên dịch vụ"
+            maxLength={200}
+            required
+            {...register("serviceName", {
+              required: "Bắt buộc",
+              maxLength: 200,
+            })}
+            error={errors.serviceName?.message}
+          />
           <label className="space-y-1">
-            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Danh muc *</span>
-            <select className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900" {...register("categoryID", { required: "Bat buoc" })}>
-              <option value="">Chon danh muc</option>
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">
+              Danh mục *
+            </span>
+            <select
+              className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
+              {...register("categoryID", { required: "Bắt buộc" })}
+            >
+              <option value="">Chọn danh mục</option>
               {categories.map((category) => (
-                <option key={category.categoryID} value={category.categoryID}>{category.categoryName}</option>
+                <option key={category.categoryID} value={category.categoryID}>
+                  {category.categoryName}
+                </option>
               ))}
             </select>
-            {errors.categoryID?.message ? <p className="text-xs text-red-600">{errors.categoryID.message}</p> : null}
+            {errors.categoryID?.message ? (
+              <p className="text-xs text-red-600">
+                {errors.categoryID.message}
+              </p>
+            ) : null}
           </label>
-          <Input label="Gia" type="number" min={0} required {...register("price", { required: "Bat buoc" })} error={errors.price?.message} />
-          <Input label="Thoi luong phut" type="number" min={1} required {...register("estimatedDuration_minutes", { required: "Bat buoc" })} error={errors.estimatedDuration_minutes?.message} />
-          <Input label="Required skills" helperText="Nhap cach nhau bang dau phay" {...register("requiredSkills")} />
+          <Input
+            label="Giá"
+            type="number"
+            min={0}
+            required
+            {...register("price", { required: "Bắt buộc" })}
+            error={errors.price?.message}
+          />
+          <Input
+            label="Thời lượng (phút)"
+            type="number"
+            min={1}
+            required
+            {...register("estimatedDuration_minutes", { required: "Bắt buộc" })}
+            error={errors.estimatedDuration_minutes?.message}
+          />
+          <Input
+            label="Kỹ năng yêu cầu"
+            helperText="Nhập cách nhau bằng dấu phẩy"
+            {...register("requiredSkills")}
+          />
           <label className="space-y-1 sm:col-span-2">
-            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Mo ta</span>
-            <textarea className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900" rows={3} {...register("description")} />
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">
+              Mô tả
+            </span>
+            <textarea
+              className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
+              rows={3}
+              {...register("description")}
+            />
           </label>
           <label className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-100">
             <input type="checkbox" {...register("isActive")} />
-            Dang hoat dong
+            Đang hoạt động
           </label>
         </div>
       </Modal>

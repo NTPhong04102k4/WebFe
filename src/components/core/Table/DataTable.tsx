@@ -78,7 +78,7 @@ function SortableRow({ dragId, index, manager, draggable, children, className, .
             ref={handleRef}
             type="button"
             className="inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 active:cursor-grabbing dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-            aria-label="Keo de sap xep"
+            aria-label="Kéo để sắp xếp"
           >
             <GripVertical className="h-4 w-4" />
           </button>
@@ -94,8 +94,8 @@ export function DataTable<TData>({
   columns,
   getRowId,
   loading = false,
-  emptyTitle = "Khong co du lieu",
-  emptyDescription = "Chua co muc nao de hien thi.",
+  emptyTitle = "Không có dữ liệu",
+  emptyDescription = "Chưa có mục nào để hiển thị.",
   className,
   enableSorting = true,
   enablePagination = false,
@@ -165,7 +165,7 @@ export function DataTable<TData>({
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {isDraggable ? <th className="w-10 px-3 py-3" aria-label="Sap xep" /> : null}
+                {isDraggable ? <th className="w-10 px-3 py-3" aria-label="Sắp xếp" /> : null}
                 {headerGroup.headers.map((header) => (
                   <th key={header.id} className="px-4 py-3 text-left font-semibold">
                     {header.isPlaceholder ? null : (
@@ -236,7 +236,7 @@ export function DataTable<TData>({
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
             >
-              Truoc
+              Trước
             </button>
             <button
               type="button"

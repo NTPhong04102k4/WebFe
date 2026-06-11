@@ -14,7 +14,7 @@ export function BodyTypeTable({ bodyTypes, onEdit }: BodyTypeTableProps) {
     () => [
       {
         accessorKey: "bodyName",
-        header: "Kieu than",
+        header: "Kiểu thân",
         cell: ({ row }) => {
           const bodyType = row.original;
 
@@ -35,19 +35,19 @@ export function BodyTypeTable({ bodyTypes, onEdit }: BodyTypeTableProps) {
       },
       {
         accessorKey: "seatCapacityRange",
-        header: "So ghe",
+        header: "Số ghế",
         cell: ({ getValue }) => String(getValue() || "-"),
       },
       {
         accessorKey: "description",
-        header: "Mo ta",
+        header: "Mô tả",
         cell: ({ getValue }) => (
           <span className="block max-w-xs truncate">{String(getValue() || "-")}</span>
         ),
       },
       {
         id: "actions",
-        header: "Hanh dong",
+        header: "Hành động",
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex justify-end">
@@ -56,7 +56,7 @@ export function BodyTypeTable({ bodyTypes, onEdit }: BodyTypeTableProps) {
               className="rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600/30 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 dark:focus:ring-blue-300/30"
               onClick={() => onEdit(row.original)}
             >
-              Sua
+              Sửa
             </button>
           </div>
         ),
@@ -70,8 +70,8 @@ export function BodyTypeTable({ bodyTypes, onEdit }: BodyTypeTableProps) {
       data={bodyTypes}
       columns={columns}
       getRowId={(bodyType) => bodyType.bodyCode}
-      emptyTitle="Khong co kieu than xe"
-      emptyDescription="Chua co kieu than xe phu hop voi bo loc."
+      emptyTitle="Không có kiểu thân xe"
+      emptyDescription="Chưa có kiểu thân xe phù hợp với bộ lọc."
     />
   );
 }

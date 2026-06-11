@@ -25,7 +25,7 @@ export function AccessoryTable({ accessories, onEdit, onDelete }: AccessoryTable
     () => [
       {
         accessorKey: "accessoryName",
-        header: "Phu kien",
+        header: "Phụ kiện",
         cell: ({ row }) => {
           const item = row.original;
 
@@ -48,46 +48,46 @@ export function AccessoryTable({ accessories, onEdit, onDelete }: AccessoryTable
       },
       {
         accessorKey: "categoryName",
-        header: "Danh muc",
+        header: "Danh mục",
         cell: ({ getValue }) => String(getValue() || "-"),
       },
       {
         accessorKey: "price",
-        header: "Gia ban",
+        header: "Giá bán",
         cell: ({ getValue }) => formatCurrency(getValue()),
       },
       {
         accessorKey: "costPrice",
-        header: "Gia von",
+        header: "Giá vốn",
         cell: ({ getValue }) => formatCurrency(getValue()),
       },
       {
         accessorKey: "stockQuantity",
-        header: "Ton kho",
+        header: "Tồn kho",
         cell: ({ getValue }) => String(getValue() ?? 0),
       },
       {
         id: "actions",
-        header: "Hanh dong",
+        header: "Hành động",
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
-            <HoverInfo content="Chinh sua phu kien">
+            <HoverInfo content="Chỉnh sửa phụ kiện">
               <button
                 type="button"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-slate-400 bg-white text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600/30 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                 onClick={() => onEdit(row.original)}
-                aria-label="Chinh sua phu kien"
+                aria-label="Chỉnh sửa phụ kiện"
               >
                 <Edit className="h-4 w-4" />
               </button>
             </HoverInfo>
-            <HoverInfo content="Xoa phu kien">
+            <HoverInfo content="Xóa phụ kiện">
               <button
                 type="button"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-red-400 bg-white text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400/30 dark:border-red-500 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-slate-800"
                 onClick={() => onDelete(row.original)}
-                aria-label="Xoa phu kien"
+                aria-label="Xóa phụ kiện"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -104,8 +104,8 @@ export function AccessoryTable({ accessories, onEdit, onDelete }: AccessoryTable
       data={accessories}
       columns={columns}
       getRowId={(item) => String(item.accessoryID)}
-      emptyTitle="Khong co phu kien"
-      emptyDescription="Chua co phu kien phu hop voi bo loc."
+      emptyTitle="Không có phụ kiện"
+      emptyDescription="Chưa có phụ kiện phù hợp với bộ lọc."
     />
   );
 }

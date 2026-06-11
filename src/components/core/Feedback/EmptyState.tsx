@@ -8,8 +8,8 @@ export type EmptyStateProps = {
 };
 
 export function EmptyState({
-  title = "Khong co du lieu",
-  description = "Chua co muc nao de hien thi.",
+  title = "Không có dữ liệu",
+  description = "Chưa có mục nào để hiển thị.",
   action,
 }: EmptyStateProps) {
   return (

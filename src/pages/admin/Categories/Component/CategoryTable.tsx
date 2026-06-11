@@ -16,7 +16,7 @@ export function CategoryTable({ categories, onEdit, onReorder }: CategoryTablePr
     () => [
       {
         accessorKey: "categoryName",
-        header: "Danh muc",
+        header: "Danh mục",
         cell: ({ row }) => (
           <div>
             <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{row.original.categoryName}</div>
@@ -26,45 +26,45 @@ export function CategoryTable({ categories, onEdit, onReorder }: CategoryTablePr
       },
       {
         accessorKey: "description",
-        header: "Mo ta",
+        header: "Mô tả",
         cell: ({ getValue }) => <span className="block max-w-md truncate">{String(getValue() || "-")}</span>,
       },
       {
         accessorKey: "parentCategoryID",
-        header: "Danh muc cha",
+        header: "Danh mục cha",
         cell: ({ getValue }) => String(getValue() || "-"),
       },
       {
         accessorKey: "displayOrder",
-        header: "Thu tu",
+        header: "Thứ tự",
         cell: ({ getValue }) => String(getValue() ?? 0),
       },
       {
         accessorKey: "isActive",
-        header: "Trang thai",
+        header: "Trạng thái",
         cell: ({ getValue }) =>
           getValue() ? (
             <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900 dark:text-green-200">
-              Dang bat
+              Đang bật
             </span>
           ) : (
             <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-              Tam tat
+              Tạm tắt
             </span>
           ),
       },
       {
         id: "actions",
-        header: "Hanh dong",
+        header: "Hành động",
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex justify-end">
-            <HoverInfo content="Chinh sua danh muc">
+            <HoverInfo content="Chỉnh sửa danh mục">
               <button
                 type="button"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-slate-400 bg-white text-slate-800 hover:bg-slate-100 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                 onClick={() => onEdit(row.original)}
-                aria-label="Chinh sua danh muc"
+                aria-label="Chỉnh sửa danh mục"
               >
                 <Edit className="h-4 w-4" />
               </button>
@@ -82,8 +82,8 @@ export function CategoryTable({ categories, onEdit, onReorder }: CategoryTablePr
       columns={columns}
       getRowId={(category) => String(category.categoryID)}
       onRowOrderChange={onReorder}
-      emptyTitle="Khong co danh muc"
-      emptyDescription="Chua co danh muc phu hop voi bo loc."
+      emptyTitle="Không có danh mục"
+      emptyDescription="Chưa có danh mục phù hợp với bộ lọc."
     />
   );
 }

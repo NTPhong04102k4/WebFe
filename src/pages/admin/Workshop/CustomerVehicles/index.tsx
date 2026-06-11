@@ -146,10 +146,10 @@ export default function CustomerVehiclesPage() {
     try {
       if (editing) {
         await mutations.updateVehicle.mutateAsync({ id: editing.customerVehicleID, body });
-        notify.success("Da cap nhat xe");
+        notify.success("Đã cập nhật xe");
       } else {
         await mutations.createVehicle.mutateAsync(body);
-        notify.success("Da tao xe");
+        notify.success("Đã tạo xe");
       }
       closeForm();
     } catch {
@@ -164,7 +164,7 @@ export default function CustomerVehiclesPage() {
         id: mileageVehicle.customerVehicleID,
         body: { currentMileage: Number(mileage) },
       });
-      notify.success("Da cap nhat so km");
+      notify.success("Đã cập nhật số km");
       setMileageVehicle(null);
       setMileage("");
     } catch {
@@ -173,10 +173,10 @@ export default function CustomerVehiclesPage() {
   };
 
   const removeVehicle = async (id: number) => {
-    if (!window.confirm("Xoa mem xe nay?")) return;
+    if (!window.confirm("Xóa mềm xe này?")) return;
     try {
       await mutations.deleteVehicle.mutateAsync(id);
-      notify.success("Da xoa xe");
+      notify.success("Đã xóa xe");
     } catch {
       // interceptor đã hiện toast lỗi
     }
@@ -193,15 +193,15 @@ export default function CustomerVehiclesPage() {
           </div>
         ),
       },
-      { header: "Khach hang", accessorKey: "ownerFullName" },
+      { header: "Khách hàng", accessorKey: "ownerFullName" },
       { header: "VIN", accessorKey: "vin" },
-      { header: "Bien so", accessorKey: "licensePlate" },
+      { header: "Biển số", accessorKey: "licensePlate" },
       {
         header: "Km",
         cell: ({ row }) => row.original.currentMileage.toLocaleString("vi-VN"),
       },
       {
-        header: "Trang thai",
+        header: "Trạng thái",
         cell: ({ row }) => (
           <Badge tone={row.original.isActive ? "green" : "slate"}>
             {row.original.isActive ? "Active" : "Inactive"}
@@ -209,17 +209,17 @@ export default function CustomerVehiclesPage() {
         ),
       },
       {
-        header: "Thao tac",
+        header: "Thao tác",
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex flex-wrap gap-2">
-            <ActionButton onClick={() => openEdit(row.original)}>Sua</ActionButton>
+            <ActionButton onClick={() => openEdit(row.original)}>Sửa</ActionButton>
             <ActionButton onClick={() => {
               setMileageVehicle(row.original);
               setMileage(String(row.original.currentMileage));
             }}>Km</ActionButton>
-            <ActionButton onClick={() => setHistoryId(row.original.customerVehicleID)}>Lich su</ActionButton>
-            <ActionButton variant="danger" onClick={() => removeVehicle(row.original.customerVehicleID)}>Xoa</ActionButton>
+            <ActionButton onClick={() => setHistoryId(row.original.customerVehicleID)}>Lịch sử</ActionButton>
+            <ActionButton variant="danger" onClick={() => removeVehicle(row.original.customerVehicleID)}>Xóa</ActionButton>
           </div>
         ),
       },
@@ -235,21 +235,21 @@ export default function CustomerVehiclesPage() {
   return (
     <div>
       <PageHeader
-        title="Xe khach hang"
-        description="Quan ly xe, so km va lich su bao duong cua khach hang."
+        title="Xe khách hàng"
+        description="Quản lý xe, số km và lịch sử bảo dưỡng của khách hàng."
         action={
           <ActionButton variant="primary" onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" /> Them xe
+            <Plus className="mr-2 h-4 w-4" /> Thêm xe
           </ActionButton>
         }
       />
 
       <div className="mb-4 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 sm:grid-cols-[1fr_auto]">
         <Input
-          label="Loc theo userId"
+          label="Lọc theo userId"
           value={userFilter}
           onChange={(event) => setUserFilter(event.target.value)}
-          placeholder="Guid khach hang"
+          placeholder="Guid khách hàng"
         />
         <div className="flex items-end gap-2">
           <ActionButton
@@ -259,13 +259,13 @@ export default function CustomerVehiclesPage() {
               setAppliedUserId(userFilter.trim() || undefined);
             }}
           >
-            <Search className="mr-2 h-4 w-4" /> Loc
+            <Search className="mr-2 h-4 w-4" /> Lọc
           </ActionButton>
           <ActionButton onClick={() => {
             setUserFilter("");
             setAppliedUserId(undefined);
             setPage(1);
-          }}>Xoa</ActionButton>
+          }}>Xóa</ActionButton>
         </div>
       </div>
 
@@ -282,49 +282,49 @@ export default function CustomerVehiclesPage() {
         columns={columns}
         getRowId={(row) => String(row.customerVehicleID)}
         loading={isLoading}
-        emptyTitle="Chua co xe"
+        emptyTitle="Chưa có xe"
         enablePagination={false}
       />
 
       <div className="mt-4 flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
-        <span>Tong {data?.totalCount ?? 0} xe</span>
+        <span>Tổng {data?.totalCount ?? 0} xe</span>
         <div className="flex gap-2">
-          <ActionButton disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Truoc</ActionButton>
+          <ActionButton disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Trước</ActionButton>
           <span className="px-2 py-2">Trang {page}/{totalPages}</span>
           <ActionButton disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Sau</ActionButton>
         </div>
       </div>
 
-      <Modal open={vehicleFormOpen} onClose={closeForm} title={editing ? "Sua xe" : "Them xe"} size="xl" footer={
+      <Modal open={vehicleFormOpen} onClose={closeForm} title={editing ? "Sửa xe" : "Thêm xe"} size="xl" footer={
         <div className="flex justify-end gap-2">
-          <ActionButton onClick={closeForm}>Huy</ActionButton>
-          <ActionButton variant="primary" type="submit" onClick={handleSubmit(saveVehicle)} disabled={mutations.createVehicle.isPending || mutations.updateVehicle.isPending}>Luu</ActionButton>
+          <ActionButton onClick={closeForm}>Hủy</ActionButton>
+          <ActionButton variant="primary" type="submit" onClick={handleSubmit(saveVehicle)} disabled={mutations.createVehicle.isPending || mutations.updateVehicle.isPending}>Lưu</ActionButton>
         </div>
       }>
         <VehicleFields register={register} errors={errors} brands={brands} />
       </Modal>
 
-      <Modal open={mileageVehicle !== null} onClose={() => setMileageVehicle(null)} title="Cap nhat so km" footer={
+      <Modal open={mileageVehicle !== null} onClose={() => setMileageVehicle(null)} title="Cập nhật số km" footer={
         <div className="flex justify-end gap-2">
-          <ActionButton onClick={() => setMileageVehicle(null)}>Huy</ActionButton>
-          <ActionButton variant="primary" onClick={updateMileage} disabled={mutations.patchMileage.isPending}>Luu</ActionButton>
+          <ActionButton onClick={() => setMileageVehicle(null)}>Hủy</ActionButton>
+          <ActionButton variant="primary" onClick={updateMileage} disabled={mutations.patchMileage.isPending}>Lưu</ActionButton>
         </div>
       }>
-        <Input label="So km hien tai" type="number" min={0} value={mileage} onChange={(event) => setMileage(event.target.value)} />
+        <Input label="Số km hiện tại" type="number" min={0} value={mileage} onChange={(event) => setMileage(event.target.value)} />
       </Modal>
 
-      <Modal open={historyId !== null} onClose={() => setHistoryId(null)} title="Lich su bao duong" size="xl">
-        {historyLoading ? <p>Dang tai...</p> : (
+      <Modal open={historyId !== null} onClose={() => setHistoryId(null)} title="Lịch sử bảo dưỡng" size="xl">
+        {historyLoading ? <p>Đang tải...</p> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase text-slate-500">
                 <tr>
-                  <th className="py-2">Ngay</th>
-                  <th>Phieu</th>
+                  <th className="py-2">Ngày</th>
+                  <th>Phiếu</th>
                   <th>Km</th>
-                  <th>Dich vu</th>
-                  <th>Chi phi</th>
-                  <th>Khuyen nghi</th>
+                  <th>Dịch vụ</th>
+                  <th>Chi phí</th>
+                  <th>Khuyến nghị</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -340,7 +340,7 @@ export default function CustomerVehiclesPage() {
                 ))}
               </tbody>
             </table>
-            {history.length === 0 ? <p className="py-6 text-center text-slate-500">Chua co lich su.</p> : null}
+            {history.length === 0 ? <p className="py-6 text-center text-slate-500">Chưa có lịch sử.</p> : null}
           </div>
         )}
       </Modal>
@@ -359,14 +359,14 @@ function VehicleFields({
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <Input label="UserID" required {...register("userID", { required: "Bat buoc" })} error={errors.userID?.message} />
+      <Input label="UserID" required {...register("userID", { required: "Bắt buộc" })} error={errors.userID?.message} />
       <Input label="CarID" type="number" min={1} {...register("carID")} />
-      <Input label="VIN" required maxLength={50} {...register("vin", { required: "Bat buoc", maxLength: 50 })} error={errors.vin?.message} />
-      <Input label="Bien so" maxLength={20} {...register("licensePlate")} />
+      <Input label="VIN" required maxLength={50} {...register("vin", { required: "Bắt buộc", maxLength: 50 })} error={errors.vin?.message} />
+      <Input label="Biển số" maxLength={20} {...register("licensePlate")} />
       <label className="space-y-1">
-        <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Hang xe *</span>
-        <select className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900" {...register("brandID", { required: "Bat buoc" })}>
-          <option value="">Chon hang</option>
+        <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">Hãng xe *</span>
+        <select className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900" {...register("brandID", { required: "Bắt buộc" })}>
+          <option value="">Chọn hãng</option>
           {brands.map((brand) => {
             const id = brand.brandID ?? brand.id ?? 0;
             return <option key={id} value={id}>{brand.brandName ?? `Brand #${id}`}</option>;
@@ -374,16 +374,16 @@ function VehicleFields({
         </select>
         {errors.brandID?.message ? <p className="text-xs text-red-600">{errors.brandID.message}</p> : null}
       </label>
-      <Input label="Dong xe" required maxLength={100} {...register("modelName", { required: "Bat buoc", maxLength: 100 })} error={errors.modelName?.message} />
-      <Input label="Nam SX" required type="number" min={1900} max={2100} {...register("modelYear", { required: "Bat buoc" })} error={errors.modelYear?.message} />
-      <Input label="Mau" maxLength={50} {...register("color")} />
-      <Input label="Km hien tai" type="number" min={0} {...register("currentMileage")} />
-      <Input label="Ngay bao duong gan nhat" type="datetime-local" {...register("lastServiceDate")} />
-      <Input label="Ngay bao duong tiep theo" type="datetime-local" {...register("nextServiceDate")} />
-      <Input label="Km bao duong tiep theo" type="number" min={0} {...register("nextServiceMileage")} />
+      <Input label="Dòng xe" required maxLength={100} {...register("modelName", { required: "Bắt buộc", maxLength: 100 })} error={errors.modelName?.message} />
+      <Input label="Năm SX" required type="number" min={1900} max={2100} {...register("modelYear", { required: "Bắt buộc" })} error={errors.modelYear?.message} />
+      <Input label="Màu" maxLength={50} {...register("color")} />
+      <Input label="Km hiện tại" type="number" min={0} {...register("currentMileage")} />
+      <Input label="Ngày bảo dưỡng gần nhất" type="datetime-local" {...register("lastServiceDate")} />
+      <Input label="Ngày bảo dưỡng tiếp theo" type="datetime-local" {...register("nextServiceDate")} />
+      <Input label="Km bảo dưỡng tiếp theo" type="number" min={0} {...register("nextServiceMileage")} />
       <label className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-100">
         <input type="checkbox" {...register("isActive")} />
-        Dang hoat dong
+        Đang hoạt động
       </label>
     </div>
   );

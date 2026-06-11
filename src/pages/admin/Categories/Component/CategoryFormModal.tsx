@@ -67,7 +67,7 @@ export function CategoryFormModal({
       open={modalOpen}
       onClose={closeModal}
       size="lg"
-      title={editingCategory ? "Chinh sua danh muc" : "Tao danh muc"}
+      title={editingCategory ? "Chỉnh sửa danh mục" : "Tạo danh mục"}
       footer={
         <div className="flex items-center justify-end gap-2">
           <button
@@ -75,7 +75,7 @@ export function CategoryFormModal({
             className="rounded-lg border-2 border-slate-400 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
             onClick={closeModal}
           >
-            Huy
+            Hủy
           </button>
           <button
             type="submit"
@@ -83,17 +83,17 @@ export function CategoryFormModal({
             disabled={isSaving}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
           >
-            {editingCategory ? "Luu thay doi" : "Tao danh muc"}
+            {editingCategory ? "Lưu thay đổi" : "Tạo danh mục"}
           </button>
         </div>
       }
     >
       <form id="category-form" className="grid grid-cols-1 gap-4 md:grid-cols-2" onSubmit={submitForm}>
         <Input
-          label="Ten danh muc"
+          label="Tên danh mục"
           className="md:col-span-2"
           error={errors.categoryName?.message}
-          {...register("categoryName", { required: "Vui long nhap ten danh muc" })}
+          {...register("categoryName", { required: "Vui lòng nhập tên danh mục" })}
         />
         <Controller
           name="parentCategoryID"
@@ -109,14 +109,14 @@ export function CategoryFormModal({
             />
           )}
         />
-        <Input label="Thu tu hien thi" type="number" min="0" {...register("displayOrder")} />
-        <Input label="Mo ta" className="md:col-span-2" {...register("description")} />
+        <Input label="Thứ tự hiển thị" type="number" min="0" {...register("displayOrder")} />
+        <Input label="Mô tả" className="md:col-span-2" {...register("description")} />
         <Controller
           name="isActive"
           control={control}
           render={({ field }) => (
             <Checkbox
-              label="Dang kich hoat"
+              label="Đang kích hoạt"
               checked={field.value}
               onChange={(event) => field.onChange(event.target.checked)}
             />

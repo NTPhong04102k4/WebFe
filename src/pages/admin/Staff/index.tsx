@@ -102,7 +102,7 @@ export default function StaffPage() {
         cell: ({ row }) => formatDate(row.original.createdDate),
       },
       {
-        header: "Thao tac",
+        header: "Thao tác",
         enableSorting: false,
         cell: ({ row }) => {
           const staff = row.original;
@@ -151,7 +151,7 @@ export default function StaffPage() {
             </ActionButton>
             <ActionButton variant="primary" onClick={h.openCreate}>
               <Plus className="mr-2 h-4 w-4" />
-              Tao staff
+              Tạo staff
             </ActionButton>
           </div>
         }
