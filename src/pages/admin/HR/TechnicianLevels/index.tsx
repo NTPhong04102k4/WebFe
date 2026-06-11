@@ -24,7 +24,8 @@ const emptyForm: TechnicianLevelRequest = {
 
 export default function AdminTechnicianLevelsPage() {
   const { data: levels = [], isLoading, error } = useHrTechnicianLevels();
-  const { createLevel, updateLevel, deleteLevel } = useHrTechnicianLevelMutations();
+  // createLevel, deleteLevel không còn dùng do đã ẩn chức năng tạo/xóa cấp bậc
+  const { updateLevel } = useHrTechnicianLevelMutations();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TechnicianLevelViewModel | null>(null);
   const [form, setForm] = useState<TechnicianLevelRequest>(emptyForm);
@@ -44,7 +45,8 @@ export default function AdminTechnicianLevelsPage() {
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
             <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm" onClick={() => openEdit(row.original)}>Sửa</button>
-            <button className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600" onClick={() => remove(row.original)}>Xóa</button>
+            {/* Đã ẩn nút xóa cấp bậc (xóa cứng - DB.Remove) */}
+            {/* <button className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600" onClick={() => remove(row.original)}>Xóa</button> */}
           </div>
         ),
       },
@@ -52,11 +54,12 @@ export default function AdminTechnicianLevelsPage() {
     []
   );
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setOpen(true);
-  };
+  // Đã ẩn chức năng tạo cấp bậc
+  // const openCreate = () => {
+  //   setEditing(null);
+  //   setForm(emptyForm);
+  //   setOpen(true);
+  // };
 
   const openEdit = (level: TechnicianLevelViewModel) => {
     setEditing(level);
@@ -72,29 +75,26 @@ export default function AdminTechnicianLevelsPage() {
   };
 
   const save = async () => {
+    if (!editing) return;
     try {
-      if (editing) {
-        await updateLevel.mutateAsync({ id: editing.levelID, body: form });
-        notify.success("Cập nhật cấp bậc thành công");
-      } else {
-        await createLevel.mutateAsync(form);
-        notify.success("Tạo cấp bậc thành công");
-      }
+      await updateLevel.mutateAsync({ id: editing.levelID, body: form });
+      notify.success("Cập nhật cấp bậc thành công");
       setOpen(false);
     } catch {
       // interceptor đã hiện toast lỗi
     }
   };
 
-  const remove = async (level: TechnicianLevelViewModel) => {
-    if (!window.confirm(`Xóa cấp bậc ${level.levelName}?`)) return;
-    try {
-      await deleteLevel.mutateAsync(level.levelID);
-      notify.success("Đã xóa cấp bậc");
-    } catch {
-      // interceptor đã hiện toast lỗi
-    }
-  };
+  // Đã ẩn chức năng xóa cấp bậc
+  // const remove = async (level: TechnicianLevelViewModel) => {
+  //   if (!window.confirm(`Xóa cấp bậc ${level.levelName}?`)) return;
+  //   try {
+  //     await deleteLevel.mutateAsync(level.levelID);
+  //     notify.success("Đã xóa cấp bậc");
+  //   } catch {
+  //     // interceptor đã hiện toast lỗi
+  //   }
+  // };
 
   return (
     <div className="space-y-6">
@@ -104,7 +104,8 @@ export default function AdminTechnicianLevelsPage() {
             <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Cấp bậc kỹ thuật viên</h1>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Quản lý bậc lương, hourly rate và thưởng theo job</p>
           </div>
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white" onClick={openCreate}>Tạo cấp bậc</button>
+          {/* Đã ẩn nút tạo cấp bậc */}
+          {/* <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white" onClick={openCreate}>Tạo cấp bậc</button> */}
         </div>
       </div>
 
@@ -121,7 +122,7 @@ export default function AdminTechnicianLevelsPage() {
       <Modal open={open} onClose={() => setOpen(false)} title={editing ? "Sửa cấp bậc" : "Tạo cấp bậc"} footer={
         <div className="flex justify-end gap-2">
           <button className="rounded-lg border px-4 py-2 text-sm" onClick={() => setOpen(false)}>Hủy</button>
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white" onClick={save} disabled={createLevel.isPending || updateLevel.isPending}>Lưu</button>
+          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white" onClick={save} disabled={updateLevel.isPending}>Lưu</button>
         </div>
       }>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

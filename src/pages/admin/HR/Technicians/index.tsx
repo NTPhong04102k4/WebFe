@@ -51,8 +51,8 @@ export default function AdminTechniciansPage() {
   const [form, setForm] = useState<TechnicianRequest>(emptyForm);
   const [certifications, setCertifications] = useState<string[]>([]);
   const [staffPickerOpen, setStaffPickerOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] =
-    useState<TechnicianViewModel | null>(null);
+  // const [confirmDelete, setConfirmDelete] =
+  //   useState<TechnicianViewModel | null>(null);
   const params = {
     page,
     pageSize: 20,
@@ -60,7 +60,8 @@ export default function AdminTechniciansPage() {
   };
   const { data, isLoading, error } = useHrTechniciansSearch(params);
   const { data: levels = [] } = useHrTechnicianLevels();
-  const { createTechnician, updateTechnician, deleteTechnician } =
+  // deleteTechnician không còn dùng do đã ẩn chức năng xóa kỹ thuật viên
+  const { createTechnician, updateTechnician } =
     useHrTechnicianMutations();
   const { data: selectedStaff } = useStaffDetail(
     !editing && form.staffID > 0 ? form.staffID : null,
@@ -109,12 +110,13 @@ export default function AdminTechniciansPage() {
             >
               Sửa
             </button>
-            <button
+            {/* Đã ẩn nút xóa kỹ thuật viên (xóa mềm - IsActive=false) */}
+            {/* <button
               className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600"
               onClick={() => setConfirmDelete(row.original)}
             >
               Xóa
-            </button>
+            </button> */}
           </div>
         ),
       },
@@ -166,15 +168,16 @@ export default function AdminTechniciansPage() {
     }
   };
 
-  const remove = async (tech: TechnicianViewModel) => {
-    try {
-      await deleteTechnician.mutateAsync(tech.technicianID);
-      notify.success("Đã xóa kỹ thuật viên");
-      setConfirmDelete(null);
-    } catch {
-      // interceptor đã hiện toast lỗi
-    }
-  };
+  // Đã ẩn chức năng xóa kỹ thuật viên
+  // const remove = async (tech: TechnicianViewModel) => {
+  //   try {
+  //     await deleteTechnician.mutateAsync(tech.technicianID);
+  //     notify.success("Đã xóa kỹ thuật viên");
+  //     setConfirmDelete(null);
+  //   } catch {
+  //     // interceptor đã hiện toast lỗi
+  //   }
+  // };
 
   return (
     <div className="space-y-6">
@@ -377,8 +380,8 @@ export default function AdminTechniciansPage() {
         onClose={() => setStaffPickerOpen(false)}
       />
 
-      {/* Confirm xóa kỹ thuật viên */}
-      {confirmDelete && (
+      {/* Confirm xóa kỹ thuật viên - đã ẩn chức năng xóa */}
+      {/* {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl dark:bg-slate-900">
             <div className="px-6 py-5">
@@ -411,7 +414,7 @@ export default function AdminTechniciansPage() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
