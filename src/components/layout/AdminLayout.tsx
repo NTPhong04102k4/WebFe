@@ -10,12 +10,19 @@ import { resolveAppTheme, useUiPreferenceStore } from '@/stores/uiStore'
 import { notify } from "@/components/core/Feedback/toast"
 import api from '@/services/api/axiosInstance'
 
+interface NavChildItem {
+  label: string
+  to: string
+  adminOnly?: boolean
+}
+
 interface NavItem {
   label: string
   icon: React.ReactNode
   to?: string
-  children?: { label: string; to: string }[]
+  children?: NavChildItem[]
   superAdminOnly?: boolean
+  adminOnly?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -44,16 +51,17 @@ const navItems: NavItem[] = [
     label: 'Nhân sự (HR)',
     icon: <Briefcase className="h-4 w-4" />,
     children: [
-      { label: 'Kỹ thuật viên', to: '/admin/hr/technicians' },
-      { label: 'Cấp bậc', to: '/admin/hr/levels' },
-      { label: 'Kỹ năng', to: '/admin/hr/skills' },
-      { label: 'Bảng lương', to: '/admin/hr/payroll' },
+      { label: 'Kỹ thuật viên', to: '/admin/hr/technicians', adminOnly: true },
+      { label: 'Cấp bậc', to: '/admin/hr/levels', adminOnly: true },
+      { label: 'Kỹ năng', to: '/admin/hr/skills', adminOnly: true },
+      { label: 'Bảng lương', to: '/admin/hr/payroll', adminOnly: true },
       { label: 'Hồ sơ KTV của tôi', to: '/admin/hr/my-profile' },
     ],
   },
   {
     label: 'Bảo hiểm',
     icon: <Shield className="h-4 w-4" />,
+    adminOnly: true,
     children: [
       { label: 'Công ty BH', to: '/admin/insurance/companies' },
       { label: 'Gói BH', to: '/admin/insurance/packages' },
@@ -70,9 +78,9 @@ const navItems: NavItem[] = [
       { label: 'Danh mục dịch vụ', to: '/admin/workshop/services' },
     ],
   },
-  { label: 'Đánh giá', icon: <Star className="h-4 w-4" />, to: '/admin/reviews' },
+  { label: 'Đánh giá', icon: <Star className="h-4 w-4" />, to: '/admin/reviews', adminOnly: true },
   { label: 'Hỗ trợ (Chat)', icon: <MessageSquare className="h-4 w-4" />, to: '/admin/support' },
-  { label: 'Thu Chi', icon: <TrendingUp className="h-4 w-4" />, to: '/admin/finance' },
+  { label: 'Thu Chi', icon: <TrendingUp className="h-4 w-4" />, to: '/admin/finance', adminOnly: true },
   {
     label: 'Premium',
     icon: <Sparkles className="h-4 w-4" />,
@@ -81,7 +89,7 @@ const navItems: NavItem[] = [
       { label: 'Đăng ký của KH', to: '/admin/subscriptions' },
     ],
   },
-  { label: 'Broadcast', icon: <Bell className="h-4 w-4" />, to: '/admin/broadcast' },
+  { label: 'Broadcast', icon: <Bell className="h-4 w-4" />, to: '/admin/broadcast', adminOnly: true },
   { label: 'Khách quan tâm', icon: <UserCog className="h-4 w-4" />, to: '/admin/car-inquiries' },
   {
     label: 'Quản lý Staff',
@@ -94,9 +102,11 @@ const navItems: NavItem[] = [
 function SidebarItem({
   item,
   isSuperAdmin,
+  isAdmin,
 }: {
   item: NavItem
   isSuperAdmin: boolean
+  isAdmin: boolean
 }) {
   const location = useLocation()
   const [open, setOpen] = useState(() =>
@@ -104,9 +114,13 @@ function SidebarItem({
   )
 
   if (item.superAdminOnly && !isSuperAdmin) return null
+  if (item.adminOnly && !isAdmin) return null
 
   if (item.children) {
-    const isActive = item.children.some((c) => location.pathname.startsWith(c.to))
+    const visibleChildren = item.children.filter((c) => !c.adminOnly || isAdmin)
+    if (visibleChildren.length === 0) return null
+
+    const isActive = visibleChildren.some((c) => location.pathname.startsWith(c.to))
     return (
       <div>
         <button
@@ -125,7 +139,7 @@ function SidebarItem({
         </button>
         {open && (
           <div className="ml-7 mt-0.5 space-y-0.5">
-            {item.children.map((child) => (
+            {visibleChildren.map((child) => (
               <Link
                 key={child.to}
                 to={child.to}
@@ -161,7 +175,7 @@ function SidebarItem({
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, logout, accessToken, isSuperAdmin } = useAuthStore()
+  const { user, logout, accessToken, isSuperAdmin, isAdmin } = useAuthStore()
   const theme = useUiPreferenceStore((state) => state.theme)
   const toggleTheme = useUiPreferenceStore((state) => state.toggleTheme)
   const isDarkTheme = resolveAppTheme(theme) === 'dark'
@@ -195,7 +209,7 @@ export default function AdminLayout() {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
         {navItems.map((item) => (
-          <SidebarItem key={item.label} item={item} isSuperAdmin={isSuperAdmin()} />
+          <SidebarItem key={item.label} item={item} isSuperAdmin={isSuperAdmin()} isAdmin={isAdmin()} />
         ))}
       </nav>
 

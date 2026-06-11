@@ -152,28 +152,98 @@ export default function AppRouter() {
           <Route path="users" element={<AdminUsersPage />} />
 
           {/* HR */}
-          <Route path="hr/technicians" element={<TechniciansPage />} />
-          <Route path="hr/levels" element={<TechnicianLevelsPage />} />
-          <Route path="hr/skills" element={<SkillsPage />} />
-          <Route path="hr/payroll" element={<PayrollPage />} />
+          <Route
+            path="hr/technicians"
+            element={
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
+                <TechniciansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="hr/levels"
+            element={
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
+                <TechnicianLevelsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="hr/skills"
+            element={
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
+                <SkillsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="hr/payroll"
+            element={
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
+                <PayrollPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="hr/my-profile" element={<MyTechnicianProfilePage />} />
 
           {/* Insurance */}
-          <Route path="insurance/companies" element={<InsuranceCompaniesPage />} />
-          <Route path="insurance/packages" element={<InsurancePackagesPage />} />
-          <Route path="insurance/policies" element={<InsurancePoliciesPage />} />
+          <Route
+            path="insurance/companies"
+            element={
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
+                <InsuranceCompaniesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="insurance/packages"
+            element={
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
+                <InsurancePackagesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="insurance/policies"
+            element={
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
+                <InsurancePoliciesPage />
+              </ProtectedRoute>
+            }
+          />
           {/* Workshop */}
           <Route path="workshop/appointments" element={<WorkshopAppointmentsPage />} />
           <Route path="workshop/vehicles" element={<CustomerVehiclesPage />} />
           <Route path="workshop/work-orders" element={<WorkOrdersPage />} />
           <Route path="workshop/services" element={<ServiceCatalogPage />} />
 
-          <Route path="reviews" element={<AdminReviewsPage />} />
+          <Route
+            path="reviews"
+            element={
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
+                <AdminReviewsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="premium-plans" element={<AdminPremiumPlansPage />} />
           <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
-          <Route path="finance" element={<AdminFinancePage />} />
+          <Route
+            path="finance"
+            element={
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
+                <AdminFinancePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="support" element={<AdminSupportChatPage />} />
-          <Route path="broadcast" element={<AdminBroadcastPage />} />
+          <Route
+            path="broadcast"
+            element={
+              <ProtectedRoute roles={['Admin', 'SuperAdmin']}>
+                <AdminBroadcastPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="car-inquiries" element={<AdminCarInquiriesPage />} />
 
           {/* SuperAdmin only */}
