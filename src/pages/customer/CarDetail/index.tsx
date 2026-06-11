@@ -10,6 +10,7 @@ import { useCarReviews, useCarReviewStats } from "@/query/review/useReviewQuerie
 import { useCart } from "@/hooks/useCart";
 import type { CarDetailResponse } from "@/shared/types/Reponse/Car";
 import type { CarDetailView } from "@/services/api/functions/Cars/Routes.Fn";
+import { CarInquiryForm } from "./components/CarInquiryForm";
 
 function parseImages(raw: unknown): string[] {
   if (!raw) return [];
@@ -132,12 +133,24 @@ function CarInfoPanel({
 }) {
   const price = car.salePrice ?? car.price ?? 0;
   const activeFeatures = spec ? CAR_FEATURES.filter((f) => spec[f.key] === true) : [];
+  const unavailable = car.statusCode === "RESERVED" || car.statusCode === "SOLD";
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6">
       {car.isFeature ? (
         <span className="mb-2 inline-block rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
           Nổi bật
+        </span>
+      ) : null}
+
+      {car.statusCode === "RESERVED" ? (
+        <span className="mb-2 ml-2 inline-block rounded-md bg-amber-500 px-2.5 py-0.5 text-xs font-semibold text-white">
+          Đặt cọc
+        </span>
+      ) : null}
+      {car.statusCode === "SOLD" ? (
+        <span className="mb-2 ml-2 inline-block rounded-md bg-slate-700 px-2.5 py-0.5 text-xs font-semibold text-white">
+          Đã bán
         </span>
       ) : null}
 
@@ -153,15 +166,19 @@ function CarInfoPanel({
         ) : null}
       </div>
 
-      <button
-        type="button"
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-        onClick={onAddToCart}
-        disabled={alreadyInCart || isPending}
-      >
-        <ShoppingCart className="h-4 w-4" />
-        {isPending ? "Đang thêm..." : alreadyInCart ? "Đã trong giỏ hàng" : "Thêm vào giỏ hàng"}
-      </button>
+      {unavailable ? (
+        <CarInquiryForm carID={car.carID} />
+      ) : (
+        <button
+          type="button"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+          onClick={onAddToCart}
+          disabled={alreadyInCart || isPending}
+        >
+          <ShoppingCart className="h-4 w-4" />
+          {isPending ? "Đang thêm..." : alreadyInCart ? "Đã trong giỏ hàng" : "Thêm vào giỏ hàng"}
+        </button>
+      )}
 
       <div className="mt-6 divide-y divide-slate-100">
         <DetailRow label="Mã xe" value={car.carCode} />

@@ -141,6 +141,11 @@ export const API = {
     techSpecDetailItem: "/car/techSpec/DetailItem",
     techSpecCreate: (id: string | number) => `/cars/${id}/tech-spec`,
     techSpecEdit: (id: string | number) => `/cars/${id}/tech-spec`,
+    inquiries: (id: string | number) => `/cars/${id}/inquiries`,
+  },
+  carInquiry: {
+    list: "/car-inquiries",
+    updateStatus: (id: string | number) => `/car-inquiries/${id}/status`,
   },
   accessory: {
     detail: (id: string | number) => `/accessories/${id}`,

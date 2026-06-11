@@ -11,6 +11,7 @@ import {
   CarPagingRequest,
   TechSpecDetailUpdateRequest,
 } from "src/shared/types/Request/Car";
+import type { CarInquiryRequest } from "src/shared/types/Request/CarInquiry";
 
 export type CarDetailView = CarResponseItem & Partial<CarDetailResponse>;
 
@@ -219,6 +220,14 @@ export const carRouteFn = {
   delete: async (id: number, options?: ApiRequestOptions) => {
     const response = await apiClient.delete<OperationResult>(
       carRoute.delete(id),
+      withSignal({}, options)
+    );
+    return response.data;
+  },
+  createInquiry: async (id: number, data: CarInquiryRequest, options?: ApiRequestOptions) => {
+    const response = await apiClient.post<OperationResult>(
+      carRoute.inquiries(id),
+      data,
       withSignal({}, options)
     );
     return response.data;

@@ -81,6 +81,7 @@ const navItems: NavItem[] = [
     ],
   },
   { label: 'Broadcast', icon: <Bell className="h-4 w-4" />, to: '/admin/broadcast' },
+  { label: 'Khách quan tâm', icon: <UserCog className="h-4 w-4" />, to: '/admin/car-inquiries' },
   {
     label: 'Quản lý Staff',
     icon: <UserCog className="h-4 w-4" />,
