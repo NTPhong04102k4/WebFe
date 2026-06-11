@@ -17,7 +17,7 @@ export function AccessoryPagination({ page, totalPages, onPageChange }: Accessor
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
-          Truoc
+          Trước
         </button>
         <button
           type="button"

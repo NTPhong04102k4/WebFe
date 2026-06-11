@@ -4,6 +4,7 @@ export type AccessoryPagingRequest = {
   priceFrom?: number | null;
   priceTo?: number | null;
   categoryID?: number | null;
+  categoryIDs?: number[] | null;
   brandAccessoryID?: number | null;
   sortBy?: string | null;
   sortDescending?: boolean;

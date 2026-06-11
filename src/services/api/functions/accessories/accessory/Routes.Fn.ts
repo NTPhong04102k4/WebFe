@@ -70,6 +70,7 @@ export const accessoryRouteFn = {
           priceFrom: params.priceFrom ?? undefined,
           priceTo: params.priceTo ?? undefined,
           categoryID: params.categoryID ?? undefined,
+          categoryIDs: params.categoryIDs?.length ? params.categoryIDs : undefined,
           brandAccessoryID: params.brandAccessoryID ?? undefined,
           sortBy: params.sortBy ?? undefined,
           sortDescending: params.sortDescending ?? false,

@@ -21,20 +21,16 @@ export default function AdminAccessoriesPage() {
     <div className="space-y-6">
       <AccessoryToolbar
         brandOptions={brandOptions}
-        categoryTreeItems={accessoryManager.categoryTreeItems}
+        categoryOptions={accessoryManager.categoryOptions}
         isCategoryLoading={accessoryManager.isCategoryLoading}
         isSyncing={accessoryManager.isSyncing}
-        search={accessoryManager.search}
         selectedBrand={accessoryManager.selectedBrand}
-        selectedCategory={accessoryManager.selectedCategory}
-        sortBy={accessoryManager.sortBy}
-        sortDescending={accessoryManager.sortDescending}
+        selectedCategories={accessoryManager.selectedCategories}
+        sortOption={accessoryManager.sortOption}
         onCreate={accessoryManager.openCreate}
-        onSearchChange={accessoryManager.setSearch}
         onSelectedBrandChange={accessoryManager.setSelectedBrand}
-        onSelectedCategoryChange={accessoryManager.setSelectedCategory}
-        onSortByChange={accessoryManager.setSortBy}
-        onSortDescendingChange={accessoryManager.setSortDescending}
+        onSelectedCategoriesChange={accessoryManager.setSelectedCategories}
+        onSortOptionChange={accessoryManager.setSortOption}
       />
 
       {accessoryManager.isLoading ? (

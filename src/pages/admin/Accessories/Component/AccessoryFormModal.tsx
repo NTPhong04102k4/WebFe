@@ -156,36 +156,30 @@ export function AccessoryFormModal({
         <Controller
           name="compatibleBrands"
           control={control}
-          render={({ field: { value, onChange } }) => {
-            console.log("[AccessoryFormModal] compatibleBrands value=", value, "carBrandOptions=", carBrandOptions);
-            return (
-              <MultiCombobox
-                label="Hãng xe tương thích"
-                placeholder="Chọn hãng xe"
-                options={carBrandOptions}
-                value={value}
-                onChange={onChange}
-                loading={isCarBrandLoading}
-              />
-            );
-          }}
+          render={({ field: { value, onChange } }) => (
+            <MultiCombobox
+              label="Hãng xe tương thích"
+              placeholder="Chọn hãng xe"
+              options={carBrandOptions}
+              value={value}
+              onChange={onChange}
+              loading={isCarBrandLoading}
+            />
+          )}
         />
         <Controller
           name="compatibleBodyTypes"
           control={control}
-          render={({ field: { value, onChange } }) => {
-            console.log("[AccessoryFormModal] compatibleBodyTypes value=", value, "bodyTypeOptions=", bodyTypeOptions);
-            return (
-              <MultiCombobox
-                label="Loại thân xe tương thích"
-                placeholder="Chọn loại thân xe"
-                options={bodyTypeOptions}
-                value={value}
-                onChange={onChange}
-                loading={isBodyTypeLoading}
-              />
-            );
-          }}
+          render={({ field: { value, onChange } }) => (
+            <MultiCombobox
+              label="Loại thân xe tương thích"
+              placeholder="Chọn loại thân xe"
+              options={bodyTypeOptions}
+              value={value}
+              onChange={onChange}
+              loading={isBodyTypeLoading}
+            />
+          )}
         />{" "}
         <div className="flex flex-col gap-4 ">
           <Input

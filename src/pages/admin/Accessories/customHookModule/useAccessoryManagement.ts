@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 
 import { notify } from "src/components/core";
-import type { ComboTreeItem, MultiComboboxOption } from "src/components/core";
+import type { MultiComboboxOption } from "src/components/core";
 import {
   useAccessoryDetail,
   useAccessoryList,
@@ -12,8 +11,7 @@ import {
 import { useBodyTypeList } from "src/query/body-type/useBodyTypeQueries";
 import { useBrandAccessoryList } from "src/query/brand-accessory/useBrandAccessoryQueries";
 import { useBrandCarList } from "src/query/brand-car/useBrandCarQueries";
-import { useServiceCategoryList } from "src/query/service-category/useServiceCategoryQueries";
-import { serviceCatalogApi } from "src/services/api/functions/serviceCatalog/serviceCatalog.api";
+import { useCategoryList } from "src/query/category/useCategoryQueries";
 import { useAuthStore } from "src/stores/authStore";
 import type {
   AccessoriesListItem,
@@ -106,16 +104,6 @@ function toCompatibleEntries(models: string[]): Array<[string, string]> {
     .filter((entry): entry is [string, string] => entry !== null);
 }
 
-function findTreeLabel(items: ComboTreeItem[], id: string): string | undefined {
-  for (const item of items) {
-    if (item.id === id) return item.label;
-    if (item.children) {
-      const found = findTreeLabel(item.children, id);
-      if (found) return found;
-    }
-  }
-}
-
 function formFromDetail(detail: AccessoryDetailResponse): AccessoryFormValues {
   const compatibleModels = parseCompatibleModels(detail.compatibleCarModels);
   const compatibleEntries = toCompatibleEntries(compatibleModels);
@@ -125,11 +113,6 @@ function formFromDetail(detail: AccessoryDetailResponse): AccessoryFormValues {
   const compatibleBodyTypes = compatibleEntries
     .filter(([key]) => key === BODY_TYPE_KEY)
     .map(([, value]) => value);
-
-  console.log("[formFromDetail] raw compatibleCarModels=", detail.compatibleCarModels);
-  console.log("[formFromDetail] parsed compatibleModels=", compatibleModels);
-  console.log("[formFromDetail] compatibleEntries=", compatibleEntries);
-  console.log("[formFromDetail] compatibleBrands=", compatibleBrands, "compatibleBodyTypes=", compatibleBodyTypes);
 
   return {
     accessoryCode: detail.accessoryCode ?? "",
@@ -156,30 +139,35 @@ function formFromDetail(detail: AccessoryDetailResponse): AccessoryFormValues {
 export function useAccessoryManagement() {
   const user = useAuthStore((state) => state.user);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategories, setSelectedCategoriesState] = useState<string[]>([]);
   const [selectedBrand, setSelectedBrand] = useState("");
-  const [sortBy, setSortBy] = useState("accessoryName");
-  const [sortDescending, setSortDescending] = useState(false);
+  const [sortOption, setSortOptionState] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectId, setSelectId] = useState<number | null>(null);
   const [deleteConfirmItem, setDeleteConfirmItem] =
     useState<AccessoriesListItem | null>(null);
   const pageSize = 10;
 
+  const [sortBy, sortDirection] = sortOption ? sortOption.split(":") : ["", ""];
+  const sortDescending = sortDirection === "desc";
+
   const listParams = useMemo(
     () => ({
       page,
       pageSize,
+      categoryID:
+        selectedCategories.length === 1 ? Number(selectedCategories[0]) : null,
+      categoryIDs:
+        selectedCategories.length > 1 ? selectedCategories.map(Number) : null,
       brandAccessoryID: selectedBrand ? Number(selectedBrand) : null,
-      sortBy,
+      sortBy: sortBy || null,
       sortDescending,
     }),
-    [page, pageSize, selectedBrand, sortBy, sortDescending],
+    [page, pageSize, selectedCategories, selectedBrand, sortBy, sortDescending],
   );
 
   const accessoryQuery = useAccessoryList(listParams);
-  const categoryQuery = useServiceCategoryList();
+  const categoryQuery = useCategoryList();
   const brandQuery = useBrandAccessoryList();
   const carBrandQuery = useBrandCarList();
   const bodyTypeQuery = useBodyTypeList();
@@ -205,47 +193,13 @@ export function useAccessoryManagement() {
     [bodyTypeQuery.data],
   );
 
-  const serviceCatalogQuery = useQuery({
-    queryKey: ["service-catalog", "tree-filter"],
-    queryFn: () =>
-      serviceCatalogApi.list({ page: 1, pageSize: 1000, isActive: true }),
-    staleTime: 5 * 60_000,
-  });
-
-  const categoryTreeItems = useMemo<ComboTreeItem[]>(() => {
-    const raw = serviceCatalogQuery.data as any;
-    const services: {
-      serviceID: number;
-      serviceName: string;
-      categoryID: number;
-      categoryName?: string | null;
-    }[] = raw?.data ?? raw?.items ?? [];
-
-    const catMap = new Map<
-      number,
-      { id: number; name: string; services: typeof services }
-    >();
-    for (const svc of services) {
-      if (!catMap.has(svc.categoryID)) {
-        catMap.set(svc.categoryID, {
-          id: svc.categoryID,
-          name: svc.categoryName ?? `Danh mục ${svc.categoryID}`,
-          services: [],
-        });
-      }
-      catMap.get(svc.categoryID)!.services.push(svc);
-    }
-
-    return Array.from(catMap.values()).map((cat) => ({
-      id: String(cat.id),
-      label: cat.name,
-      children: cat.services.map((svc) => ({
-        id: `svc_${svc.serviceID}`,
-        label: svc.serviceName,
-        meta: { categoryID: cat.id },
-      })),
-    }));
-  }, [serviceCatalogQuery.data]);
+  const categoryOptions = useMemo<MultiComboboxOption[]>(
+    () =>
+      (categoryQuery.data ?? [])
+        .filter((c) => c.isActive)
+        .map((c) => ({ value: String(c.categoryID), label: c.categoryName })),
+    [categoryQuery.data],
+  );
 
   const form = useForm<AccessoryFormValues>({
     defaultValues: emptyForm,
@@ -254,27 +208,7 @@ export function useAccessoryManagement() {
 
   const editingAccessory = detailQuery.data ?? null;
 
-  const accessories = useMemo(() => {
-    let items = accessoryQuery.data?.items ?? [];
-
-    if (selectedCategory) {
-      const catName = findTreeLabel(categoryTreeItems, selectedCategory);
-      if (catName) {
-        items = items.filter((item) => item.categoryName === catName);
-      }
-    }
-
-    const q = search.trim().toLowerCase();
-    if (q) {
-      items = items.filter((item) =>
-        [item.accessoryName, item.categoryName, item.brandName]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(q)),
-      );
-    }
-
-    return items;
-  }, [accessoryQuery.data?.items, search, selectedCategory, categoryTreeItems]);
+  const accessories = accessoryQuery.data?.items ?? [];
 
   const closeModal = () => {
     setModalOpen(false);
@@ -294,21 +228,13 @@ export function useAccessoryManagement() {
   };
 
   useEffect(() => {
-    console.log("[useAccessoryManagement] reset effect", {
-      modalOpen,
-      selectId,
-      editingAccessoryID: editingAccessory?.accessoryID,
-      editingAccessory,
-    });
     if (
       !modalOpen ||
       !editingAccessory ||
       selectId !== editingAccessory.accessoryID
     )
       return;
-    const formValues = formFromDetail(editingAccessory);
-    console.log("[useAccessoryManagement] form.reset values", formValues);
-    form.reset(formValues);
+    form.reset(formFromDetail(editingAccessory));
   }, [editingAccessory, selectId, form, modalOpen]);
 
   const submitForm = form.handleSubmit(async (values) => {
@@ -385,14 +311,14 @@ export function useAccessoryManagement() {
     brands: brandQuery.data ?? [],
     carBrandOptions,
     categories: categoryQuery.data ?? [],
-    categoryTreeItems,
+    categoryOptions,
     deleteConfirmItem,
     editingAccessory,
     error: (accessoryQuery.error ?? null) as Error | null,
     form,
     isBodyTypeLoading: bodyTypeQuery.isLoading,
     isCarBrandLoading: carBrandQuery.isLoading,
-    isCategoryLoading: serviceCatalogQuery.isLoading,
+    isCategoryLoading: categoryQuery.isLoading,
     isLoading:
       accessoryQuery.isLoading ||
       categoryQuery.isLoading ||
@@ -403,11 +329,9 @@ export function useAccessoryManagement() {
     modalOpen,
     page,
     pageSize,
-    search,
     selectedBrand,
-    selectedCategory,
-    sortBy,
-    sortDescending,
+    selectedCategories,
+    sortOption,
     totalPages: accessoryQuery.data?.totalPages ?? 1,
     closeModal,
     confirmDelete,
@@ -416,17 +340,18 @@ export function useAccessoryManagement() {
     openCreate,
     openEdit,
     setPage,
-    setSearch,
     setSelectedBrand: (value: string) => {
       setSelectedBrand(value);
       setPage(1);
     },
-    setSelectedCategory: (value: string) => {
-      setSelectedCategory(value);
+    setSelectedCategories: (value: string[]) => {
+      setSelectedCategoriesState(value);
       setPage(1);
     },
-    setSortBy,
-    setSortDescending,
+    setSortOption: (value: string) => {
+      setSortOptionState(value);
+      setPage(1);
+    },
     submitForm,
   };
 }

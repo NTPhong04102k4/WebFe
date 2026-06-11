@@ -1,6 +1,6 @@
 import type { UseFormReturn } from "react-hook-form";
 
-import type { ComboTreeItem, MultiComboboxOption } from "src/components/core";
+import type { MultiComboboxOption } from "src/components/core";
 import type {
   AccessoriesListItem,
   AccessoryDetailResponse,
@@ -9,9 +9,13 @@ import type { BrandAccessoryResponse } from "src/shared/types/Reponse/accessorie
 import type { CategoryResponse } from "src/shared/types/Reponse/category";
 
 export const ACCESSORY_SORT_OPTIONS = [
-  { label: "Ten phu kien", value: "accessoryName" },
-  { label: "Gia ban", value: "price" },
-  { label: "Ton kho", value: "stockQuantity" },
+  { label: "Mặc định", value: "" },
+  { label: "Tên: A → Z", value: "accessoryName:asc" },
+  { label: "Tên: Z → A", value: "accessoryName:desc" },
+  { label: "Giá: Tăng dần", value: "price:asc" },
+  { label: "Giá: Giảm dần", value: "price:desc" },
+  { label: "Tồn kho: Tăng dần", value: "stockQuantity:asc" },
+  { label: "Tồn kho: Giảm dần", value: "stockQuantity:desc" },
 ] as const;
 
 export type AccessoryFormValues = {
@@ -38,7 +42,7 @@ export type AccessoryManagerState = {
   brands: BrandAccessoryResponse[];
   carBrandOptions: MultiComboboxOption[];
   categories: CategoryResponse[];
-  categoryTreeItems: ComboTreeItem[];
+  categoryOptions: MultiComboboxOption[];
   deleteConfirmItem: AccessoriesListItem | null;
   editingAccessory: AccessoryDetailResponse | null;
   error: Error | null;
@@ -53,11 +57,9 @@ export type AccessoryManagerState = {
   modalOpen: boolean;
   page: number;
   pageSize: number;
-  search: string;
   selectedBrand: string;
-  selectedCategory: string;
-  sortBy: string;
-  sortDescending: boolean;
+  selectedCategories: string[];
+  sortOption: string;
   totalPages: number;
   closeModal: () => void;
   confirmDelete: () => void;
@@ -66,10 +68,8 @@ export type AccessoryManagerState = {
   openEdit: (item: AccessoriesListItem) => void;
   setDeleteConfirmItem: (item: AccessoriesListItem | null) => void;
   setPage: (page: number) => void;
-  setSearch: (value: string) => void;
   setSelectedBrand: (value: string) => void;
-  setSelectedCategory: (value: string) => void;
-  setSortBy: (value: string) => void;
-  setSortDescending: (value: boolean) => void;
+  setSelectedCategories: (value: string[]) => void;
+  setSortOption: (value: string) => void;
   submitForm: () => void;
 };
