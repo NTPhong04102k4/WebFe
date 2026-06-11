@@ -51,6 +51,10 @@ export function useCart() {
   };
 
   const addCar = async ({ carId, name, price, imagePath, discountAmount }: AddCarParams) => {
+    if (!user) {
+      notify.error("Bạn phải đăng nhập để thêm vào giỏ hàng");
+      return;
+    }
     if (isCustomer) {
       try {
         await mutations.addCar.mutateAsync({ carId, discountAmount });
@@ -71,6 +75,10 @@ export function useCart() {
     price,
     imagePath,
   }: AddAccessoryParams) => {
+    if (!user) {
+      notify.error("Bạn phải đăng nhập để thêm vào giỏ hàng");
+      return;
+    }
     if (isCustomer) {
       try {
         await mutations.addAccessory.mutateAsync({ accessoryId, quantity });

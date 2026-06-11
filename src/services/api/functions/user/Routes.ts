@@ -5,7 +5,6 @@ export const userRoute = {
   allUsers: "/user/admin/users/all",
   detailByKey: (gmailOrUserName: string) =>
     `/user/${encodeURIComponent(gmailOrUserName)}`,
-  adminUserById: (id: string | number) => `/user/admin/users/${id}`,
   fcmToken: "/user/fcm-token",
   sendGmailMessage: "/user/send-gmail-message",
 } as const;
