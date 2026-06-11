@@ -53,9 +53,10 @@ export default function CustomerCarsPage() {
   const [condition, setCondition] = useState(
     () => searchParams.get("condition") ?? "",
   );
-  const [statusCode, setStatusCode] = useState(
-    () => searchParams.get("statusCode") ?? "",
-  );
+  const [statusCodes, setStatusCodes] = useState<string[]>(() => {
+    const fromUrl = searchParams.get("statusCodes");
+    return fromUrl ? fromUrl.split(",").filter(Boolean) : ["AVAILABLE"];
+  });
   const [priceFrom, setPriceFrom] = useState<string>("");
   const [priceTo, setPriceTo] = useState<string>("");
 
@@ -66,10 +67,10 @@ export default function CustomerCarsPage() {
     if (brandCode) params.brandCode = brandCode;
     if (bodyCode) params.bodyCode = bodyCode;
     if (condition) params.condition = condition;
-    if (statusCode) params.statusCode = statusCode;
+    if (statusCodes.length) params.statusCodes = statusCodes.join(",");
     setSearchParams(params, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, brandCode, bodyCode, condition, statusCode]);
+  }, [search, brandCode, bodyCode, condition, statusCodes]);
 
   const priceFromNum = useMemo(() => {
     const n = Number(priceFrom);
@@ -108,7 +109,7 @@ export default function CustomerCarsPage() {
       priceFromNum,
       priceToNum,
       condition,
-      statusCode,
+      statusCodes,
     ],
     placeholderData: keepPreviousData,
     queryFn: () =>
@@ -121,7 +122,7 @@ export default function CustomerCarsPage() {
         ...(priceFromNum !== undefined ? { priceFrom: priceFromNum } : {}),
         ...(priceToNum !== undefined ? { priceTo: priceToNum } : {}),
         ...(condition ? { conditions: [condition] } : {}),
-        ...(statusCode ? { statusCodes: [statusCode] } : {}),
+        ...(statusCodes.length ? { statusCodes } : {}),
       }),
   });
 
@@ -138,7 +139,7 @@ export default function CustomerCarsPage() {
     setPriceFrom("");
     setPriceTo("");
     setCondition("");
-    setStatusCode("");
+    setStatusCodes(["AVAILABLE"]);
   };
 
   return (
@@ -170,7 +171,7 @@ export default function CustomerCarsPage() {
           brandCode={brandCode}
           bodyCode={bodyCode}
           condition={condition}
-          statusCode={statusCode}
+          statusCodes={statusCodes}
           priceFrom={priceFrom}
           priceTo={priceTo}
           brandOptions={brandOptions}
@@ -194,9 +195,9 @@ export default function CustomerCarsPage() {
             setPage(1);
             setCondition(v);
           }}
-          onStatusCodeChange={(v) => {
+          onStatusCodesChange={(v) => {
             setPage(1);
-            setStatusCode(v);
+            setStatusCodes(v);
           }}
           onPriceFromChange={(v) => {
             setPage(1);

@@ -1,6 +1,8 @@
 import { Input } from "@/components/core/Form/Input";
 import { Select } from "@/components/core/Select/Select";
 import type { SelectOption } from "@/components/core/Select/Select";
+import { MultiCombobox } from "@/components/core/MultiCombobox/MultiCombobox";
+import type { MultiComboboxOption } from "@/components/core/MultiCombobox/MultiCombobox";
 
 const CONDITION_OPTIONS: SelectOption[] = [
   { value: "new", label: "Xe mới nguyên" },
@@ -13,19 +15,19 @@ interface CarFiltersProps {
   brandCode: string;
   bodyCode: string;
   condition: string;
-  statusCode: string;
+  statusCodes: string[];
   priceFrom: string;
   priceTo: string;
   brandOptions: SelectOption[];
   bodyOptions: SelectOption[];
-  statusOptions: SelectOption[];
+  statusOptions: MultiComboboxOption[];
   brandsLoading: boolean;
   bodiesLoading: boolean;
   onSearchChange: (v: string) => void;
   onBrandCodeChange: (v: string) => void;
   onBodyCodeChange: (v: string) => void;
   onConditionChange: (v: string) => void;
-  onStatusCodeChange: (v: string) => void;
+  onStatusCodesChange: (v: string[]) => void;
   onPriceFromChange: (v: string) => void;
   onPriceToChange: (v: string) => void;
   onReset: () => void;
@@ -36,7 +38,7 @@ export function CarFilters({
   brandCode,
   bodyCode,
   condition,
-  statusCode,
+  statusCodes,
   priceFrom,
   priceTo,
   brandOptions,
@@ -48,7 +50,7 @@ export function CarFilters({
   onBrandCodeChange,
   onBodyCodeChange,
   onConditionChange,
-  onStatusCodeChange,
+  onStatusCodesChange,
   onPriceFromChange,
   onPriceToChange,
   onReset,
@@ -84,6 +86,13 @@ export function CarFilters({
           options={CONDITION_OPTIONS}
           placeholder="Tất cả"
           onChange={(e) => onConditionChange(e.target.value)}
+        />
+        <MultiCombobox
+          label="Trạng thái xe"
+          options={statusOptions}
+          value={statusCodes}
+          onChange={onStatusCodesChange}
+          placeholder="Tất cả trạng thái"
         />
 
         <Input
