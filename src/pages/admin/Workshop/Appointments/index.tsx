@@ -401,12 +401,15 @@ export default function WorkshopAppointmentsPage() {
           const canCheckIn =
             (appt.status === "Confirmed" || appt.status === "Scheduled") &&
             !appt.workOrderID;
+          const canConfirm = appt.status === "Pending" || appt.status === "Scheduled";
           return (
             <div className="flex flex-wrap gap-2">
               <ActionButton onClick={() => setDetailId(appt.appointmentID)}>Xem</ActionButton>
-              <ActionButton onClick={() => confirmAppointment(appt.appointmentID)}>
-                Xác nhận
-              </ActionButton>
+              {canConfirm && (
+                <ActionButton onClick={() => confirmAppointment(appt.appointmentID)}>
+                  Xác nhận
+                </ActionButton>
+              )}
               {canCheckIn && (
                 <>
                   <ActionButton variant="primary" onClick={() => handleQuickCheckIn(appt)}>

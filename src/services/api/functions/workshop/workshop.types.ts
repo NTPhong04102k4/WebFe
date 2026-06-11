@@ -8,11 +8,13 @@ export type {
 // ── Status literal types ──────────────────────────────────────────────────────
 
 export type AppointmentStatus =
+  | "Pending"
   | "Scheduled"
   | "Confirmed"
   | "In-Progress"
   | "Completed"
-  | "Cancelled";
+  | "Cancelled"
+  | "NoShow";
 
 export type WorkOrderStatus =
   | "Open"
