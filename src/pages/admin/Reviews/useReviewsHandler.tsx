@@ -1,11 +1,9 @@
 import { useMemo, useState } from "react";
 import { Star } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { notify } from "src/components/core/Feedback/toast";
 import {
   useAllCarReviews,
   useServiceReviews,
-  useReviewMutations,
 } from "src/query/review/useReviewQueries";
 import type { DateTimeRangeValue } from "src/components/common/DateTimePicker";
 
@@ -26,23 +24,20 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export type ConfirmDelete = { type: "car" | "service"; id: number };
+// Đã ẩn chức năng xóa đánh giá
+// export type ConfirmDelete = { type: "car" | "service"; id: number };
 
 export function useReviewsHandler() {
   const [tab, setTab] = useState<"car" | "service">("car");
   const [page, setPage] = useState(1);
   const [starFilter, setStarFilter] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState<DateTimeRangeValue>({ fromDate: "", toDate: "" });
-  const [deletingCarId, setDeletingCarId] = useState<number | null>(null);
-  const [deletingServiceId, setDeletingServiceId] = useState<number | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<ConfirmDelete | null>(null);
 
   const fromDate = dateRange.fromDate ? dateRange.fromDate.slice(0, 10) : undefined;
   const toDate = dateRange.toDate ? dateRange.toDate.slice(0, 10) : undefined;
 
   const carQ = useAllCarReviews({ page, pageSize: PAGE_SIZE, fromDate, toDate });
   const serviceQ = useServiceReviews({ page, pageSize: PAGE_SIZE, locationId: 0, fromDate, toDate });
-  const { deleteCarReview, deleteServiceReview } = useReviewMutations();
 
   const carReviews = carQ.data?.data ?? [];
   const serviceReviews = serviceQ.data?.data ?? [];
@@ -56,24 +51,25 @@ export function useReviewsHandler() {
     ? (carReviews.reduce((s, r) => s + r.overallRating, 0) / carReviews.length).toFixed(1)
     : "—";
 
-  const handleConfirmDelete = () => {
-    if (!confirmDelete) return;
-    const { type, id } = confirmDelete;
-    setConfirmDelete(null);
-    if (type === "car") {
-      setDeletingCarId(id);
-      deleteCarReview.mutate(id, {
-        onSuccess: () => { notify.success("Đã xóa đánh giá"); setDeletingCarId(null); },
-        onError:   () => setDeletingCarId(null),
-      });
-    } else {
-      setDeletingServiceId(id);
-      deleteServiceReview.mutate(id, {
-        onSuccess: () => { notify.success("Đã xóa đánh giá dịch vụ"); setDeletingServiceId(null); },
-        onError:   () => setDeletingServiceId(null),
-      });
-    }
-  };
+  // Đã ẩn chức năng xóa đánh giá
+  // const handleConfirmDelete = () => {
+  //   if (!confirmDelete) return;
+  //   const { type, id } = confirmDelete;
+  //   setConfirmDelete(null);
+  //   if (type === "car") {
+  //     setDeletingCarId(id);
+  //     deleteCarReview.mutate(id, {
+  //       onSuccess: () => { notify.success("Đã xóa đánh giá"); setDeletingCarId(null); },
+  //       onError:   () => setDeletingCarId(null),
+  //     });
+  //   } else {
+  //     setDeletingServiceId(id);
+  //     deleteServiceReview.mutate(id, {
+  //       onSuccess: () => { notify.success("Đã xóa đánh giá dịch vụ"); setDeletingServiceId(null); },
+  //       onError:   () => setDeletingServiceId(null),
+  //     });
+  //   }
+  // };
 
   const carColumns = useMemo<ColumnDef<(typeof carReviews)[0]>[]>(() => [
     {
@@ -81,6 +77,15 @@ export function useReviewsHandler() {
       header: "#",
       cell: ({ row }) => (
         <span className="text-slate-400">{(page - 1) * PAGE_SIZE + row.index + 1}</span>
+      ),
+    },
+    {
+      accessorKey: "carName",
+      header: "Xe",
+      cell: ({ getValue, row }) => (
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          {String(getValue() || `#${row.original.carID}`)}
+        </span>
       ),
     },
     {
@@ -111,21 +116,22 @@ export function useReviewsHandler() {
         </span>
       ),
     },
-    {
-      id: "actions",
-      header: "Hành động",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <button
-          onClick={() => setConfirmDelete({ type: "car", id: row.original.reviewID })}
-          disabled={deletingCarId === row.original.reviewID}
-          className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40 dark:border-red-700 dark:text-red-400"
-        >
-          {deletingCarId === row.original.reviewID ? "Đang xóa..." : "Xóa"}
-        </button>
-      ),
-    },
-  ], [page, deletingCarId]);
+    // Đã ẩn cột hành động xóa đánh giá xe
+    // {
+    //   id: "actions",
+    //   header: "Hành động",
+    //   enableSorting: false,
+    //   cell: ({ row }) => (
+    //     <button
+    //       onClick={() => setConfirmDelete({ type: "car", id: row.original.reviewID })}
+    //       disabled={deletingCarId === row.original.reviewID}
+    //       className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40 dark:border-red-700 dark:text-red-400"
+    //     >
+    //       {deletingCarId === row.original.reviewID ? "Đang xóa..." : "Xóa"}
+    //     </button>
+    //   ),
+    // },
+  ], [page]);
 
   const serviceColumns = useMemo<ColumnDef<(typeof serviceReviews)[0]>[]>(() => [
     {
@@ -160,39 +166,34 @@ export function useReviewsHandler() {
         </span>
       ),
     },
-    {
-      id: "actions",
-      header: "Hành động",
-      enableSorting: false,
-      cell: ({ row }) => (
-        <button
-          onClick={() => setConfirmDelete({ type: "service", id: row.original.reviewID })}
-          disabled={deletingServiceId === row.original.reviewID}
-          className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40 dark:border-red-700 dark:text-red-400"
-        >
-          {deletingServiceId === row.original.reviewID ? "Đang xóa..." : "Xóa"}
-        </button>
-      ),
-    },
-  ], [page, deletingServiceId]);
+    // Đã ẩn cột hành động xóa đánh giá dịch vụ
+    // {
+    //   id: "actions",
+    //   header: "Hành động",
+    //   enableSorting: false,
+    //   cell: ({ row }) => (
+    //     <button
+    //       onClick={() => setConfirmDelete({ type: "service", id: row.original.reviewID })}
+    //       disabled={deletingServiceId === row.original.reviewID}
+    //       className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40 dark:border-red-700 dark:text-red-400"
+    //     >
+    //       {deletingServiceId === row.original.reviewID ? "Đang xóa..." : "Xóa"}
+    //     </button>
+    //   ),
+    // },
+  ], [page]);
 
   return {
     tab, setTab,
     page, setPage,
     starFilter, setStarFilter,
     dateRange, setDateRange,
-    confirmDelete, setConfirmDelete,
     carQ, serviceQ,
     carReviews: filter(carReviews),
     serviceReviews: filter(serviceReviews),
     carTotal, carPages,
     avgRating,
     serviceTotal: serviceQ.data?.totalCount ?? serviceReviews.length,
-    handleConfirmDelete,
-    isConfirmDeleting:
-      confirmDelete?.type === "car"
-        ? deleteCarReview.isPending
-        : deleteServiceReview.isPending,
     carColumns,
     serviceColumns,
   };

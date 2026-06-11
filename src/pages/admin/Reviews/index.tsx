@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import { DataTable, Modal } from "src/components/core";
+import { DataTable } from "src/components/core";
 import { DateTimePicker } from "src/components/common/DateTimePicker";
 import { useReviewsHandler } from "./useReviewsHandler";
 
@@ -65,6 +65,7 @@ export default function AdminReviewsPage() {
           <DateTimePicker
             label="Khoảng ngày"
             type="date"
+            inline
             value={h.dateRange}
             onChange={(v) => { h.setDateRange(v); h.setPage(1); }}
             className="flex-1 min-w-[280px]"
@@ -126,7 +127,8 @@ export default function AdminReviewsPage() {
         </div>
       )}
 
-      <Modal
+      {/* Đã ẩn chức năng xóa đánh giá */}
+      {/* <Modal
         open={!!h.confirmDelete}
         title="Xác nhận xóa đánh giá"
         onClose={() => h.setConfirmDelete(null)}
@@ -154,7 +156,7 @@ export default function AdminReviewsPage() {
           Bạn có chắc muốn xóa đánh giá{h.confirmDelete?.type === "service" ? " dịch vụ" : ""} này?
           Hành động này không thể hoàn tác.
         </p>
-      </Modal>
+      </Modal> */}
     </div>
   );
 }

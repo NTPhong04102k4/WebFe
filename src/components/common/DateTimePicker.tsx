@@ -9,6 +9,8 @@ type DateTimePickerProps = {
   onChange: (value: DateTimeRangeValue) => void;
   className?: string;
   type?: "date" | "datetime-local";
+  /** Hiển thị label và 2 ô ngày trên cùng 1 hàng thay vì xuống dòng */
+  inline?: boolean;
 };
 
 export function DateTimePicker({
@@ -17,7 +19,32 @@ export function DateTimePicker({
   onChange,
   className = "",
   type = "datetime-local",
+  inline = false,
 }: DateTimePickerProps) {
+  const inputClassName =
+    "rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-300 dark:focus:ring-blue-300/30";
+
+  if (inline) {
+    return (
+      <div className={`flex flex-wrap items-center gap-2 ${className}`}>
+        <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{label}</span>
+        <input
+          type={type}
+          value={value.fromDate}
+          onChange={(event) => onChange({ ...value, fromDate: event.target.value })}
+          className={inputClassName}
+        />
+        <span className="text-sm text-slate-500 dark:text-slate-400">-</span>
+        <input
+          type={type}
+          value={value.toDate}
+          onChange={(event) => onChange({ ...value, toDate: event.target.value })}
+          className={inputClassName}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="text-sm font-medium text-slate-800 dark:text-slate-100">{label}</div>
@@ -30,7 +57,7 @@ export function DateTimePicker({
             type={type}
             value={value.fromDate}
             onChange={(event) => onChange({ ...value, fromDate: event.target.value })}
-            className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-300 dark:focus:ring-blue-300/30"
+            className={`w-full ${inputClassName}`}
           />
         </label>
         <label className="space-y-1">
@@ -41,7 +68,7 @@ export function DateTimePicker({
             type={type}
             value={value.toDate}
             onChange={(event) => onChange({ ...value, toDate: event.target.value })}
-            className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25 dark:border-slate-500 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-300 dark:focus:ring-blue-300/30"
+            className={`w-full ${inputClassName}`}
           />
         </label>
       </div>
