@@ -20,7 +20,7 @@ export const notify = {
         border: "1px solid #bbf7d0",
       },
       iconTheme: { primary: "#16a34a", secondary: "#f0fdf4" },
-      duration: 3000,
+      duration: 2000,
     }),
 
   /** Thao tác CRUD thất bại hoặc lỗi hệ thống */
@@ -33,7 +33,7 @@ export const notify = {
         border: "1px solid #fecaca",
       },
       iconTheme: { primary: "#dc2626", secondary: "#fef2f2" },
-      duration: 4000,
+      duration: 3000,
     }),
 
   /** Điều kiện chưa đủ / thông báo trung tính (không phải lỗi) */
@@ -46,7 +46,7 @@ export const notify = {
         color: "#1e40af",
         border: "1px solid #bfdbfe",
       },
-      duration: 3500,
+      duration: 2500,
     }),
 
   loading: (message: string) =>

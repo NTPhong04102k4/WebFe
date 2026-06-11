@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
@@ -33,7 +33,7 @@ export default function CustomerCarsPage() {
     });
   };
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: brandCars = [], isLoading: brandsLoading } = useBrandCarList();
   const { data: bodyTypes = [], isLoading: bodiesLoading } = useBodyTypeList();
   const { data: carStatuses = [] } = useCarStatusList();
@@ -58,6 +58,18 @@ export default function CustomerCarsPage() {
   );
   const [priceFrom, setPriceFrom] = useState<string>("");
   const [priceTo, setPriceTo] = useState<string>("");
+
+  // Đồng bộ filter hiện tại lên URL để giữ trạng thái khi reload/share link
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (search) params.search = search;
+    if (brandCode) params.brandCode = brandCode;
+    if (bodyCode) params.bodyCode = bodyCode;
+    if (condition) params.condition = condition;
+    if (statusCode) params.statusCode = statusCode;
+    setSearchParams(params, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, brandCode, bodyCode, condition, statusCode]);
 
   const priceFromNum = useMemo(() => {
     const n = Number(priceFrom);

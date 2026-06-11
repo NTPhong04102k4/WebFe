@@ -250,7 +250,7 @@ export default function CustomerChatPage() {
 
       <div className="flex flex-col md:grid flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:grid-cols-[340px_1fr]">
         {/* Left Column */}
-        <div className="flex flex-col border-b md:border-b-0 md:border-r border-slate-200 overflow-hidden h-[25vh] md:h-full shrink-0">
+        <div className="flex flex-col border-b md:border-b-0 md:border-r border-slate-200 overflow-y-auto max-h-[45vh] md:h-full md:overflow-hidden shrink-0">
           <div className="border-b border-slate-100 bg-slate-50/50 p-4 shrink-0">
             <h2 className="font-semibold text-slate-800 flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-slate-500" />

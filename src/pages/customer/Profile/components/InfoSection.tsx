@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -8,6 +8,7 @@ import {
   profileEditSchema,
   type ProfileEditValues,
 } from "@/query/user/useProfileQuery";
+import { useUnsavedChangesStore } from "@/stores/unsavedChangesStore";
 
 const GENDER_LABEL: Record<string, string> = {
   Male: "Nam",
@@ -58,6 +59,14 @@ export function InfoSection({ defaultValues, onSave, isSaving }: InfoSectionProp
     resolver: zodResolver(profileEditSchema),
     values: defaultValues,
   });
+
+  const setDirty = useUnsavedChangesStore((s) => s.setDirty);
+
+  // Cảnh báo rời trang khi đang chỉnh sửa và có thay đổi chưa lưu
+  useEffect(() => {
+    setDirty(editing && isDirty, "Bạn đang chỉnh sửa thông tin cá nhân. Nếu rời khỏi trang, thay đổi chưa lưu sẽ bị mất.");
+    return () => setDirty(false);
+  }, [editing, isDirty, setDirty]);
 
   const handleCancel = () => {
     reset(defaultValues);

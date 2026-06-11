@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Car,
   ShoppingCart,
@@ -14,6 +14,7 @@ import {
   Mail,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
+import { useUnsavedChangesStore } from "@/stores/unsavedChangesStore";
 import { useCart } from "@/hooks/useCart";
 import { notify } from "@/components/core/Feedback/toast";
 import { Modal, Input } from "@/components/core";
@@ -38,6 +39,47 @@ export default function CustomerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
+
+  const isDirty = useUnsavedChangesStore((s) => s.isDirty);
+  const dirtyMessage = useUnsavedChangesStore((s) => s.message);
+  const setDirty = useUnsavedChangesStore((s) => s.setDirty);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+
+  // Cảnh báo khi đóng/refresh tab nếu có thay đổi chưa lưu
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
+  // Chặn điều hướng nội bộ (click vào Link) khi có thay đổi chưa lưu
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleClick = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement)?.closest("a");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || !href.startsWith("/")) return;
+      if (href === location.pathname + location.search) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      setPendingNavigation(href);
+    };
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
+  }, [isDirty, location.pathname, location.search]);
+
+  const handleConfirmLeave = () => {
+    setDirty(false);
+    const target = pendingNavigation;
+    setPendingNavigation(null);
+    if (target) navigate(target);
+  };
 
   // Reset scroll về đầu trang mỗi khi chuyển route — <main> là vùng scroll riêng,
   // window.scrollTo không có tác dụng vì nó dùng overflow-y-auto
@@ -176,13 +218,18 @@ export default function CustomerLayout() {
           {/* Desktop nav */}
           <nav className="hidden items-center gap-6 md:flex">
             {navLinks.map((l) => (
-              <Link
+              <NavLink
                 key={l.to}
                 to={l.to}
-                className="text-sm font-medium text-slate-600 transition-colors hover:text-blue-600"
+                end={l.to === "/"}
+                className={({ isActive }) =>
+                  `text-sm font-medium transition-colors hover:text-blue-600 ${
+                    isActive ? "text-blue-600" : "text-slate-600"
+                  }`
+                }
               >
                 {l.label}
-              </Link>
+              </NavLink>
             ))}
           </nav>
 
@@ -308,14 +355,19 @@ export default function CustomerLayout() {
         {menuOpen && (
           <div className="border-t border-slate-100 bg-white px-4 pb-4 md:hidden">
             {navLinks.map((l) => (
-              <Link
+              <NavLink
                 key={l.to}
                 to={l.to}
+                end={l.to === "/"}
                 onClick={() => setMenuOpen(false)}
-                className="block py-3 text-sm font-medium text-slate-700 hover:text-blue-600"
+                className={({ isActive }) =>
+                  `block py-3 text-sm font-medium transition-colors hover:text-blue-600 ${
+                    isActive ? "text-blue-600" : "text-slate-700"
+                  }`
+                }
               >
                 {l.label}
-              </Link>
+              </NavLink>
             ))}
           </div>
         )}
@@ -448,6 +500,37 @@ export default function CustomerLayout() {
           </div>
         </div>
       </Modal>
+
+      {/* Cảnh báo rời trang khi có thay đổi chưa lưu */}
+      {pendingNavigation !== null && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPendingNavigation(null);
+          }}
+        >
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+            <h3 className="text-base font-semibold text-slate-900">Rời khỏi trang?</h3>
+            <p className="mt-2 text-sm text-slate-500">{dirtyMessage}</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingNavigation(null)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Tiếp tục chỉnh sửa
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmLeave}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Rời khỏi trang
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

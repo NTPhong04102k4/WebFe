@@ -18,12 +18,35 @@ export const profileEditSchema = z.object({
   identityNumber: z.string().min(1, "IdentiNumber là bắt buộc."),
   phone: z
     .string()
-    .regex(/^[0-9]{10,11}$/, "Số điện thoại phải có 10-11 chữ số")
-    .or(z.literal(""))
-    .optional(),
+    .optional()
+    .refine((val) => !val || /^[0-9]{10,11}$/.test(val), {
+      message: "Số điện thoại phải có 10-11 chữ số",
+    }),
   address: z.string().max(200).optional(),
   gender: z.enum(["Male", "Female", "Other"]).optional(),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z
+    .string()
+    .optional()
+    .refine((val) => !val || !Number.isNaN(new Date(val).getTime()), {
+      message: "Ngày sinh không hợp lệ",
+    })
+    .refine((val) => !val || new Date(val) <= new Date(), {
+      message: "Ngày sinh không được ở tương lai",
+    })
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const dob = new Date(val);
+        const today = new Date();
+        const eighteenYearsAgo = new Date(
+          today.getFullYear() - 18,
+          today.getMonth(),
+          today.getDate(),
+        );
+        return dob <= eighteenYearsAgo;
+      },
+      { message: "Bạn phải đủ 18 tuổi" },
+    ),
 });
 
 export type ProfileEditValues = z.infer<typeof profileEditSchema>;
