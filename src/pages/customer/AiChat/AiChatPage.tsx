@@ -439,9 +439,14 @@ export default function AiChatPage() {
   };
 
   // ── Effects ────────────────────────────────────────────────────────────────
+  // Auto-select the most recent session only on first load — not after
+  // handleNewChat sets sessionId back to null for a fresh conversation.
+  const hasAutoSelectedRef = useRef(false);
   useEffect(() => {
+    if (hasAutoSelectedRef.current) return;
     if (sessionId == null && sessionsQuery.data?.data?.[0]) {
       setSessionId(sessionsQuery.data.data[0].sessionId);
+      hasAutoSelectedRef.current = true;
     }
   }, [sessionId, sessionsQuery.data]);
 

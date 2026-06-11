@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import {
   Car,
   ShoppingCart,
@@ -43,7 +49,9 @@ export default function CustomerLayout() {
   const isDirty = useUnsavedChangesStore((s) => s.isDirty);
   const dirtyMessage = useUnsavedChangesStore((s) => s.message);
   const setDirty = useUnsavedChangesStore((s) => s.setDirty);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+    null,
+  );
 
   // Cảnh báo khi đóng/refresh tab nếu có thay đổi chưa lưu
   useEffect(() => {
@@ -510,7 +518,9 @@ export default function CustomerLayout() {
           }}
         >
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
-            <h3 className="text-base font-semibold text-slate-900">Rời khỏi trang?</h3>
+            <h3 className="text-base font-semibold text-slate-900">
+              Rời khỏi trang?
+            </h3>
             <p className="mt-2 text-sm text-slate-500">{dirtyMessage}</p>
             <div className="mt-5 flex justify-end gap-2">
               <button
