@@ -23,6 +23,13 @@ const ORDER_BADGE: Record<string, { className: string; label: string }> = {
   Cancelled:  { className: "bg-slate-100 text-slate-500",  label: "Đã hủy" },
 };
 
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  BANK_TRANSFER: "Chuyển khoản",
+  NAPAS_BANK_TRANSFER: "Chuyển khoản (Napas)",
+  CASH: "Tiền mặt",
+  MIXED: "Kết hợp",
+};
+
 function badge(map: Record<string, { className: string; label: string }>, key: string) {
   const { className, label } = map[key] ?? { className: "bg-slate-100 text-slate-600", label: key };
   return (
@@ -32,10 +39,75 @@ function badge(map: Record<string, { className: string; label: string }>, key: s
   );
 }
 
+function paymentMethodLabel(method: string) {
+  return PAYMENT_METHOD_LABEL[method] ?? method;
+}
+
 function isPendingPayment(order: OrderViewModel) {
   return (
     (order.paymentStatus === "Pending" || order.paymentStatus === "PartialPaid") &&
     order.orderStatus !== "Cancelled"
+  );
+}
+
+interface OrderItemPreview {
+  key: string;
+  name: string;
+  imagePath?: string | null;
+  quantity: number;
+  unitPrice: number;
+}
+
+function getOrderItems(order: OrderViewModel): OrderItemPreview[] {
+  const cars = (order.cars ?? []).map((car) => ({
+    key: `car-${car.carID}`,
+    name: car.carName,
+    imagePath: car.carImagePath,
+    quantity: 1,
+    unitPrice: car.unitPrice,
+  }));
+  const accessories = (order.accessories ?? []).map((acc) => ({
+    key: `acc-${acc.accessoryID}`,
+    name: acc.accessoryName,
+    imagePath: acc.accessoryImagePath,
+    quantity: acc.quantity,
+    unitPrice: acc.unitPrice,
+  }));
+  return [...cars, ...accessories];
+}
+
+function OrderItemsPreview({ order }: { order: OrderViewModel }) {
+  const items = getOrderItems(order);
+  if (items.length === 0) return null;
+
+  const visible = items.slice(0, 2);
+  const remaining = items.length - visible.length;
+
+  return (
+    <div className="mt-2 space-y-1.5">
+      {visible.map((item) => (
+        <div key={item.key} className="flex items-center gap-2 text-sm">
+          {item.imagePath ? (
+            <img
+              src={item.imagePath}
+              alt={item.name}
+              className="h-10 w-10 shrink-0 rounded-lg border border-slate-200 object-cover"
+            />
+          ) : (
+            <div className="h-10 w-10 shrink-0 rounded-lg border border-slate-200 bg-slate-100" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-medium text-slate-800">{item.name}</p>
+            <p className="text-xs text-slate-500">
+              x{item.quantity} · {formatCurrency(item.unitPrice)}
+            </p>
+          </div>
+        </div>
+      ))}
+      {remaining > 0 && (
+        <p className="text-xs text-slate-400">+{remaining} sản phẩm khác</p>
+      )}
+    </div>
   );
 }
 
@@ -87,16 +159,16 @@ export default function CustomerOrdersPage() {
                 {pending.map((order) => (
                   <div
                     key={order.orderID}
-                    className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between"
                   >
-                    <div className="flex flex-col gap-1">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-slate-900">{order.orderNumber}</span>
                         {badge(ORDER_BADGE, order.orderStatus)}
                         {badge(PAYMENT_BADGE, order.paymentStatus)}
                       </div>
                       <div className="text-sm text-slate-500">
-                        {order.orderType} •{" "}
+                        {order.orderType} • {paymentMethodLabel(order.paymentMethod)} •{" "}
                         <span className="font-semibold text-blue-700">
                           {formatCurrency(order.totalAmount)}
                         </span>
@@ -104,6 +176,7 @@ export default function CustomerOrdersPage() {
                       {order.paymentStatus === "PartialPaid" && (
                         <p className="text-xs text-blue-600">Đã thanh toán một phần — vào đơn để xem tiến trình</p>
                       )}
+                      <OrderItemsPreview order={order} />
                     </div>
                     <Link
                       to={`/orders/${order.orderNumber}`}
@@ -128,15 +201,18 @@ export default function CustomerOrdersPage() {
                   <Link
                     key={order.orderID}
                     to={`/orders/${order.orderNumber}`}
-                    className="flex flex-col gap-2 p-4 hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-2 p-4 hover:bg-slate-50 sm:flex-row sm:items-start sm:justify-between"
                   >
-                    <div className="flex flex-col gap-1">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-slate-900">{order.orderNumber}</span>
                         {badge(ORDER_BADGE, order.orderStatus)}
                         {badge(PAYMENT_BADGE, order.paymentStatus)}
                       </div>
-                      <span className="text-sm text-slate-500">{order.orderType}</span>
+                      <span className="text-sm text-slate-500">
+                        {order.orderType} • {paymentMethodLabel(order.paymentMethod)}
+                      </span>
+                      <OrderItemsPreview order={order} />
                     </div>
                     <span className="shrink-0 font-semibold text-blue-700">
                       {formatCurrency(order.totalAmount)}

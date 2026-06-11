@@ -10,6 +10,70 @@ import { useWorkOrdersHandler } from "./useWorkOrdersHandler";
 import { ServiceReviewPanel } from "./components/ServiceReviewPanel";
 import shell from "../account-shell.module.scss";
 
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  Cash: "Tiền mặt",
+  Transfer: "Chuyển khoản",
+  Mixed: "Kết hợp",
+};
+
+function paymentMethodLabel(method?: string | null) {
+  if (!method) return "—";
+  return PAYMENT_METHOD_LABEL[method] ?? method;
+}
+
+function WorkOrderItemsPreview({ workOrder }: { workOrder: WorkOrderViewModel }) {
+  const items = [
+    ...(workOrder.services ?? []).map((s) => ({
+      key: `svc-${s.workOrderServiceID}`,
+      name: s.serviceName ?? `Dịch vụ #${s.serviceID}`,
+      imagePath: null as string | null | undefined,
+      quantity: 1,
+      unitPrice: s.unitPrice,
+    })),
+    ...(workOrder.parts ?? []).map((p) => ({
+      key: `part-${p.workOrderPartID}`,
+      name: p.accessoryName ?? `Phụ tùng #${p.accessoryID}`,
+      imagePath: p.accessoryImagePath,
+      quantity: p.quantity,
+      unitPrice: p.unitPrice,
+    })),
+  ];
+
+  if (items.length === 0) return <span style={{ color: "#94a3b8" }}>—</span>;
+
+  const visible = items.slice(0, 2);
+  const remaining = items.length - visible.length;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 180 }}>
+      {visible.map((item) => (
+        <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {item.imagePath ? (
+            <img
+              src={item.imagePath}
+              alt={item.name}
+              style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", border: "1px solid #e2e8f0", flexShrink: 0 }}
+            />
+          ) : (
+            <div style={{ width: 28, height: 28, borderRadius: 6, background: "#f1f5f9", flexShrink: 0 }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: 0, fontWeight: 500, fontSize: "0.85rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {item.name}
+            </p>
+            <p style={{ margin: 0, fontSize: "0.75rem", color: "#64748b" }}>
+              x{item.quantity} · {item.unitPrice.toLocaleString("vi-VN")} ₫
+            </p>
+          </div>
+        </div>
+      ))}
+      {remaining > 0 && (
+        <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>+{remaining} mục khác</span>
+      )}
+    </div>
+  );
+}
+
 export default function WorkOrdersPage() {
   const h = useWorkOrdersHandler();
 
@@ -20,6 +84,16 @@ export default function WorkOrdersPage() {
         accessorKey: "status",
         header: "Trạng thái",
         cell: ({ getValue }) => <span className={shell.badge}>{getValue<string>()}</span>,
+      },
+      {
+        id: "items",
+        header: "Dịch vụ / Phụ tùng",
+        cell: ({ row }) => <WorkOrderItemsPreview workOrder={row.original} />,
+      },
+      {
+        accessorKey: "paymentMethod",
+        header: "Phương thức TT",
+        cell: ({ getValue }) => paymentMethodLabel(getValue<string | null | undefined>()),
       },
       {
         accessorKey: "totalAmount",

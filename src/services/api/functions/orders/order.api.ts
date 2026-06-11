@@ -53,6 +53,7 @@ export interface OrderCarDetail {
   unitPrice: number;
   discountAmount: number;
   totalPrice: number;
+  carImagePath?: string | null;
 }
 
 export interface OrderAccessoryDetail {
@@ -62,6 +63,7 @@ export interface OrderAccessoryDetail {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  accessoryImagePath?: string | null;
 }
 
 export interface OrderViewModel {

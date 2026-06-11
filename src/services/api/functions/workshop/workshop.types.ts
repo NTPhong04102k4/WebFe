@@ -274,6 +274,7 @@ export interface WorkOrderPartViewModel {
   workOrderPartID: number;
   accessoryID: number;
   accessoryName?: string | null;
+  accessoryImagePath?: string | null;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
