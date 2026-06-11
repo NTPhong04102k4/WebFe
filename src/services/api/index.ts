@@ -15,6 +15,9 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // ASP.NET Core array model binding expects repeated keys (key=1&key=2),
+  // not axios's "key[]=1&key[]=2" format (indexes: null -> repeated keys).
+  paramsSerializer: { indexes: null },
 });
 
 registerAuthHeaderCleanup(() => {
