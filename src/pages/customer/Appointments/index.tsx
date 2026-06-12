@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { formatCurrency } from "@/common/utils/formatCurrency";
+import { WorkflowStepper } from "@/components/common/WorkflowStepper";
+import {
+  APPOINTMENT_PROGRESS_STEPS,
+  appointmentProgressCancelledLabel,
+  appointmentProgressStepIndex,
+} from "@/common/utils/appointmentProgress";
 import { notify } from "@/components/core/Feedback/toast";
 import { useAuthStore } from "@/stores/authStore";
 import {
@@ -36,14 +42,9 @@ function BookingModal({
   onClose: () => void;
   preselectedServiceID: number | null;
 }) {
-  const user = useAuthStore((s) => s.user);
-  const rawUID = user?.userUUID || user?.userID || user?.id;
-  const userID = rawUID != null ? String(rawUID) : undefined;
-
   const { data: vehiclesRes } = useCustomerVehicles({
     page: 1,
     pageSize: 100,
-    userId: userID,
   });
   const vehicles = vehiclesRes?.data ?? [];
 
@@ -523,6 +524,7 @@ function StatusBadge({ status }: { status: string }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function CustomerAppointmentsPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedServiceID = searchParams.get("serviceID")
     ? Number(searchParams.get("serviceID"))
@@ -610,6 +612,13 @@ export default function CustomerAppointmentsPage() {
                     <div className="mt-0.5 text-sm text-slate-500">
                       {new Date(appt.scheduledDateTime).toLocaleString("vi-VN")}
                     </div>
+                    <div className="mt-3 min-w-[420px]">
+                      <WorkflowStepper
+                        steps={APPOINTMENT_PROGRESS_STEPS}
+                        currentIndex={appointmentProgressStepIndex(appt) ?? 0}
+                        cancelledLabel={appointmentProgressCancelledLabel(appt)}
+                      />
+                    </div>
                     {Array.isArray((appt as any).services) &&
                       (appt as any).services.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
@@ -625,26 +634,37 @@ export default function CustomerAppointmentsPage() {
                       )}
                   </div>
 
-                  {["Pending", "Scheduled", "Confirmed"].includes(
-                    appt.status,
-                  ) && (
-                    <button
-                      type="button"
-                      className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-                      disabled={cancelAppointment.isPending}
-                      onClick={() =>
-                        cancelAppointment.mutate({
-                          id: appt.appointmentID,
-                          body: {
-                            status: "Cancelled",
-                            cancelReason: "Khách hàng hủy",
-                          },
-                        })
-                      }
-                    >
-                      Hủy lịch
-                    </button>
-                  )}
+                  <div className="flex flex-col gap-2">
+                    {appt.workOrderID && (
+                      <button
+                        type="button"
+                        className="rounded-lg border border-blue-200 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50"
+                        onClick={() => navigate(`/account/work-orders?workOrderId=${appt.workOrderID}`)}
+                      >
+                        Xem tiến trình
+                      </button>
+                    )}
+                    {["Pending", "Scheduled", "Confirmed"].includes(
+                      appt.status,
+                    ) && (
+                      <button
+                        type="button"
+                        className="rounded-lg border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        disabled={cancelAppointment.isPending}
+                        onClick={() =>
+                          cancelAppointment.mutate({
+                            id: appt.appointmentID,
+                            body: {
+                              status: "Cancelled",
+                              cancelReason: "Khách hàng hủy",
+                            },
+                          })
+                        }
+                      >
+                        Hủy lịch
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

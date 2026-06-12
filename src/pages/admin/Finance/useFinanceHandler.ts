@@ -26,6 +26,8 @@ export function useFinanceHandler() {
   const totalRevenue = summary?.totalRevenue ?? revenueQ.data?.totalRevenue ?? 0;
   const orderRevenue = summary?.orderRevenue ?? revenueQ.data?.totalRevenue ?? 0;
   const workshopRevenue = summary?.workshopRevenue ?? 0;
+  const cashRevenue = summary?.cashRevenue ?? 0;
+  const transferRevenue = summary?.transferRevenue ?? 0;
   const totalExpense = summary?.totalExpense ?? fallbackExpense;
   const payrollExpense = summary?.payrollExpense ?? fallbackExpense;
   const partsExpense = summary?.partsExpense ?? 0;
@@ -53,6 +55,8 @@ export function useFinanceHandler() {
     totalRevenue,
     orderRevenue,
     workshopRevenue,
+    cashRevenue,
+    transferRevenue,
     totalExpense,
     payrollExpense,
     partsExpense,

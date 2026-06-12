@@ -8,6 +8,7 @@ import type {
   PagedResult,
   PayrollListParams,
   PayrollPaymentRequest,
+  PayrollPreview,
   PayrollRequest,
   PayrollViewModel,
   SkillRequest,
@@ -280,6 +281,14 @@ export const hrApi = {
 
   deletePayroll: async (id: number, options?: ApiRequestOptions) => {
     await apiClient.delete(API.hr.payroll(id), withSignal({}, options));
+  },
+
+  /** GET /hr/payrolls/preview?staffId=X&year=Y&month=Z */
+  previewPayroll: async (staffId: number, year: number, month: number) => {
+    const res = await apiClient.get<OperationResult<PayrollPreview>>(API.hr.payrollPreview, {
+      params: { staffId, year, month },
+    });
+    return res.data;
   },
 
   /** POST /hr/payrolls/recalculate?year=X&month=Y */

@@ -55,7 +55,7 @@ export default function AdminPayrollPage() {
       <Modal
         open={h.open}
         onClose={() => h.setOpen(false)}
-        title={h.editing ? "Sửa bảng lương" : "Tạo bảng lương"}
+        title="Tạo bảng lương"
         size="xl"
         footer={
           <div className="flex justify-end gap-2">
@@ -65,7 +65,7 @@ export default function AdminPayrollPage() {
         }
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Input label="Staff ID" type="number" value={h.form.staffID} disabled={Boolean(h.editing)} onChange={(e) => h.setForm({ ...h.form, staffID: Number(e.target.value) })} />
+          <Input label="Staff ID" type="number" value={h.form.staffID} onChange={(e) => h.setForm({ ...h.form, staffID: Number(e.target.value) })} />
           <Input label="Kỳ lương" type="date" value={h.form.payPeriod.slice(0, 10)} onChange={(e) => h.setForm({ ...h.form, payPeriod: e.target.value })} />
           <Input label="Lương cơ bản" type="number" value={h.form.baseSalary} onChange={(e) => h.setForm({ ...h.form, baseSalary: Number(e.target.value) })} />
           <Input label="Giờ làm" type="number" value={h.form.workingHours} onChange={(e) => h.setForm({ ...h.form, workingHours: Number(e.target.value) })} />
@@ -94,25 +94,6 @@ export default function AdminPayrollPage() {
       >
         <p className="text-sm text-slate-700 dark:text-slate-200">
           Xác nhận thanh toán bảng lương cho {h.payOpen?.staffFullName || h.payOpen?.staffID}?
-        </p>
-      </Modal>
-
-      <Modal
-        open={!!h.deleteConfirmItem}
-        onClose={() => h.setDeleteConfirmItem(null)}
-        title="Xác nhận xóa"
-        size="sm"
-        footer={
-          <div className="flex justify-end gap-2">
-            <button className="rounded-lg border px-4 py-2 text-sm" onClick={() => h.setDeleteConfirmItem(null)} disabled={h.isDeleting}>Hủy</button>
-            <button className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white disabled:opacity-60" onClick={h.confirmDelete} disabled={h.isDeleting}>
-              {h.isDeleting ? "Đang xóa..." : "Xóa"}
-            </button>
-          </div>
-        }
-      >
-        <p className="text-sm text-slate-700 dark:text-slate-200">
-          Xóa bảng lương của {h.deleteConfirmItem?.staffFullName || h.deleteConfirmItem?.staffID}? Hành động này không thể hoàn tác.
         </p>
       </Modal>
     </div>

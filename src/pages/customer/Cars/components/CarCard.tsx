@@ -54,9 +54,18 @@ export function CarCard({ car, img, inCompare, onToggleCompare, inCart, onAddToC
         <p className="mt-0.5 text-xs text-slate-500">{car.modelYear} • {car.condition}</p>
 
         <div className="mt-2 flex items-center justify-between gap-1.5">
-          <div className="text-sm font-bold text-blue-700">
-            {formatCurrency(car.salePrice ?? car.price)}
-          </div>
+          {car.statusCode === 'SOLD' ? (
+            <Link
+              to={`/cars/${car.carID}`}
+              className="rounded-lg bg-amber-500 px-2 py-1 text-xs font-semibold text-white hover:bg-amber-600"
+            >
+              Liên hệ để nhận hỗ trợ
+            </Link>
+          ) : (
+            <div className="text-sm font-bold text-blue-700">
+              {formatCurrency(car.salePrice ?? car.price)}
+            </div>
+          )}
           <div className="flex items-center gap-1">
             <Link
               to={`/cars/${car.carID}`}

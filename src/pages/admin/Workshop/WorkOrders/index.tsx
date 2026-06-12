@@ -24,12 +24,14 @@ import apiClient from "src/services/api";
 
 import {
   ActionButton,
+  ActionMenu,
   Badge,
   formatDate,
   formatMoney,
   getErrorMessage,
   PageHeader,
   TextareaField,
+  WorkflowStepper,
 } from "../workshopUi";
 import { workshopKeys } from "src/query/workshop/keys";
 
@@ -39,6 +41,7 @@ export const STATUS_LABELS: Record<string, string> = {
   WaitingParts: "Chờ phụ tùng",
   QualityCheck: "Kiểm tra chất lượng",
   Completed: "Hoàn thành",
+  AwaitingHandover: "Chờ bàn giao",
   Delivered: "Đã giao xe",
   Cancelled: "Đã hủy",
 };
@@ -102,12 +105,53 @@ const createDefaults: CreateForm = {
   customerComplaint: "",
 };
 
-const workStatuses = ["Open", "InProgress", "WaitingParts", "QualityCheck", "Completed", "Delivered", "Cancelled"];
+const workStatuses = ["Open", "InProgress", "WaitingParts", "QualityCheck", "Completed", "AwaitingHandover", "Delivered", "Cancelled"];
 const priorities = ["Low", "Normal", "High", "Urgent"];
 
+// ── Luồng trạng thái phiếu công việc ────────────────────────────────────────
+// Phải khớp với ValidStatusTransitions ở backend (WorkOrderServices.ChangeStatusAsync).
+// "Delivered" chỉ đạt được qua action "Bàn giao xe" (DeliverAsync), không qua đổi trạng thái thông thường.
+export const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
+  Open: ["InProgress", "Cancelled"],
+  InProgress: ["WaitingParts", "QualityCheck", "Cancelled"],
+  WaitingParts: ["InProgress", "Cancelled"],
+  QualityCheck: ["InProgress", "Completed", "Cancelled"],
+  Completed: ["AwaitingHandover"],
+  AwaitingHandover: [],
+  Delivered: [],
+  Cancelled: [],
+};
+
+/** True khi còn có thể đổi sang trạng thái khác qua action "Status". */
+function canChangeStatus(status: string): boolean {
+  return (VALID_STATUS_TRANSITIONS[status]?.length ?? 0) > 0;
+}
+
+export const WORK_ORDER_STEPS = ["Mở phiếu", "Đang xử lý", "Kiểm tra chất lượng", "Chờ bàn giao", "Đã giao xe"];
+
+/** Trả về index bước hiện tại (0-based), hoặc null nếu phiếu đã hủy. */
+function workOrderStepIndex(status: string): number | null {
+  switch (status) {
+    case "Open":
+      return 0;
+    case "InProgress":
+    case "WaitingParts":
+      return 1;
+    case "QualityCheck":
+      return 2;
+    case "Completed":
+    case "AwaitingHandover":
+      return 3;
+    case "Delivered":
+      return 4;
+    default:
+      return null; // Cancelled
+  }
+}
+
 function tone(status: string) {
-  if (status === "Completed" || status === "Delivered") return "green" as const;
-  if (status === "InProgress" || status === "QualityCheck") return "blue" as const;
+  if (status === "Delivered") return "green" as const;
+  if (status === "Completed" || status === "AwaitingHandover" || status === "InProgress" || status === "QualityCheck") return "blue" as const;
   if (status === "WaitingParts") return "amber" as const;
   if (status === "Cancelled") return "red" as const;
   return "slate" as const;
@@ -134,6 +178,7 @@ export default function WorkOrdersPage() {
   const createForm = useForm<CreateForm>({ defaultValues: createDefaults });
   const { register, handleSubmit, reset, setValue, watch } = createForm;
   const watchVehicleId = watch("customerVehicleID");
+  const watchLocationId = watch("locationID");
 
   const applyFilter = () => {
     setQuery({
@@ -200,17 +245,39 @@ export default function WorkOrdersPage() {
       {
         header: "Thao tác",
         enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex flex-wrap gap-2">
-            <ActionButton onClick={() => setDetailId(row.original.workOrderID)}>Xem</ActionButton>
-            <ActionButton onClick={() => setAction({ type: "status", workOrder: row.original })}>Status</ActionButton>
-            <ActionButton onClick={() => setAction({ type: "assign", workOrder: row.original })}>Gán KTV</ActionButton>
-            <ActionButton onClick={() => setAction({ type: "service", workOrder: row.original })}>Dịch vụ</ActionButton>
-            <ActionButton onClick={() => setAction({ type: "part", workOrder: row.original })}>Phụ tùng</ActionButton>
-            <ActionButton onClick={() => setAction({ type: "pay", workOrder: row.original })}>Thanh toán</ActionButton>
-            <ActionButton onClick={() => setPaymentInfoId(row.original.workOrderID)}>QR</ActionButton>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const wo = row.original;
+          const canPay = wo.paymentStatus !== "Paid" && wo.status !== "Cancelled";
+
+          const menuItems: Array<{ label: string; onClick: () => void }> = [];
+          if (wo.status === "Open") {
+            // Gán/đổi KTV chính: chỉ ở bước Mở — khi đã vào sửa chữa (InProgress+) coi như đã có KTV, ẩn action này
+            menuItems.push({ label: "Gán KTV", onClick: () => setAction({ type: "assign", workOrder: wo }) });
+          }
+          if (wo.status === "InProgress") {
+            // Chỉ thêm dịch vụ/phụ tùng khi phiếu đang xử lý (khớp ràng buộc backend)
+            menuItems.push(
+              { label: "Dịch vụ", onClick: () => setAction({ type: "service", workOrder: wo }) },
+              { label: "Phụ tùng", onClick: () => setAction({ type: "part", workOrder: wo }) },
+            );
+          }
+          if (canPay) {
+            menuItems.push(
+              { label: "Thanh toán", onClick: () => setAction({ type: "pay", workOrder: wo }) },
+              { label: "QR thanh toán", onClick: () => setPaymentInfoId(wo.workOrderID) },
+            );
+          }
+
+          return (
+            <div className="flex flex-wrap items-center gap-2">
+              <ActionButton onClick={() => setDetailId(wo.workOrderID)}>Xem</ActionButton>
+              {canChangeStatus(wo.status) && (
+                <ActionButton onClick={() => setAction({ type: "status", workOrder: wo })}>Status</ActionButton>
+              )}
+              <ActionMenu items={menuItems} />
+            </div>
+          );
+        },
       },
     ],
     []
@@ -260,7 +327,7 @@ export default function WorkOrdersPage() {
           <ActionButton variant="primary" onClick={handleSubmit(createWorkOrder)} disabled={mutations.createWorkOrder.isPending}>Tạo phiếu</ActionButton>
         </div>
       }>
-        <CreateFields register={register} setValue={setValue} watchVehicleId={watchVehicleId} technicians={technicians} />
+        <CreateFields register={register} setValue={setValue} watchVehicleId={watchVehicleId} watchLocationId={watchLocationId} technicians={technicians} />
       </Modal>
 
       {/* Modal chi tiết */}
@@ -464,12 +531,14 @@ function CreateFields({
   register,
   setValue,
   watchVehicleId,
+  watchLocationId,
   technicians,
 }: {
   register: ReturnType<typeof useForm<CreateForm>>["register"];
   setValue: ReturnType<typeof useForm<CreateForm>>["setValue"];
   watchVehicleId: string;
-  technicians: Array<{ technicianID: number; staffFullName?: string | null }>;
+  watchLocationId: string;
+  technicians: Array<{ technicianID: number; staffFullName?: string | null; locationID: number }>;
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -493,7 +562,9 @@ function CreateFields({
         <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">KTV chính *</span>
         <select className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900" {...register("primaryTechnicianID", { required: true })}>
           <option value="">Chọn KTV</option>
-          {technicians.map((t) => <option key={t.technicianID} value={t.technicianID}>{t.staffFullName ?? `Tech #${t.technicianID}`}</option>)}
+          {technicians
+            .filter((t) => !watchLocationId || t.locationID === Number(watchLocationId))
+            .map((t) => <option key={t.technicianID} value={t.technicianID}>{t.staffFullName ?? `Tech #${t.technicianID}`}</option>)}
         </select>
       </label>
       <Input label="Cố vấn dịch vụ (ServiceAdvisorID)" type="number" min={1} {...register("serviceAdvisorID")} />
@@ -521,7 +592,7 @@ function WorkOrderActionModal({
   mutations,
 }: {
   action: { type: "status" | "assign" | "service" | "part" | "pay"; workOrder: WorkOrderViewModel };
-  technicians: Array<{ technicianID: number; staffFullName?: string | null }>;
+  technicians: Array<{ technicianID: number; staffFullName?: string | null; locationID: number }>;
   services: Array<{ serviceID: number; serviceName: string; serviceCode: string; price: number }>;
   onClose: () => void;
   mutations: ReturnType<typeof useWorkshopMutations>;
@@ -616,7 +687,13 @@ function WorkOrderActionModal({
     }>
       {action.type === "status" ? (
         <div className="space-y-4">
-          <Select label="Trạng thái" value={status} onChange={(v) => setStatus(v as typeof status)} options={workStatuses.map(s => ({ value: s, label: STATUS_LABELS[s] ?? s }))} />
+          <Select
+            label="Trạng thái"
+            value={status}
+            onChange={(v) => setStatus(v as typeof status)}
+            options={[action.workOrder.status, ...(VALID_STATUS_TRANSITIONS[action.workOrder.status] ?? [])]
+              .map((s) => ({ value: s, label: STATUS_LABELS[s] ?? s }))}
+          />
           <Input label="Km ra" type="number" min={0} value={mileageOut} onChange={(e) => setMileageOut(e.target.value)} />
           <TextareaField label="Chẩn đoán" value={diagnosis} onChange={setDiagnosis} />
           <TextareaField label="Công việc đã làm" value={workPerformed} onChange={setWorkPerformed} />
@@ -624,7 +701,7 @@ function WorkOrderActionModal({
       ) : null}
 
       {action.type === "assign" ? (
-        <Select label="Kỹ thuật viên" value={technicianID} onChange={setTechnicianID} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
+        <Select label="Kỹ thuật viên" value={technicianID} onChange={setTechnicianID} options={technicians.filter((t) => t.locationID === action.workOrder.locationID).map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
       ) : null}
 
       {action.type === "service" ? (
@@ -651,7 +728,7 @@ function WorkOrderActionModal({
               ))}
             </select>
           </label>
-          <Select label="Kỹ thuật viên" value={service.technicianID} onChange={(value) => setService((s) => ({ ...s, technicianID: value }))} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
+          <Select label="Kỹ thuật viên" value={service.technicianID} onChange={(value) => setService((s) => ({ ...s, technicianID: value }))} options={technicians.filter((t) => t.locationID === action.workOrder.locationID).map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
           <Input label="Giờ công" type="number" min={0} max={24} value={service.laborHours} onChange={(e) => setService((s) => ({ ...s, laborHours: e.target.value }))} />
           <Input label="Đơn giá" type="number" min={0} value={service.unitPrice} onChange={(e) => setService((s) => ({ ...s, unitPrice: e.target.value }))} />
           <Input label="Ghi chú" value={service.notes} onChange={(e) => setService((s) => ({ ...s, notes: e.target.value }))} />
@@ -682,7 +759,7 @@ function WorkOrderActionModal({
           )}
           <Input label="Số lượng" type="number" min={1} value={part.quantity} onChange={(e) => setPart((s) => ({ ...s, quantity: e.target.value }))} />
           <Input label="Đơn giá" type="number" min={0} value={part.unitPrice} onChange={(e) => setPart((s) => ({ ...s, unitPrice: e.target.value }))} />
-          <Select label="Người lắp" value={part.installedByTechnicianID} onChange={(value) => setPart((s) => ({ ...s, installedByTechnicianID: value }))} options={technicians.map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
+          <Select label="Người lắp" value={part.installedByTechnicianID} onChange={(value) => setPart((s) => ({ ...s, installedByTechnicianID: value }))} options={technicians.filter((t) => t.locationID === action.workOrder.locationID).map((t) => ({ value: String(t.technicianID), label: t.staffFullName ?? `Tech #${t.technicianID}` }))} />
           <Input label="Ghi chú" value={part.notes} onChange={(e) => setPart((s) => ({ ...s, notes: e.target.value }))} />
         </div>
       ) : null}
@@ -805,6 +882,11 @@ function WorkOrderDetail({
         <Info label="Kết thúc" value={formatDate(workOrder.endDateTime)} />
         <Info label="Tổng tiền" value={formatMoney(workOrder.totalAmount)} />
       </div>
+      <WorkflowStepper
+        steps={WORK_ORDER_STEPS}
+        currentIndex={workOrderStepIndex(workOrder.status) ?? 0}
+        cancelledLabel={workOrder.status === "Cancelled" ? "Phiếu đã hủy" : undefined}
+      />
       <Info label="Khách phản ánh" value={workOrder.customerComplaint ?? "-"} />
       <Info label="Chẩn đoán" value={workOrder.diagnosis ?? "-"} />
       <Info label="Công việc đã làm" value={workOrder.workPerformed ?? "-"} />
@@ -887,7 +969,7 @@ function WorkOrderDetail({
       )}
 
       {/* Bàn giao xe */}
-      {workOrder.status === "Completed" && !workOrder.deliveredDateTime && (
+      {(workOrder.status === "Completed" || workOrder.status === "AwaitingHandover") && !workOrder.deliveredDateTime && (
         <DeliverSection workOrder={workOrder} mutations={mutations} />
       )}
       {workOrder.deliveredDateTime && (
@@ -904,8 +986,8 @@ function WorkOrderDetail({
         </Section>
       )}
 
-      {/* Section đánh giá khách hàng — chỉ hiện khi Completed hoặc Delivered */}
-      {(workOrder.status === "Completed" || workOrder.status === "Delivered") && (
+      {/* Section đánh giá khách hàng — chỉ hiện khi đã hoàn thành/chờ bàn giao/đã giao */}
+      {(workOrder.status === "Completed" || workOrder.status === "AwaitingHandover" || workOrder.status === "Delivered") && (
         <FeedbackSection workOrder={workOrder} mutations={mutations} />
       )}
     </div>
@@ -935,10 +1017,18 @@ function DeliverSection({
     }
   };
 
+  const paid = workOrder.paymentStatus === "Paid";
+
   return (
     <Section title="Bàn giao xe">
       <div className="space-y-3">
-        <p className="text-sm text-slate-600">Phiếu đã hoàn thành. Xác nhận bàn giao xe cho khách hàng.</p>
+        {paid ? (
+          <p className="text-sm text-slate-600">Phiếu đã hoàn thành và thanh toán đủ. Xác nhận bàn giao xe cho khách hàng.</p>
+        ) : (
+          <p className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-700">
+            Phiếu chưa thanh toán đủ — cần thu thanh toán trước khi bàn giao xe.
+          </p>
+        )}
         <label className="block">
           <span className="text-xs font-medium text-slate-600">Ghi chú bàn giao (tuỳ chọn)</span>
           <textarea
@@ -951,7 +1041,7 @@ function DeliverSection({
         </label>
         <button
           type="button"
-          disabled={saving}
+          disabled={saving || !paid}
           onClick={handleDeliver}
           className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
         >

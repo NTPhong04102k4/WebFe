@@ -22,6 +22,7 @@ export type WorkOrderStatus =
   | "WaitingParts"
   | "QualityCheck"
   | "Completed"
+  | "AwaitingHandover"
   | "Delivered"
   | "Cancelled";
 
@@ -140,6 +141,9 @@ export interface AppointmentViewModel {
   /** Tồn tại khi Appointment đã có WorkOrder — dùng để disable nút "Tạo phiếu" */
   workOrderID?: number | null;
   workOrderNumber?: string | null;
+  workOrderStatus?: WorkOrderStatus | null;
+  workOrderPaymentStatus?: string | null;
+  workOrderDeliveredDateTime?: string | null;
   reminderSent: boolean;
   reminderSentDate?: string | null;
   customerNote?: string | null;

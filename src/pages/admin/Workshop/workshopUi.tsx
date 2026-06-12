@@ -1,4 +1,7 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { MoreVertical } from "lucide-react";
+
+export { WorkflowStepper } from "@/components/common/WorkflowStepper";
 
 export function formatDate(value?: string | null) {
   if (!value) return "-";
@@ -103,6 +106,60 @@ export function ActionButton({
     >
       {children}
     </button>
+  );
+}
+
+/** Nút "..." gom các action phụ (ít dùng / chỉ phù hợp ở một số step) để bảng đỡ rối. */
+export function ActionMenu({
+  items,
+}: {
+  items: Array<{ label: ReactNode; onClick: () => void; danger?: boolean }>;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Thêm thao tác"
+        className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white p-2 text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+      >
+        <MoreVertical className="h-4 w-4" />
+      </button>
+      {open && (
+        <ul className="absolute right-0 z-50 mt-1 min-w-[170px] overflow-hidden rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          {items.map((item, index) => (
+            <li key={index}>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  item.onClick();
+                }}
+                className={`block w-full px-3 py-2 text-left transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                  item.danger ? "text-red-600 dark:text-red-400" : "text-slate-700 dark:text-slate-200"
+                }`}
+              >
+                {item.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

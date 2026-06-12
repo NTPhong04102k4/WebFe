@@ -179,6 +179,7 @@ export const API = {
     payroll: (id: string | number) => `/hr/payrolls/${id}`,
     payrollPay: (id: string | number) => `/hr/payrolls/${id}/pay`,
     payrollRecalculate: "/hr/payrolls/recalculate",
+    payrollPreview: "/hr/payrolls/preview",
     skills: {
       list: "/hr/skills",
       detail: (id: string | number) => `/hr/skills/${id}`,

@@ -27,12 +27,14 @@ import { VehicleAutocomplete } from "../VehicleAutocomplete";
 
 import {
   ActionButton,
+  ActionMenu,
   Badge,
   formatDate,
   formatMoney,
   getErrorMessage,
   PageHeader,
   TextareaField,
+  WorkflowStepper,
 } from "../workshopUi";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -108,6 +110,31 @@ export const STATUS_LABELS: Record<string, string> = {
   NoShow: "Khách không đến",
 };
 
+// ── Luồng trạng thái lịch hẹn ───────────────────────────────────────────────
+export const APPOINTMENT_STEPS = ["Đặt lịch", "Xác nhận", "Sửa chữa", "Hoàn thành"];
+
+/** Trả về index bước hiện tại (0-based), hoặc null nếu lịch hẹn đã hủy/khách không đến. */
+function appointmentStepIndex(status: string): number | null {
+  switch (status) {
+    case "Pending":
+    case "Scheduled":
+      return 0;
+    case "Confirmed":
+      return 1;
+    case "In-Progress":
+      return 2;
+    case "Completed":
+      return 3;
+    default:
+      return null; // Cancelled / NoShow
+  }
+}
+
+/** True khi lịch hẹn đã ở bước cuối hoặc đã hủy/khách không đến — ẩn các action chỉnh sửa. */
+function isAppointmentClosed(status: string): boolean {
+  return status === "Completed" || status === "Cancelled" || status === "NoShow";
+}
+
 export const TYPE_LABELS: Record<string, string> = {
   Maintenance: "Bảo dưỡng",
   Repair: "Sửa chữa",
@@ -154,6 +181,7 @@ export default function WorkshopAppointmentsPage() {
   const mutations = useWorkshopMutations();
   const { register, handleSubmit, reset, setValue, watch } = useForm<AppointmentForm>({ defaultValues: defaults });
   const watchVehicleId = watch("customerVehicleID");
+  const watchLocationId = watch("locationID");
 
   // Tính năng A: hook check-in với xử lý conflict
   const checkInMutation = useCheckInAppointment({
@@ -305,40 +333,6 @@ export default function WorkshopAppointmentsPage() {
     }
   };
 
-  const handleQuickCheckIn = async (appt: AppointmentViewModel) => {
-    const techId = appt.assignedTechnicianID || technicians[0]?.technicianID;
-    if (!techId) {
-      notify.error("Không tìm thấy kỹ thuật viên khả dụng để gán. Vui lòng check-in chi tiết.");
-      return;
-    }
-    try {
-      const result = await checkInMutation.mutateAsync({
-        id: appt.appointmentID,
-        body: {
-          primaryTechnicianId: Number(techId),
-          mileageIn: 0,
-          priority: "Normal",
-          customerComplaint: appt.customerNote || null,
-        },
-      });
-      notify.success(
-        `Đã check-in nhanh và tạo phiếu công việc${result?.workOrderNumber ? ` #${result.workOrderNumber}` : ""}` +
-          (result?.servicesCount ? ` (${result.servicesCount} dịch vụ)` : ""),
-      );
-      if (detailId === appt.appointmentID) {
-        detail.refetch();
-      }
-    } catch (err) {
-      const msg = getErrorMessage(err);
-      if (
-        !(err as any)?.response?.data?.errorCode?.includes("Conflict") &&
-        !(err as any)?.response?.data?.errorCode?.includes("AppointmentNotFound")
-      ) {
-        notify.error(msg);
-      }
-    }
-  };
-
   // ── Tính năng C: quản lý service rows ───────────────────────────────────
 
   const addServiceRow = () => {
@@ -402,8 +396,24 @@ export default function WorkshopAppointmentsPage() {
             (appt.status === "Confirmed" || appt.status === "Scheduled") &&
             !appt.workOrderID;
           const canConfirm = appt.status === "Pending" || appt.status === "Scheduled";
+          const closed = isAppointmentClosed(appt.status);
+
+          const menuItems: Array<{ label: string; onClick: () => void }> = [];
+          if (!closed) {
+            menuItems.push(
+              {
+                label: "Trạng thái",
+                onClick: () => {
+                  setStatusTarget(appt);
+                  setNextStatus(appt.status);
+                },
+              },
+              { label: "Nhắc hẹn", onClick: () => sendReminder(appt.appointmentID) },
+            );
+          }
+
           return (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <ActionButton onClick={() => setDetailId(appt.appointmentID)}>Xem</ActionButton>
               {canConfirm && (
                 <ActionButton onClick={() => confirmAppointment(appt.appointmentID)}>
@@ -411,27 +421,12 @@ export default function WorkshopAppointmentsPage() {
                 </ActionButton>
               )}
               {canCheckIn && (
-                <>
-                  <ActionButton variant="primary" onClick={() => handleQuickCheckIn(appt)}>
-                    <ClipboardCheck className="mr-1 h-3.5 w-3.5" />
-                    Check-in nhanh
-                  </ActionButton>
-                  <ActionButton onClick={() => openCheckIn(appt)}>
-                    Chi tiết
-                  </ActionButton>
-                </>
+                <ActionButton variant="primary" onClick={() => openCheckIn(appt)}>
+                  <ClipboardCheck className="mr-1 h-3.5 w-3.5" />
+                  Check-in
+                </ActionButton>
               )}
-              <ActionButton
-                onClick={() => {
-                  setStatusTarget(appt);
-                  setNextStatus(appt.status);
-                }}
-              >
-                Trạng thái
-              </ActionButton>
-              <ActionButton onClick={() => sendReminder(appt.appointmentID)}>
-                Nhắc hẹn
-              </ActionButton>
+              <ActionMenu items={menuItems} />
             </div>
           );
         },
@@ -597,6 +592,7 @@ export default function WorkshopAppointmentsPage() {
           register={register}
           setValue={setValue}
           watchVehicleId={watchVehicleId}
+          watchLocationId={watchLocationId}
           technicians={technicians}
           locations={locations}
           services={services}
@@ -682,6 +678,17 @@ export default function WorkshopAppointmentsPage() {
                 />
               )}
             </div>
+            <WorkflowStepper
+              steps={APPOINTMENT_STEPS}
+              currentIndex={appointmentStepIndex(detail.data.status) ?? 0}
+              cancelledLabel={
+                detail.data.status === "Cancelled"
+                  ? "Lịch hẹn đã hủy"
+                  : detail.data.status === "NoShow"
+                  ? "Khách không đến"
+                  : undefined
+              }
+            />
             <Info label="Ghi chú khách" value={detail.data.customerNote ?? "-"} />
             <Info label="Ghi chú staff" value={detail.data.staffNote ?? "-"} />
             <div className="overflow-x-auto">
@@ -799,11 +806,13 @@ export default function WorkshopAppointmentsPage() {
                   }
                 >
                   <option value="">-- Chọn kỹ thuật viên --</option>
-                  {technicians.map((t) => (
-                    <option key={t.technicianID} value={t.technicianID}>
-                      {t.staffFullName ?? `Tech #${t.technicianID}`}
-                    </option>
-                  ))}
+                  {technicians
+                    .filter((t) => t.locationID === checkInTarget.locationID)
+                    .map((t) => (
+                      <option key={t.technicianID} value={t.technicianID}>
+                        {t.staffFullName ?? `Tech #${t.technicianID}`}
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -868,6 +877,7 @@ function AppointmentFields({
   register,
   setValue,
   watchVehicleId,
+  watchLocationId,
   technicians,
   locations,
   services,
@@ -880,7 +890,8 @@ function AppointmentFields({
   register: ReturnType<typeof useForm<AppointmentForm>>["register"];
   setValue: ReturnType<typeof useForm<AppointmentForm>>["setValue"];
   watchVehicleId: string;
-  technicians: Array<{ technicianID: number; staffFullName?: string | null }>;
+  watchLocationId: string;
+  technicians: Array<{ technicianID: number; staffFullName?: string | null; locationID: number }>;
   locations: Array<{ locationID: number; locationName: string; city: string }>;
   services: Array<{
     serviceID: number;
@@ -951,10 +962,12 @@ function AppointmentFields({
       <Select
         label="Kỹ thuật viên"
         placeholder="Chưa gán"
-        options={technicians.map((t) => ({
-          value: t.technicianID,
-          label: t.staffFullName ?? `Tech #${t.technicianID}`,
-        }))}
+        options={technicians
+          .filter((t) => !watchLocationId || t.locationID === Number(watchLocationId))
+          .map((t) => ({
+            value: t.technicianID,
+            label: t.staffFullName ?? `Tech #${t.technicianID}`,
+          }))}
         {...register("assignedTechnicianID")}
       />
       <Select

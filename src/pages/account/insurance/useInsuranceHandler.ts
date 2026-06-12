@@ -34,7 +34,7 @@ export type InsuranceHandlerReturn = {
 
 export function useInsuranceHandler(): InsuranceHandlerReturn {
   const user = useAuthStore((s) => s.user);
-  const userID = user?.userID ?? user?.id;
+  const userID = user?.userUUID;
 
   const { data: polRes, isLoading: polLoading } = useMyPolicies(userID);
   const policies = polRes?.data ?? [];

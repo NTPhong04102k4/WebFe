@@ -27,9 +27,7 @@ export function usePayrollHandler() {
   const [period, setPeriod] = useState("");
   const [open, setOpen] = useState(false);
   const [payOpen, setPayOpen] = useState<PayrollViewModel | null>(null);
-  const [editing, setEditing] = useState<PayrollViewModel | null>(null);
   const [form, setForm] = useState<PayrollRequest>(emptyForm);
-  const [deleteConfirmItem, setDeleteConfirmItem] = useState<PayrollViewModel | null>(null);
 
   const { data, isLoading, error } = usePayrolls({
     page,
@@ -37,55 +35,20 @@ export function usePayrollHandler() {
     staffId: staffId ? Number(staffId) : undefined,
     period: period ? `${period}-01` : undefined,
   });
-  const { createPayroll, updatePayroll, markPayrollPaid, deletePayroll } = usePayrollMutations();
+  const { createPayroll, markPayrollPaid } = usePayrollMutations();
   const payrolls = data?.data ?? [];
 
   const openCreate = () => {
-    setEditing(null);
     setForm(emptyForm);
-    setOpen(true);
-  };
-
-  const openEdit = (payroll: PayrollViewModel) => {
-    setEditing(payroll);
-    setForm({
-      staffID: payroll.staffID,
-      payPeriod: payroll.payPeriod.slice(0, 10),
-      baseSalary: payroll.baseSalary,
-      workingHours: payroll.workingHours,
-      overtimeHours: payroll.overtimeHours,
-      jobsCompleted: payroll.jobsCompleted,
-      commissionAmount: payroll.commissionAmount,
-      bonusAmount: payroll.bonusAmount,
-      deductionAmount: payroll.deductionAmount,
-      taxAmount: payroll.taxAmount,
-      notes: payroll.notes ?? "",
-    });
     setOpen(true);
   };
 
   const save = async () => {
     try {
       const payload = { ...form, payPeriod: new Date(form.payPeriod).toISOString() };
-      if (editing) {
-        await updatePayroll.mutateAsync({ id: editing.payrollID, body: payload });
-        notify.success("Cap nhat bang luong thanh cong");
-      } else {
-        await createPayroll.mutateAsync(payload);
-        notify.success("Tao bang luong thanh cong");
-      }
+      await createPayroll.mutateAsync(payload);
+      notify.success("Tao bang luong thanh cong");
       setOpen(false);
-    } catch {
-      // interceptor đã hiện toast lỗi
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteConfirmItem) return;
-    try {
-      await deletePayroll.mutateAsync(deleteConfirmItem.payrollID);
-      notify.success("Da xoa bang luong");
-      setDeleteConfirmItem(null);
     } catch {
       // interceptor đã hiện toast lỗi
     }
@@ -123,6 +86,16 @@ export function usePayrollHandler() {
         cell: ({ getValue }) => formatCurrency(Number(getValue() || 0)),
       },
       {
+        id: "commission",
+        header: "Hoa hong (theo job)",
+        cell: ({ row }) => (
+          <div className="text-right">
+            <div>{formatCurrency(Number(row.original.commissionAmount || 0))}</div>
+            <div className="text-xs text-slate-400">{row.original.jobsCompleted || 0} job</div>
+          </div>
+        ),
+      },
+      {
         accessorKey: "grossSalary",
         header: "Gross",
         cell: ({ getValue }) => formatCurrency(Number(getValue() || 0)),
@@ -137,13 +110,20 @@ export function usePayrollHandler() {
         id: "actions",
         header: "Hanh dong",
         enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex justify-end gap-2">
-            <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm" onClick={() => openEdit(row.original)}>Sua</button>
-            <button className="rounded-lg border border-emerald-300 px-3 py-1.5 text-sm text-emerald-700" onClick={() => setPayOpen(row.original)}>Pay</button>
-            <button className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600" onClick={() => setDeleteConfirmItem(row.original)}>Xoa</button>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const isPaid = row.original.paymentStatus === "Paid";
+          return (
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded-lg border border-emerald-300 px-3 py-1.5 text-sm text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => setPayOpen(row.original)}
+                disabled={isPaid}
+              >
+                {isPaid ? "Da thanh toan" : "Pay"}
+              </button>
+            </div>
+          );
+        },
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -156,18 +136,14 @@ export function usePayrollHandler() {
     period, setPeriod,
     open, setOpen,
     payOpen, setPayOpen,
-    editing,
     form, setForm,
-    deleteConfirmItem, setDeleteConfirmItem,
     data, isLoading, error,
     payrolls,
     columns,
     openCreate,
     save,
-    confirmDelete,
     markPaid,
-    isSaving: createPayroll.isPending || updatePayroll.isPending,
-    isDeleting: deletePayroll.isPending,
+    isSaving: createPayroll.isPending,
     isMarkingPaid: markPayrollPaid.isPending,
   };
 }

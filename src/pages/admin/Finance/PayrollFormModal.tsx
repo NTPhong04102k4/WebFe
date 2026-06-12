@@ -29,13 +29,39 @@ const fmt = (v: number) =>
 
 export function PayrollFormModal({ open, onClose }: Props) {
   const [form, setForm] = useState<PayrollRequest>(emptyForm());
-  const { createPayroll } = useFinancePayrollMutations();
+  const { createPayroll, previewPayroll } = useFinancePayrollMutations();
   const staffQ = useStaffList({ page: 1, pageSize: 100, isActive: true });
   const staffList = staffQ.data?.data ?? [];
 
   useEffect(() => {
     if (open) setForm(emptyForm());
   }, [open]);
+
+  // Tự động tính lương từ WorkOrder thực tế khi chọn nhân viên + kỳ lương
+  useEffect(() => {
+    if (!open || !form.staffID || !form.payPeriod) return;
+    const [y, m] = form.payPeriod.split("-").map(Number);
+    previewPayroll.mutate(
+      { staffId: form.staffID, year: y, month: m },
+      {
+        onSuccess: (res) => {
+          const p = res.data;
+          if (!p) return;
+          setForm((f) => ({
+            ...f,
+            baseSalary: p.baseSalary,
+            workingHours: p.workingHours,
+            jobsCompleted: p.jobsCompleted,
+            commissionAmount: p.commissionAmount,
+            bonusAmount: p.bonusAmount,
+          }));
+        },
+        // Nhân viên không phải kỹ thuật viên / chưa có bậc lương -> giữ giá trị nhập tay
+        onError: () => {},
+      }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, form.staffID, form.payPeriod]);
 
   if (!open) return null;
 
@@ -48,7 +74,7 @@ export function PayrollFormModal({ open, onClose }: Props) {
     e.preventDefault();
     if (!form.staffID) { notify.error("Vui lòng chọn nhân viên"); return; }
     try {
-      await createPayroll.mutateAsync(form);
+      await createPayroll.mutateAsync({ ...form, payPeriod: `${form.payPeriod}-01` });
       notify.success("Tạo phiếu lương thành công");
       onClose();
     } catch {
@@ -92,6 +118,9 @@ export function PayrollFormModal({ open, onClose }: Props) {
               onChange={(e) => set("payPeriod", e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             />
+            {previewPayroll.isPending && (
+              <p className="mt-1 text-xs text-slate-400">Đang tính lương từ dữ liệu công việc thực tế...</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

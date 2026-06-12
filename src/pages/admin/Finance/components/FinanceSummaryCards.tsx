@@ -6,6 +6,8 @@ import {
   Wrench,
   Package,
   ClipboardList,
+  Wallet,
+  Landmark,
 } from "lucide-react";
 import { fmt } from "../financeHelpers";
 
@@ -14,6 +16,8 @@ type Props = {
   totalRevenue: number;
   orderRevenue: number;
   workshopRevenue: number;
+  cashRevenue: number;
+  transferRevenue: number;
   totalExpense: number;
   payrollExpense: number;
   partsExpense: number;
@@ -27,6 +31,8 @@ export function FinanceSummaryCards({
   totalRevenue,
   orderRevenue,
   workshopRevenue,
+  cashRevenue,
+  transferRevenue,
   totalExpense,
   payrollExpense,
   partsExpense,
@@ -59,6 +65,22 @@ export function FinanceSummaryCards({
       icon: Wrench,
       gradient: "from-cyan-500 to-cyan-600",
       text: "text-cyan-600",
+    },
+    {
+      label: "Thu tiền mặt",
+      value: isLoading ? "…" : fmt(cashRevenue),
+      sub: "Tiền mặt",
+      icon: Wallet,
+      gradient: "from-lime-500 to-lime-600",
+      text: "text-lime-600",
+    },
+    {
+      label: "Thu chuyển khoản",
+      value: isLoading ? "…" : fmt(transferRevenue),
+      sub: "CK / ngân hàng",
+      icon: Landmark,
+      gradient: "from-sky-500 to-sky-600",
+      text: "text-sky-600",
     },
     {
       label: "Tổng chi phí",

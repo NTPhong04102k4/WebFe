@@ -1,7 +1,14 @@
 import React, { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useNavigate } from "react-router-dom";
 
 import { DataTable } from "src/components/core/Table/DataTable";
+import { WorkflowStepper } from "@/components/common/WorkflowStepper";
+import {
+  APPOINTMENT_PROGRESS_STEPS,
+  appointmentProgressCancelledLabel,
+  appointmentProgressStepIndex,
+} from "@/common/utils/appointmentProgress";
 import type { AppointmentViewModel } from "src/services/api/functions/workshop/workshop.types";
 
 type Props = {
@@ -12,6 +19,8 @@ type Props = {
 };
 
 export function AppointmentTable({ rows, isLoading, onCancel, isCancelling }: Props) {
+  const navigate = useNavigate();
+
   const columns = useMemo<ColumnDef<AppointmentViewModel>[]>(
     () => [
       {
@@ -33,6 +42,19 @@ export function AppointmentTable({ rows, isLoading, onCancel, isCancelling }: Pr
         ),
       },
       {
+        id: "progress",
+        header: "Tiến độ",
+        cell: ({ row }) => (
+          <div className="min-w-[420px]">
+            <WorkflowStepper
+              steps={APPOINTMENT_PROGRESS_STEPS}
+              currentIndex={appointmentProgressStepIndex(row.original) ?? 0}
+              cancelledLabel={appointmentProgressCancelledLabel(row.original)}
+            />
+          </div>
+        ),
+      },
+      {
         accessorKey: "customerNote",
         header: "Ghi chú",
         cell: ({ row }) => row.original.customerNote ?? "—",
@@ -42,16 +64,28 @@ export function AppointmentTable({ rows, isLoading, onCancel, isCancelling }: Pr
         header: "",
         cell: ({ row }) => {
           const a = row.original;
-          if (a.status === "Cancelled" || a.status === "Completed") return null;
           return (
-            <button
-              type="button"
-              className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-55 dark:bg-red-900/30 dark:text-red-400"
-              onClick={() => onCancel(a.appointmentID)}
-              disabled={isCancelling}
-            >
-              Hủy
-            </button>
+            <div className="flex items-center gap-2">
+              {a.workOrderID && (
+                <button
+                  type="button"
+                  className="rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
+                  onClick={() => navigate(`/account/work-orders?workOrderId=${a.workOrderID}`)}
+                >
+                  Xem tiến trình
+                </button>
+              )}
+              {a.status !== "Cancelled" && a.status !== "Completed" && (
+                <button
+                  type="button"
+                  className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-55 dark:bg-red-900/30 dark:text-red-400"
+                  onClick={() => onCancel(a.appointmentID)}
+                  disabled={isCancelling}
+                >
+                  Hủy
+                </button>
+              )}
+            </div>
           );
         },
       },

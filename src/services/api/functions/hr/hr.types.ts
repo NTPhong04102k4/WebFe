@@ -80,6 +80,7 @@ export interface TechnicianViewModel {
   staffID: number;
   staffFullName?: string | null;
   staffEmail?: string | null;
+  locationID: number;
   levelID: number;
   levelName?: string | null;
   hireDate: string;
@@ -127,6 +128,15 @@ export interface PayrollRequest {
   deductionAmount: number;
   taxAmount: number;
   notes?: string | null;
+}
+
+export interface PayrollPreview {
+  staffID: number;
+  baseSalary: number;
+  workingHours: number;
+  jobsCompleted: number;
+  commissionAmount: number;
+  bonusAmount: number;
 }
 
 export interface PayrollPaymentRequest {

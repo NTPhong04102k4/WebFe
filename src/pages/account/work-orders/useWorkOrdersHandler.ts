@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import {
   useCustomerVehicles,
   useWorkOrderDetail,
   useWorkOrders,
 } from "src/query/workshop/useWorkshopQueries";
-import { useAuthStore } from "@/stores/authStore";
 import type { SelectOption } from "src/components/core/Select/Select";
 import type { WorkOrderViewModel } from "src/services/api/functions/workshop/workshop.types";
 
@@ -22,10 +22,7 @@ export type WorkOrdersHandlerReturn = {
 };
 
 export function useWorkOrdersHandler(): WorkOrdersHandlerReturn {
-  const user = useAuthStore((s) => s.user);
-  const userID = user?.userID ?? user?.id;
-
-  const { data: vehiclesRes } = useCustomerVehicles({ page: 1, pageSize: 100, userId: userID });
+  const { data: vehiclesRes } = useCustomerVehicles({ page: 1, pageSize: 100 });
   const vehicles = vehiclesRes?.data ?? [];
 
   const [vehicleFilter, setVehicleFilter] = useState<number | "">("");
@@ -36,7 +33,11 @@ export function useWorkOrdersHandler(): WorkOrdersHandlerReturn {
   });
   const rows = woRes?.data ?? [];
 
-  const [openId, setOpenId] = useState<number | null>(null);
+  const [searchParams] = useSearchParams();
+  const workOrderIdParam = searchParams.get("workOrderId");
+  const [openId, setOpenId] = useState<number | null>(
+    workOrderIdParam ? Number(workOrderIdParam) : null
+  );
   const detailQuery = useWorkOrderDetail(openId);
 
   const vehicleOptions = useMemo<SelectOption[]>(

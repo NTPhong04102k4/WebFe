@@ -14,6 +14,8 @@ export interface FinanceTimelinePoint {
   orderRevenue: number;
   workshopRevenue: number;
   totalRevenue: number;
+  cashRevenue: number;
+  transferRevenue: number;
   payrollExpense: number;
   partsExpense: number;
   grossProfit: number;
@@ -23,6 +25,8 @@ export interface FinanceSummary {
   orderRevenue: number;
   workshopRevenue: number;
   totalRevenue: number;
+  cashRevenue: number;
+  transferRevenue: number;
   payrollExpense: number;
   partsExpense: number;
   totalExpense: number;

@@ -56,6 +56,8 @@ export default function AdminFinancePage() {
         totalRevenue={h.totalRevenue}
         orderRevenue={h.orderRevenue}
         workshopRevenue={h.workshopRevenue}
+        cashRevenue={h.cashRevenue}
+        transferRevenue={h.transferRevenue}
         totalExpense={h.totalExpense}
         payrollExpense={h.payrollExpense}
         partsExpense={h.partsExpense}

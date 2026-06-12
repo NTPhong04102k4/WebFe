@@ -75,5 +75,9 @@ export function useFinancePayrollMutations() {
         hrApi.recalculatePayroll(year, month),
       onSuccess: invalidate,
     }),
+    previewPayroll: useMutation({
+      mutationFn: ({ staffId, year, month }: { staffId: number; year: number; month: number }) =>
+        hrApi.previewPayroll(staffId, year, month),
+    }),
   };
 }
