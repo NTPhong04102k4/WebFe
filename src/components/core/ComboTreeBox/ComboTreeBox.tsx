@@ -88,35 +88,27 @@ function TreeNode({ item, depth, value, expanded, onToggle, onSelect }: TreeNode
         tabIndex={-1}
         style={{ paddingLeft: `${8 + depth * 16}px` }}
         className={cn(
-          "flex select-none items-center gap-1.5 rounded-md py-1.5 pr-3 text-sm transition-colors",
-          hasChildren
-            ? "cursor-default text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/50"
-            : cn(
-                "cursor-pointer",
-                isSelected
-                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200"
-                  : "text-slate-800 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800",
-              ),
+          "flex select-none cursor-pointer items-center gap-1.5 rounded-md py-1.5 pr-3 text-sm transition-colors",
+          isSelected
+            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200"
+            : "text-slate-800 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800",
         )}
-        onClick={() => {
-          if (hasChildren) {
-            onToggle(item.id);
-          } else {
-            onSelect(item);
-          }
-        }}
+        onClick={() => onSelect(item)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            if (hasChildren) {
-              onToggle(item.id);
-            } else {
-              onSelect(item);
-            }
+            onSelect(item);
           }
         }}
       >
-        <span className="flex w-4 flex-shrink-0 items-center justify-center">
+        <span
+          className="flex w-4 flex-shrink-0 items-center justify-center"
+          onClick={(e) => {
+            if (!hasChildren) return;
+            e.stopPropagation();
+            onToggle(item.id);
+          }}
+        >
           {hasChildren ? (
             isOpen ? (
               <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
