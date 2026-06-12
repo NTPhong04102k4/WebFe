@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { notify } from "@/components/core/Feedback/toast";
 import {
@@ -178,6 +178,7 @@ export function useCartHandler(): CartHandlerReturn {
       ),
     enabled: isInstallment && hasCarInSelection,
     staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
   const installmentPlans: InstallmentPlanViewModel[] = installmentPlansQuery.data ?? [];
   const selectedPlan = installmentPlans.find((p) => p.months === installmentMonths) ?? null;
@@ -201,7 +202,8 @@ export function useCartHandler(): CartHandlerReturn {
 
   const handleInstallmentMonthsChange = (months: number | null) => {
     setInstallmentMonths(months);
-    setDownPayment("");
+    const plan = installmentPlans.find((p) => p.months === months);
+    setDownPayment(plan?.minDownPayment ? String(plan.minDownPayment) : "");
   };
 
   const handlePromoCodeChange = (value: string) => {
