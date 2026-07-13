@@ -6,7 +6,10 @@
       "Bash(npx *)",
       "Bash(yarn *)",
       "Bash(xargs grep *)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(sr status *)",
+      "Bash(sr list *)",
+      "Bash(sr emit *)"
     ],
     "additionalDirectories": [
       "D:\\DA\\webapp\\src"
